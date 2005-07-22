@@ -49,9 +49,9 @@ preserve the maximum amount of memory needed):
    - What is the maximum index of attribute found in a sample?
  
 -2 Read and parse all values in the file
-
+ 
 Everything after a '#' symbol is discarded.
-
+ 
 */
 
 
@@ -168,8 +168,8 @@ void read_svm_light( char* file_name, I &inputs, O &outputs ) {
                     // read the input into the input container
                     inputs[sample_index][attribute_nr] = boost::lexical_cast< scalar_type >( *i++ );
                 }
+                ++sample_index;
             }
-            ++sample_index;
         }
     }
     data.close();
@@ -178,11 +178,166 @@ void read_svm_light( char* file_name, I &inputs, O &outputs ) {
 
 
 
+/*!
+Read a data file also used in SVM Torch - train data file format in ASCII mode
+For more details, see http://www.idiap.ch/machine_learning.php?content=Torch/en_SVMTorch.txt
+ 
+\param I a range over input examples
+\param O a range over output examples
+ 
+Because you supply inputs AND outputs here, the SVM Torch Train data file format is assumed
+ 
+*/
+
+template<typename I, typename O>
+void read_svm_torch( char* file_name, I &inputs, O &outputs ) {
+
+    typedef typename boost::range_value<I>::type input_type;
+    typedef typename boost::range_value<O>::type output_type;
+
+    // TODO
+    typedef double scalar_type;
+
+    // open the file
+    std::ifstream data( file_name, std::ios::in );
+
+    unsigned int number_of_samples;
+    unsigned int number_of_attributes;
+    std::string line_buffer;
+
+    // these are the separators the input file will be split on:
+    // space and tab
+    boost::char_separator<char> separator(" \t");
+
+
+    // read a line with info
+    std::getline( data, line_buffer );
+
+    boost::tokenizer<boost::char_separator<char> > first_line( line_buffer, separator );
+    typedef boost::tokenizer<boost::char_separator<char> >::iterator iter;
+
+    iter i=first_line.begin();
+    number_of_samples = boost::lexical_cast< unsigned int >( *i++ );
+    number_of_attributes = boost::lexical_cast< unsigned int >( *i ) - 1;
+
+    //     std::cout << "Number of samples:    " << number_of_samples << std::endl;
+    //     std::cout << "Number of attributes: " << number_of_attributes << std::endl;
+
+    // resize the inputs and outputs containers accordingly
+    inputs.resize( number_of_samples );
+    outputs.resize( number_of_samples );
+
+    // read the data
+    unsigned int sample_index = 0;
+    while( (!data.eof()) && (sample_index < number_of_samples)  ) {
+        std::getline( data, line_buffer );
+
+        // split the data
+        boost::tokenizer<boost::char_separator<char> > tokens( line_buffer, separator );
+        i = tokens.begin();
+
+        // DENSE vector format
+        inputs[ sample_index ] = input_type( number_of_attributes );
+
+        for( unsigned int j=0; j<number_of_attributes; ++j ) {
+            inputs[sample_index][j] = boost::lexical_cast< double >( *i++ );
+        }
+
+        // TODO cast to correct output type
+        outputs[sample_index] = boost::lexical_cast< double >( *i );
+
+        ++sample_index;
+    }
+    // close the input file
+    data.close();
+
+}
+
+/*!
+Write a data file also used in SVM Torch - train data file format in ASCII mode
+For more details, see http://www.idiap.ch/machine_learning.php?content=Torch/en_SVMTorch.txt
+ 
+\param I a range over input examples
+\param O a range over output examples
+ 
+At the moment, we use space as a white-space character.
+*/
+
+
+template<typename I, typename O>
+void write_svm_torch( char* file_name, I &inputs, O &outputs ) {
+
+    typedef typename boost::range_value<I>::type input_type;
+    typedef typename boost::range_value<O>::type output_type;
+
+    // open the file
+    std::ofstream data( file_name, std::ios::out );
+
+    // write the data set dimensions
+    data << inputs.size() << " " << ((*inputs.begin()).size()+1) << std::endl;
+
+    // change formatting to scientific
+    data.setf(std::ios::scientific);
+    data.precision(16);
+    for( unsigned int i=0; i<inputs.size(); ++i ) {
+        // write input vector
+        for( typename input_type::iterator j=inputs[i].begin(); j!=inputs[i].end(); ++j ) {
+            data << *j << " ";
+        }
+        // write output value
+        // TODO if these are bool, write +1 and -1
+        data << outputs[i] << std::endl;
+    }
+
+    data.close();
+}
+
+
+
+/*!
+ 
+Read a data file also used in SVM Torch - test data file format in ASCII mode
+For more details, see http://www.idiap.ch/machine_learning.php?content=Torch/en_SVMTorch.txt
+ 
+\param I a range over input examples
+\param O a range over output examples
+ 
+Because you supply inputs only, the SVM Torch Test data file format is assumed
+ 
+*/
+
+template<typename I>
+void read_svm_torch( char* file_name, I &inputs ) {
+
+    // open the file
+    //std::ifstream data( file_name, std::ios::in );
+
+    // read a line
+    //    std::getline( data, line_buffer );
+
+
+
+
+
+
+
+
+
+
 
 
 
 
 }
+
+
+
+
+
+
+
+} // namespace kml
+
 
 
 #endif
