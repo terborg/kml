@@ -32,7 +32,7 @@ namespace kml {
 
 
 /*!
-Read a data file also used in Joachims' SVM_Light format
+Read a data file also used in Joachims' SVM^{light} format
 For more details, see http://svmlight.joachims.org/
  
  
@@ -174,6 +174,38 @@ void read_svm_light( char* file_name, I &inputs, O &outputs ) {
     }
     data.close();
 }
+
+
+/*!
+Write a data file also used in Joachims' SVM^{light} format
+For more details, see http://svmlight.joachims.org/
+*/
+
+template<typename I, typename O>
+void write_svm_light( char* file_name, I &inputs, O &outputs ) {
+
+    typedef typename boost::range_value<I>::type input_type;
+    typedef typename boost::range_value<O>::type output_type;
+
+    // TODO
+    typedef double scalar_type;
+
+    // open the file
+    std::ofstream data( file_name, std::ios::out );
+
+    for( unsigned int i=0; i< boost::size(inputs); ++i ) {
+	data << outputs[i] << " ";
+	for( unsigned j=0; j< boost::size(inputs); ++j ) {
+    		if ( inputs[i][j] != 0.0 ) {
+			data << j << ":" << inputs[i][j] << " ";
+		}
+	}
+	data << std::endl;
+    }
+}
+
+
+
 
 
 
