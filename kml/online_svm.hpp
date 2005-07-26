@@ -25,11 +25,13 @@
 #include <boost/numeric/bindings/traits/ublas_symmetric.hpp>
 #include <boost/numeric/bindings/traits/ublas_vector.hpp>
 #include <boost/mpl/equal_to.hpp>
+#include <boost/type_traits/is_float.hpp>
+#include <boost/type_traits/is_same.hpp>
+#include <boost/utility/enable_if.hpp>
 
 #include <kml/online_determinate.hpp>
 #include <kml/matrix_view.hpp>
 #include <kml/symmetric_view.hpp>
-
 
 
 
@@ -40,9 +42,8 @@ namespace kml {
 
 /*!
 \brief On-line Support Vector Machine.
-\param I the input type
-\param O the output type
-\param K the kernel type
+\param Problem the problem type
+\param Kernel the kernel type
 
 Training a Support Vector Machine (SVM) normally requires solving a quadratic programming problem (QP) in a number of
 coefficients equal to the number of training examples. For very large data sets, QP methods become infeasible. 
@@ -103,8 +104,19 @@ Classification: \f$ Q_{ij}= y_i y_j k(x_i,x_j) \f$
 */
 
 
-template< typename I, typename O, template<typename,int> class K >
-class online_svm: public online_determinate<I,O,K> {
+template< typename I, typename O, template<typename,int> class K, class Enable = void >
+class online_svm: public online_determinate<I,O,K> {};
+
+
+//
+//
+// REGRESSION ALGORITHM
+//
+//
+
+template< typename I, typename O, template<typename,int> class K>
+class online_svm<I,O,K, typename boost::enable_if< boost::is_float<O> >::type >: 
+         public online_determinate<I,O,K> {
 public:
     typedef online_determinate<I,O,K> base_type;
     typedef typename base_type::kernel_type kernel_type;
@@ -132,26 +144,25 @@ public:
         // temp_K[i], not temp_K[i+1]
         if (margin_set.size()>0) {
             vector_type temp_K( margin_set.size() );
-            for( int i=0; i < margin_set.size(); ++i )
+            for( unsigned int i=0; i < margin_set.size(); ++i )
                 temp_K[i] = base_type::kernel( base_type::support_vector[margin_set[i]], x );
             result += atlas::dot( temp_K, base_type::weight );
         }
         if (error_set.size()>0) {
             result_type temp_K(0);
             //vector_type temp_K( error_set.size() );
-            for( int i=0; i < error_set.size(); ++i )
+            for( unsigned int i=0; i < error_set.size(); ++i )
                 temp_K += kernel( base_type::support_vector[error_set[i]], x );
             result += C * temp_K;
         }
         if (error_star_set.size()>0) {
             result_type temp_K(0);
-            for( int i=0; i < error_star_set.size(); ++i )
+            for( unsigned int i=0; i < error_star_set.size(); ++i )
                 temp_K += kernel( base_type::support_vector[error_star_set[i]], x );
             result -= C * temp_K;
         }
         return result;
     }
-
 
     /*! \param input an input pattern of input type I
         \param output an output pattern of output type O */
@@ -207,8 +218,9 @@ public:
                 std::cout << "H is now " << H.size1() << " by " << H.size2() << std::endl;
 
             // fill last row of design matrix with this input sample
+	    // TODO this should be an otimised function call 
             H.matrix( index, 0 ) = 1.0;
-            for( int i=0; i < margin_set.size(); ++i )
+            for( unsigned int i=0; i < margin_set.size(); ++i )
                 H.matrix(index,i+1) = base_type::kernel( base_type::support_vector[margin_set[i]], input );
 
 
@@ -231,10 +243,7 @@ public:
         }
     }
 
-
-    
     // define types for different actions
-
     struct incremental_type {
         typedef mpl::bool_<true> increment;
         typedef mpl::bool_<false> decrement;
@@ -257,7 +266,7 @@ public:
             return a < b;
         else
             return a > b;
-    };
+    }
 
     
     // this template function switches the operation done on two scalars
@@ -310,7 +319,7 @@ public:
         // create a candidate column of the design matrix; this column also includes the
         // point under consideration
         vector_type candidate_column( base_type::support_vector.size() );
-        for( int i=0; i<base_type::support_vector.size(); ++i )
+        for( unsigned int i=0; i<base_type::support_vector.size(); ++i )
             candidate_column[i] = base_type::kernel( base_type::support_vector[index], base_type::support_vector[i] );
 
         if (debug)
@@ -713,7 +722,7 @@ public:
         // NOTE has to be done AFTER the update of the R matrix!!  (to check ... )
         // because a row of the "old" design matrix is used in the determination of "delta", see above.
         H.grow_column();
-        for( int i=0; i<base_type::support_vector.size(); ++i )
+        for( unsigned int i=0; i<base_type::support_vector.size(); ++i )
             H.matrix(i,old_size) = base_type::kernel( base_type::support_vector[i],base_type::support_vector[idx] );
 
         // perform the actual set transition
@@ -759,14 +768,11 @@ public:
 
     matrix_view< ublas::matrix<double> > H;					// (part of) design matrix H
     symmetric_view< ublas::matrix<double> > R;					// matrix inverse
-    std::vector<double> residual;
+    std::vector<double> residual;						// in some sense, the history of outputs
 
     scalar_type epsilon;
     scalar_type C;
 
-    // this is actually quite efficient, because transition between sets can be done
-    // by a swap
-    
     /*! A vector containing the indices of the margin vectors (-C < weight < C)*/
     std::vector<unsigned int> margin_set;
     
@@ -776,18 +782,107 @@ public:
     /*! A vector containing the indices of the error-star vectors (weight < -C)*/
     std::vector<unsigned int> error_star_set;
     
-    /*! A vector containing the indices of the remaining vectors (weight = 0)*/
+    /*! A vector containing the indices of the remaining vectors (weight == 0)*/
     std::vector<unsigned int> remaining_set;
-
 };
 
 
 
-}
+
+//
+//
+// ON-LINE SVM CLASSIFICATION ALGORITHM
+//
+//
+
+// it will become something like this:
+// template<typename P, template<typename,int> class K>
+
+template<typename I, typename O, template<typename,int> class K>
+class online_svm<I,O,K, typename boost::enable_if< boost::is_same<O,bool> >::type >: 
+         public online_determinate<I,O,K> {
+	 
+    typedef online_determinate<I,O,K> base_type;
+    typedef I input_type;
+    typedef O output_type;
+    typedef typename base_type::kernel_type kernel_type;
+    typedef double scalar_type;
+
+    online_svm( typename boost::call_traits<kernel_type>::param_type k,
+                typename boost::call_traits<scalar_type>::param_type max_weight ):
+    base_type(k), C(max_weight) {}
+
+    
+    
+    
+    /*! \param input an input pattern of input type I
+        \param output an output pattern of output type O */
+    void push_back( input_type const &input, output_type const &output ) {
+
+
+    	// if the output type is double, no conversion of +1, -1 to +1, -1 is needed?
+	// if the output type is bool, some conversions are needed to +1, -1
+    
+	// This seems to be a MUCH simpler case than regression
+	
+	
+        //vector_type margin_sense( base_type::support_vector.size() );
+
+        //vector_type maximum_values( margin_sense.size() );
+
+        //vector_type coef_sense;
+
+	
+	
+	
+	
+	
+	
+	
+	
+	    
+    }
 
 
 
 
+
+
+
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    scalar_type C;
+
+    /*! A vector containing the indices of the margin vectors (y_i f(x_i) == 1 */
+    std::vector<unsigned int> margin_set;
+    
+    /*! A vector containing the indices of the error vectors (exceeding the margin) */
+    std::vector<unsigned int> error_set;
+    
+    /*! A vector containing the indices of the remaining vectors (within the margin) */
+    std::vector<unsigned int> remaining_set;
+};
+
+
+
+
+
+
+
+} //namespace kml
 
 #endif
+
+
+
 

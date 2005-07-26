@@ -22,6 +22,34 @@
 
 // TODO
 
+#include <boost/call_traits.hpp>
+#include <boost/type_traits.hpp>
+
+
+template<typename Range, int N>
+class polynomial: public std::binary_function<Range,
+                                              Range,
+                                              typename kml::power_return_type<Range,N>::type> {
+
+    typedef typename boost::range_value<Range>::type scalar_type;
+    typedef typename mpl::int_<N>::type derivative_order;
+
+    /*! Construct an uninitialised polynomial kernel */
+    polynomial() {}
+
+    /*! Construct a polynomial kernel
+        \param gamma  the scale of the inner product
+        \param lambda the bias of the inner product
+        \param d      the order of the polynomial kernel
+      */
+    polynomial( typename boost::call_traits<scalar_type>::param_type gamma,
+                typename boost::call_traits<scalar_type>::param_type lambda,
+                typename boost::call_traits<scalar_type>::param_type d ) {
+    }
+
+
+
+}
 
 #endif
 

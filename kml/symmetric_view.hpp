@@ -61,6 +61,8 @@ template<class M>
 class symmetric_view {
 public:
     typedef ublas::vector<double> vector_type;
+    typedef M matrix_type;
+    typedef typename M::size_type size_type;
 
     symmetric_view() {
         // 1 by 1, for fast growth determination later on (i.e. use size * 2)
@@ -71,7 +73,7 @@ public:
 
     // if you have some pre-knowledge, or want to pre-reserve memory
     // does not preserve the matrix!!
-    void reserve( int rows, int cols ) {
+    void reserve( size_type rows, size_type cols ) {
         matrix.resize( std::max(rows,1), std::max(cols,1), false );
     }
 
@@ -92,7 +94,7 @@ public:
      */
     void remove_column( int index ) {
         ublas::matrix_range<M> matrix_view(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols));
-        for( int i=index; i<(view_cols-1); ++i ) {
+        for( size_type i=index; i<(view_cols-1); ++i ) {
             ublas::matrix_column< ublas::matrix_range<M> > cur_col( matrix_view, i);
             ublas::matrix_column< ublas::matrix_range<M> > next_col( matrix_view, i+1);
             atlas::copy( next_col, cur_col );
@@ -111,16 +113,16 @@ public:
 
 
     // NOTE shouldn't this be done with atlas::copy as well?
-    void remove_row( int index ) {
+    void remove_row( size_type index ) {
         ublas::matrix_range<M> matrix_view(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols));
-        for( int i=index; i<(view_rows-1); ++i ) {
+        for( size_type i=index; i<(view_rows-1); ++i ) {
             ublas::row(matrix_view,i).assign( ublas::row(matrix_view,i+1));
         }
         --view_rows;
     }
 
     // copies the last row to index and decreases the view_rows
-    void swap_remove_row( int index ) {
+    void swap_remove_row( size_type index ) {
 	ublas::matrix_range<M> matrix_view(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols));
         ublas::matrix_row< ublas::matrix_range<M> > last_row( matrix_view, view_rows-1);
         ublas::matrix_row< ublas::matrix_range<M> > index_row( matrix_view, index);
@@ -128,16 +130,16 @@ public:
 	--view_rows;
     }
 
-    void remove_row_col( int index ) {
+    void remove_row_col( size_type index ) {
         remove_column(index);
         remove_row(index);
     }
 
     // work for: row_major matrix with a symmetric view adaptor (row major as well)
     // warning: sensitive code
-    void swap_remove_row_col( int index ) {
+    void swap_remove_row_col( size_type index ) {
 	ublas::matrix_range<M> matrix_view(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols));
-        int index_last = view_rows-1;
+        size_type index_last = view_rows-1;
 
 	// perhaps this is an overkill for 1 atlas-op.
 	// perhaps can be done with 2 matrix vector slices?
@@ -149,7 +151,7 @@ public:
 
 	// and a difficult element copy, in same direction. can be atlasified
 	// note that index_last is one less than the matrix size
-	for( int i=index+1; i<index_last; ++i ) {
+	for( size_type i=index+1; i<index_last; ++i ) {
 		matrix( i, index ) = matrix( index_last, i );
 	}
 	
@@ -164,11 +166,11 @@ public:
         matrix.resize( view_rows, view_cols, true );
     }
 
-    int size1() {
+    size_type const size1() const {
         return view_rows;
     }
 
-    int size2() {
+    size_type const size2() const {
         return view_cols;
     }
 
@@ -182,19 +184,19 @@ public:
         return ublas::matrix_range<M>(matrix, ublas::range(0,view_rows-1),ublas::range(0,view_cols-1));
     }
 
-    inline ublas::matrix_row< ublas::matrix_range<M> > const row( int nr ) {
+    inline ublas::matrix_row< ublas::matrix_range<M> > const row( size_type const nr ) {
         return ublas::row( ublas::matrix_range<M>(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols)), nr );
     }
 
-    inline ublas::matrix_row< ublas::matrix_range<M> > const shrinked_row( int nr ) {
+    inline ublas::matrix_row< ublas::matrix_range<M> > const shrinked_row( size_type const nr ) {
         return ublas::row( ublas::matrix_range<M>(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols-1)), nr );
     }
 
-    inline ublas::matrix_column< ublas::matrix_range<M> > const column( int nr ) {
+    inline ublas::matrix_column< ublas::matrix_range<M> > const column( size_type const nr ) {
         return ublas::column( ublas::matrix_range<M>(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols)), nr );
     }
 
-    inline ublas::matrix_column< ublas::matrix_range<M> > const shrinked_column( int nr ) {
+    inline ublas::matrix_column< ublas::matrix_range<M> > const shrinked_column( size_type const nr ) {
         return ublas::column( ublas::matrix_range<M>(matrix, ublas::range(0,view_rows-1),ublas::range(0,view_cols)), nr );
     }
 
@@ -308,7 +310,7 @@ KRLS:
     }
 
 
-    void shrink_inverse( unsigned int index ) {
+    void shrink_inverse( size_type index ) {
 
         // remove from the inverse matrix
         if ( view_rows==2) {
@@ -338,8 +340,8 @@ KRLS:
     // internal memory is a matrix
     M matrix;
 private:
-    int view_rows;
-    int view_cols;
+    size_type view_rows;
+    size_type view_cols;
 };
 
 

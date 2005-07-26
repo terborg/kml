@@ -21,15 +21,17 @@
 #define GAUSSIAN_HPP
 
 #include <boost/call_traits.hpp>
+#include <boost/numeric/bindings/atlas/cblas.hpp>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/split_member.hpp>
 #include <boost/static_assert.hpp>
 #include <boost/type_traits.hpp>
-#include <kml/linear.hpp>
+#include <kml/input_value.hpp>
 #include <kml/distance.hpp>
 #include <kml/math.hpp>
+#include <kml/power_value.hpp>
 
-
+namespace atlas = boost::numeric::bindings::atlas;
 
 namespace kml { namespace detail {
 
@@ -86,23 +88,23 @@ struct hermite_eval<N,-1> {
     }
 };
 
-template<class Range, int N>
+template<typename Input, int N>
 struct gaussian_even {
-    static typename boost::range_value<Range>::type compute( typename scalar_type<Range>::type const *buffer,
-							      typename scalar_type<Range>::type const exp_factor,
-							      Range const &u, Range const &v ) {
-	double d_square( distance_square(u,v) );
+    static typename input_value<Input>::type compute( typename input_value<Input>::type const *buffer,
+						      typename input_value<Input>::type const exp_factor,
+                          			      typename input_value<Input>::type const d_square,
+							       Input const &u, Input const &v ) {
 	return ( *buffer + hermite_eval<N,N/2-1>::compute( buffer+1,d_square,d_square )) *
 	          std::exp( exp_factor * d_square );
     }
 };
 
-template<class Range, int N>
+template<class Input, int N>
 struct gaussian_uneven {
-    static Range compute( typename scalar_type<Range>::type const *buffer,
-      		           typename scalar_type<Range>::type const exp_factor,
-			   Range const &u, Range const &v ) {
-	double d_square( distance_square(u,v) );
+    static Input compute( typename input_value<Input>::type const *buffer,
+      		          typename input_value<Input>::type const exp_factor,
+                          typename input_value<Input>::type const d_square,
+			  Input const &u, Input const &v ) {
 	if (N==1)
 		// at N==1, we should not unroll any loop: otherwise we call a termplate with J=-1
 		// and since hermite_eval returns a number (is not a void function), the behaviour
@@ -123,7 +125,7 @@ struct gaussian_uneven {
 
 /*!
 \brief Gaussian kernel
-\param T defines the underlying input data type
+\param Input defines the underlying input data type
 \param N defines the derivative order N, with default 0
 
 This is a template class that creates a function for any derivative of the Gaussian kernel. 
@@ -148,18 +150,19 @@ std::transform( my_data.begin(), my_data.end(), result.begin(), kml::gaussian< u
 - clean-up
 - finish documentation
 - complexity guarantees
+- loading and saving
 
 */
 
 
-template<typename Range, int N=0>
-class gaussian: public std::binary_function<Range,
-                                            Range,
-                                            typename kml::power_return_type<Range,N>::type> {
+template<typename Input, int N=0>
+class gaussian: public std::binary_function<Input,
+                                            Input,
+                                            typename power_value<Input,N>::type> {
 public:
-    BOOST_SERIALIZATION_SPLIT_MEMBER();
+    BOOST_SERIALIZATION_SPLIT_MEMBER()
     friend class boost::serialization::access;
-    typedef typename boost::range_value<Range>::type scalar_type;
+    typedef typename input_value<Input>::type scalar_type;
     typedef typename mpl::int_<N>::type derivative_order;
 
     
@@ -173,20 +176,22 @@ public:
     }
 
     
-    /*! \param u input pattern 1
-        \param v input pattern 2
+    /*! \param u input pattern u
+        \param v input pattern v
 	\return the result of the evaluation of the Gaussian kernel for these points. The length of the result depends on 
 	        the derivative order of the kernel, which is 1 for N even, and D for N odd, with D the length of the 
 		patterns u and v.
     */
-    typename kml::power_return_type<Range,N>::type operator()( Range const &u, Range const &v ) const {
+    typename power_value<Input,N>::type operator()( Input const &u, Input const &v ) const {
                                   return mpl::if_<
                                          mpl::is_even<mpl::int_<N> >,
-                                         detail::gaussian_even<Range,N>,
-                                         detail::gaussian_uneven<Range,N> >::type::compute( precomputed_factors,
-                                                                                            exp_factor, u, v );
+                                         detail::gaussian_even<Input,N>,
+                                         detail::gaussian_uneven<Input,N> >::type::compute( precomputed_factors,
+                                                                                            exp_factor, distance_square(u,v),
+                                                                                            u, v );
     }
     
+    /*! Set the parameter for this kernel, and precompute all needed Hermite factors */
     void set_parameter( typename boost::call_traits<scalar_type>::param_type sigma ) {
 	exp_factor = -1.0 / (2.0*sigma*sigma);
 
@@ -231,27 +236,51 @@ private:
 
 
 // for efficiency reasons, a 0th order derivative specialisation
-// This is also the only Mercer Kernel of the series.
 
-template<typename Range>
-class gaussian<Range,0>:public std::binary_function<Range,
-                                                    Range,
-                                                    typename kml::power_return_type<Range,0>::type> {
+template<typename Input>
+class gaussian<Input,0>:public std::binary_function<Input,
+                                                    Input,
+                                                    typename power_value<Input,0>::type> {
 public:
-    BOOST_SERIALIZATION_SPLIT_MEMBER();
+    BOOST_SERIALIZATION_SPLIT_MEMBER()
     friend class boost::serialization::access;
-    typedef typename boost::range_value<Range>::type scalar_type;
+    typedef typename input_value<Input>::type scalar_type;
     typedef typename mpl::int_<0>::type derivative_order;
+    typedef scalar_type precomp_type;
 
+    /*! Construct an uninitialised Gaussian kernel */
     gaussian() {}
+
     gaussian( typename boost::call_traits<scalar_type>::param_type sigma ): parameter(sigma) {
        set_parameter(sigma);
     }
 
-    typename kml::power_return_type<Range,0>::type operator()( Range const &u, Range const &v ) const {
+    /*! \param u input pattern u
+        \param v input pattern v
+	\return the result of the evaluation of the Gaussian kernel for these points
+    */
+    typename power_value<Input,0>::type operator()( Input const &u, Input const &v ) const {
         return std::exp( exp_factor * distance_square( u, v ) );
     }
-    
+
+    /*! \param u input pattern u
+	\param dot_uu precomputed dot(u,u) for input pattern u
+        \param v input pattern v
+	\param dot_vv precomputed dot(v,v) for input pattern v
+	\return the result of the evaluation of the Gaussian kernel for these points. This version
+                does not compute pairwise differences (u_i-v_i), but evaluates (u-v)^2=u^2-2uv+v^2.
+    */
+    typename power_value<Input,0>::type operator()( Input const &u, precomp_type dot_uu,
+		     			            Input const &v, precomp_type dot_vv ) const {
+        // don't multiply with 2.0, but subtract twice
+	double dot_uv = atlas::dot( u, v );
+	return std::exp( exp_factor * ( dot_uu + dot_vv - dot_uv - dot_uv ) );
+    }
+
+    void precompute( Input const &u, precomp_type &precomp ) {
+	precomp = atlas::dot( u, u );
+    }
+
     void set_parameter( typename boost::call_traits<scalar_type>::param_type sigma ) {
 	exp_factor = -1.0/(2.0*sigma*sigma);
     }

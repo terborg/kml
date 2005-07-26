@@ -64,6 +64,8 @@ template<class M>
 class matrix_view {
 public:
     typedef ublas::vector<double> vector_type;
+    typedef M matrix_type;
+    typedef typename M::size_type size_type;
 
     matrix_view() {
         // 1 by 1, for fast growth determination later on (i.e. use size * 2)
@@ -74,7 +76,7 @@ public:
 
     // if you have some pre-knowledge, or want to pre-reserve memory
     // does not preserve the matrix!!
-    void reserve( int rows, int cols ) {
+    void reserve( size_type rows, size_type cols ) {
         matrix.resize( std::max(rows,1), std::max(cols,1), false );
     }
 
@@ -127,7 +129,7 @@ public:
 	will be reduced by 1 column. This is the most efficient way of removing a column from a dense matrix, 
 	it costs O(M). 
 	*/
-    void swap_remove_column( int index ) {
+    void swap_remove_column( size_type index ) {
         ublas::matrix_range<M> matrix_view(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols));
         ublas::matrix_column< ublas::matrix_range<M> > last_col( matrix_view, view_cols-1);
         ublas::matrix_column< ublas::matrix_range<M> > index_col( matrix_view, index );
@@ -199,11 +201,11 @@ public:
         matrix.resize( view_rows, view_cols, true );
     }
 
-    int size1() {
+    size_type const size1() const {
         return view_rows;
     }
 
-    int size2() {
+    size_type const size2() const {
         return view_cols;
     }
 
@@ -237,8 +239,8 @@ public:
     // internal memory is a (dense) matrix
     M matrix;
 private:
-    int view_rows;
-    int view_cols;
+    size_type view_rows;
+    size_type view_cols;
 };
 
 
