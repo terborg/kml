@@ -32,6 +32,8 @@
 #include <boost/range/value_type.hpp>
 #include <boost/range/size.hpp>
 #include <boost/type_traits/is_scalar.hpp>
+
+#include <kml/power_value.hpp>
 #include <numeric>
 
 namespace atlas = boost::numeric::bindings::atlas;
@@ -114,31 +116,23 @@ public:
 
 
 
-template<typename T>
-struct scalar_type: mpl::eval_if<
-boost::is_scalar<T>,
-mpl::identity<T>,
-boost::range_value<T> > {};
+template<typename Input, unsigned int N>
+class linear: public std::binary_function<Input,
+                                          Input,
+                                          typename power_value<Input,N>::type> { 
+    typedef typename input_value<Input>::type scalar_type;
+    typedef typename mpl::int_<N>::type derivative_order;
 
+    /*! Construct an uninitialised linear kernel */
+    linear() {}
+    
+    typename power_value<Input,N>::type operator()( Input const &u, Input const &v ) {
+    		    return mpl::if_<boost::is_scalar<T>,
+             				detail::scalar_inner_prod,
+           				detail::vector_inner_prod >::type::compute( u, v );
+    }
 
-
-// inner product function which works on both scalars and vectors
-// imaginary numbers not yet taken into account :-)
-
-template<typename T>
-
-typename mpl::eval_if<
-boost::is_scalar<T>,
-mpl::identity<T>,
-boost::range_value<T> >::type
-
-inner_product( T const &u, T const &v ) {
-    return mpl::if_<
-           boost::is_scalar<T>,
-           detail::scalar_inner_prod,
-           detail::vector_inner_prod
-           >::type::compute( u, v );
-}
+};
 
 
 
