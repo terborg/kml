@@ -41,7 +41,7 @@ public:
 
     // constructor
     online_determinate( typename boost::call_traits<kernel_type>::param_type k ):
-    base_type::determinate(k)	{}
+    base_type(k) {}
 
     // works for any Single Pass Range
     template<typename InputRange, typename OutputRange>
