@@ -6,21 +6,27 @@ env = Environment()
 print "Platform:", env['PLATFORM']
 print "Compiler:", env['CXX']
 
-#
-# Start with a search for dependencies
-#
-
-# Start with the default include path
+# Start with a default cpp and lib path
 cpp_path = ['#']
+lib_path = []
+
+# Improve platform dependent (?) settings
+boost_search_path = []
+atlas_search_path = []
+atlas_link_libs = []
+if env['PLATFORM'] == 'posix':
+   boost_search_path = ['/usr/include/boost']
+   atlas_search_path = ['/usr/include', '/usr/include/atlas' ]
+   atlas_link_libs = ['cblas','atlas']
+elif env['PLATFORM'] == 'win32':
+   env.Replace( ENV = os.environ )
+   boost_search_path = ['/boost']
+   atlas_search_path = ['/atlas','/atlas/include']
+   atlas_link_libs = ['cblas']
+   lib_path = ['#/lib']
 
 # Search path dictionaries for dependent libraries
-boost_search_path = { 'posix': ['/usr/include/boost'],
-                      'win32': ['/boost'] }
-atlas_search_path = { 'posix': ['/usr/include', '/usr/include/atlas' ],
-                      'win32': ['/atlas','/atlas/include'] }
-
-
-path = env.FindFile( 'version.hpp', boost_search_path[ env['PLATFORM'] ] )
+path = env.FindFile( 'version.hpp', boost_search_path )
 if path == None:
 	print "Could not find Boost! Please check installation and/or search path in SConstruct file."
 	Exit(1)
@@ -30,7 +36,7 @@ else:
 	if not cpp_path.count( boost_path ):
 		cpp_path.append( boost_path )
 
-path = env.FindFile( 'cblas.h', atlas_search_path[ env['PLATFORM'] ] )
+path = env.FindFile( 'cblas.h', atlas_search_path )
 if path == None:
 	print "Could not find ATLAS! Please check installation and/or search path in SConstruct file."
 	Exit(1)
@@ -41,8 +47,7 @@ else:
    
 # Adjust the environment
 env.Replace( CPPPATH = cpp_path )
-
-
+env.Replace( LIBPATH = lib_path )
 
 #
 # Alright, perform some basic compile tests (of available libraries etc.)
@@ -96,9 +101,11 @@ if env['CXX'] == 'g++':
 			optimise_flags += ' -msse3'
 		if cpu.has_3dnow():
 			optimise_flags += ' -m3dnow'
+		if cpu.has_mmx():
+			optimise_flags += ' -mmmx'
 
-elif env['CXX'] == 'msvc':
-        cc_flags += '/Wall'
+elif env['CXX'] == '$CC' and env['CC'] == 'cl':
+        cc_flags += '/GX'
 	optimise_flags += '/O2 /Ot'
 	if cpu.is_PentiumPro() or cpu.is_PentiumII() or cpu.is_pentiumIII():
 		optimize_flags += ' /G6'
@@ -110,10 +117,16 @@ elif env['CXX'] == 'msvc':
 		optimise_flags += ' /arch:SSE'
 
 
+# Export the environment variables
+Export( 'env' )
+Export( 'atlas_link_libs' )
+
+# If requested, convert te libatlas.a etc. to .dll and .lib files
+if env['PLATFORM'] == 'win32':
+	SConscript( dirs=['lib'] )
 
 # Deligate to build scripts
 env.Replace( CXXFLAGS = cc_flags + ' ' + optimise_flags )
-Export( 'env' )
 SConscript( dirs=['example'] )
 
 
