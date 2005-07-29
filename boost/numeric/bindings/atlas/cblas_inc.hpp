@@ -29,7 +29,7 @@
 #define BOOST_NUMERIC_BINDINGS_CBLAS_INC_H
 
 extern "C" {
-#  include <atlas/cblas.h> 
+#  include <cblas.h> 
 }
 
 #endif 
