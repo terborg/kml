@@ -34,14 +34,6 @@
 
 int main(int argc, char *argv[]) {
     
-    // gcc recommended flags: -O3 -ffast-math -mfpmath=sse -msse2 -march=CPU
-
-    #ifndef __FAST_MATH__
-       std::cout << "Enabling -ffast-math is recommended, e.g. std::exp will be twice as fast" << std::endl;
-    #endif
-
-
-
     boost::mt19937 randomness;
     boost::normal_distribution<double> norm_dist( 0.0, 0.1 );
     boost::variate_generator<boost::mt19937, boost::normal_distribution<double> > noise( randomness, norm_dist );
