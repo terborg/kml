@@ -33,6 +33,7 @@ using namespace std;
 int main(int argc, char *argv[])
 {
 
+  // vector input types
   ublas::vector<double> u(2);
   ublas::vector<double> v(2);
   u[0] = 1.0;
@@ -41,6 +42,9 @@ int main(int argc, char *argv[])
   v[1] = 4.0;
   kml::gaussian< ublas::vector<double> > kernel( 1.0 );
   std::cout << kernel( u, v ) << std::endl;
+  
+  // scalar input types
+  std::cout << kml::gaussian< float >( 1.0 )( 1.5, 2.0 ) << std::endl;
 
   return EXIT_SUCCESS;
 }
