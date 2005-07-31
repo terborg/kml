@@ -105,12 +105,14 @@ if env['CXX'] == 'g++':
 			optimise_flags += ' -mmmx'
 
 elif env['CXX'] == '$CC' and env['CC'] == 'cl':
-        cc_flags += '/GX'
+	# /Wall show all warnings 
+	# /Wp64 show warning related to future 64 bit porting
+        # /GX enable exception handling - or would /EHsc be better?
+	cc_flags += '/Wall /Wp64 /GX'
 	
-	# /02 
-	# /Ot favor speed over size
-	# /Oy omit frame pointer
-	optimise_flags = '/O2 /Ot /Oy'
+	# /02 favor speed
+	# /GL is whole program optimisation
+	optimise_flags = '/O2 /GL'
 	if cpu.is_PentiumPro() or cpu.is_PentiumII() or cpu.is_pentiumIII():
 		optimize_flags += ' /G6'
 	if cpu.is_PentiumIV() or cpu.is_Athlon():
