@@ -74,7 +74,7 @@ if env['CXX'] == 'g++':
         # change default CXXflags to something which is 
 	# CXXFLAGS = ....
 	cc_flags += '-Wall -ansi -pedantic'
-	optimise_flags += ' -O3 -ffast-math -fomit-frame-pointer'
+	optimise_flags = '-O3 -ffast-math -fomit-frame-pointer -DNDEBUG -DNO_DEBUG'
 	debug_flags += ' -g'
 	if cpu.is_PentiumIII():
    		optimise_flags += ' -march=pentium3'
@@ -106,7 +106,11 @@ if env['CXX'] == 'g++':
 
 elif env['CXX'] == '$CC' and env['CC'] == 'cl':
         cc_flags += '/GX'
-	optimise_flags += '/O2 /Ot'
+	
+	# /02 
+	# /Ot favor speed over size
+	# /Oy omit frame pointer
+	optimise_flags = '/O2 /Ot /Oy'
 	if cpu.is_PentiumPro() or cpu.is_PentiumII() or cpu.is_pentiumIII():
 		optimize_flags += ' /G6'
 	if cpu.is_PentiumIV() or cpu.is_Athlon():
