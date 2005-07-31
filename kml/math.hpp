@@ -56,14 +56,12 @@ inline const bool is_zero( T const &value ) {
 //
 
 template<unsigned int N>
-class factorial {
-public:
+struct factorial {
     static const unsigned int value = N * factorial<N-1>::value;
 };
 
 template<>
-class factorial<0> {
-public:
+struct factorial<0> {
     static const unsigned int value = 1;
 };
 

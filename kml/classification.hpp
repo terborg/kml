@@ -34,9 +34,7 @@ class classification {
 
 
 
-
-
-// Define templates is_regression so we can recognise the regression type of problems
+// Define templates is_classification so we can recognise the classification type of problems
 
 template<typename T>
 struct is_classification: mpl::bool_<false> {};
