@@ -171,10 +171,9 @@ public:
     
     /*! Construct a Gaussian kernel
         \param sigma the width of the Gaussian kernel */
-    gaussian( typename boost::call_traits<scalar_type>::param_type sigma ): parameter(sigma) {
-	set_parameter( sigma );
+    gaussian( typename boost::call_traits<scalar_type>::param_type sigma ) {
+	set_width( sigma );
     }
-
     
     /*! \param u input pattern u
         \param v input pattern v
@@ -191,9 +190,30 @@ public:
                                                                                             u, v );
     }
     
-    /*! Set the parameter for this kernel, and precompute all needed Hermite factors */
-    void set_parameter( typename boost::call_traits<scalar_type>::param_type sigma ) {
+    void set_width( typename boost::call_traits<scalar_type>::param_type sigma ) {
+    	assert( sigma > 0.0 );
+	width = sigma;
 	exp_factor = -1.0 / (2.0*sigma*sigma);
+	init();
+    }
+    
+    scalar_type const get_width() const {
+    	return width;
+    }
+    
+    void set_scale_factor( typename boost::call_traits<scalar_type>::param_type gamma ) {
+        assert( gamma > 0.0 );
+	width = std::sqrt(0.5 / gamma);
+	exp_factor = -gamma;
+	init();
+    }
+    
+    scalar_type const get_scale_factor() const {
+    	return -exp_factor;
+    }
+    
+    /*! Initialise the kernel; precompute all needed Hermite factors */
+    void init() {
 
 	// precompute, the if statement will be removed by compile-time optimisations
 	if ( mpl::is_even< mpl::int_<N> >::type::value ) {
@@ -212,24 +232,21 @@ public:
 	}
     }
 
-    scalar_type const &get_parameter() const {
-    	return parameter;
-    }
-        
     template<class Archive>
     void load( Archive &archive, unsigned int const version ) {
-    	archive & parameter;
-	set_parameter(parameter);    
+    	archive & width;
+	exp_factor = -1.0 / (2.0*width*width);
+	init();    
     }
     
     template<class Archive>
     void save( Archive &archive, unsigned int const version ) const {
-    	archive & parameter;
+    	archive & width;
     }
     
 
 private:
-    scalar_type parameter;
+    scalar_type width;
     scalar_type exp_factor;
     scalar_type precomputed_factors[N/2+1];
 };
@@ -251,8 +268,8 @@ public:
     /*! Construct an uninitialised Gaussian kernel */
     gaussian() {}
 
-    gaussian( typename boost::call_traits<scalar_type>::param_type sigma ): parameter(sigma) {
-       set_parameter(sigma);
+    gaussian( typename boost::call_traits<scalar_type>::param_type sigma ) {
+       set_width(sigma);
     }
 
     /*! \param u input pattern u
@@ -281,14 +298,26 @@ public:
 	precomp = atlas::dot( u, u );
     }
 
-    void set_parameter( typename boost::call_traits<scalar_type>::param_type sigma ) {
-	exp_factor = -1.0/(2.0*sigma*sigma);
+    void set_width( typename boost::call_traits<scalar_type>::param_type sigma ) {
+    	assert( sigma > 0.0 );
+	width = sigma;
+	exp_factor = -1.0 / (2.0*sigma*sigma);
     }
-
-    scalar_type const &get_parameter() const {
-    	return parameter;
+    
+    scalar_type const get_width() const {
+    	return width;
     }
-
+    
+    void set_scale_factor( typename boost::call_traits<scalar_type>::param_type gamma ) {
+        assert( gamma > 0.0 );
+	width = std::sqrt(0.5 / gamma);
+	exp_factor = -gamma;
+    }
+    
+    scalar_type const get_scale_factor() const {
+    	return -exp_factor;
+    }
+    
     /*! The dimension of the feature space */
     scalar_type const dimension() const {
 	return std::numeric_limits<scalar_type>::infinity();
@@ -296,17 +325,17 @@ public:
 
     template<class Archive>
     void load( Archive &archive, unsigned int const version ) {
-    	archive & parameter;
-	set_parameter(parameter);
+    	archive & width;
+	exp_factor = -1.0 / (2.0*width*width);
     }
     
     template<class Archive>
     void save( Archive &archive, unsigned int const version ) const {
-    	archive & parameter;
+    	archive & width;
     }
     
 private:
-    scalar_type parameter;
+    scalar_type width;
     scalar_type exp_factor;
 };
 

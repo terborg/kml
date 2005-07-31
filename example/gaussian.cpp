@@ -43,7 +43,11 @@ int main(int argc, char *argv[])
   kml::gaussian< ublas::vector<double> > kernel( 1.0 );
   std::cout << kernel( u, v ) << std::endl;
   
-  // scalar input types
+  // query its parameter in different formats
+  std::cout << "Kernel width (sigma):        " << kernel.get_width() << std::endl;
+  std::cout << "Kernel scale factor (gamma): " << kernel.get_scale_factor() << std::endl;
+  
+  // inline use on scalar input types
   std::cout << kml::gaussian< float >( 1.0 )( 1.5, 2.0 ) << std::endl;
 
   return EXIT_SUCCESS;
