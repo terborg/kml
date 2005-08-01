@@ -107,12 +107,13 @@ if env['CXX'] == 'g++':
 elif env['CXX'] == '$CC' and env['CC'] == 'cl':
 	# /Wall show all warnings 
 	# /Wp64 show warning related to future 64 bit porting
-        # /GX enable exception handling - or would /EHsc be better?
-	cc_flags += '/Wall /Wp64 /GX'
+      # /GX enable exception handling - or would /EHsc be better?
+      # /Zx:
+	cc_flags += '/nologo /Wp64 /GX /Zc:forScope'
 	
 	# /02 favor speed
 	# /GL is whole program optimisation
-	optimise_flags = '/O2 /GL'
+	optimise_flags = '/O2'
 	if cpu.is_PentiumPro() or cpu.is_PentiumII() or cpu.is_pentiumIII():
 		optimize_flags += ' /G6'
 	if cpu.is_PentiumIV() or cpu.is_Athlon():
@@ -134,6 +135,5 @@ if env['PLATFORM'] == 'win32':
 # Deligate to build scripts
 env.Replace( CXXFLAGS = cc_flags + ' ' + optimise_flags )
 SConscript( dirs=['example'] )
-
 
 
