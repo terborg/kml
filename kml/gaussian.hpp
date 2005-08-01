@@ -225,7 +225,7 @@ public:
 		                                           precomputed_factors+1 );
 	} else {
 		// total_factor was: pow( -herm_factor, N )
-		scalar_type total_factor = -std::pow( 1.0 / ( std::sqrt(2.0) * sigma ), N+1 );
+		scalar_type total_factor = -std::pow( 1.0 / ( std::sqrt(2.0) * width ), N+1 );
 		precomputed_factors[0] = total_factor * detail::hermite_factor<N,0>::value;
  	        detail::hermite_eval<N,N/2-1>::precompute( total_factor, -exp_factor, -exp_factor,
 		                                           precomputed_factors+1 );
