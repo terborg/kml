@@ -787,7 +787,59 @@ public:
 };
 
 
+// ON-LINE SVM RANKING ALGORITHM
 
+template<typename I, typename O, template<typename,int> class K>
+/* this will eventually take a problem_type, right? */
+class online_svm<I,O,K, typename boost::enable_if< boost::is_same<O,int> >::type >:
+    public online_determinate<I,O,K> {
+
+  typedef online_determinate<I,O,K> base_type;
+  typedef I input_type;
+  typedef O output_type;
+  typedef typename base_type::kernel_type kernel_type;
+  typedef double scalar_type;
+  typedef typename boost::range_value<input_type>::type point_type;
+  typedef typename output_type::const_iterator const_output_iterator;
+  typedef typename std::vector<input_type>::const_iterator const_svec_iterator;
+
+  online_svm(typename boost::call_traits<kernel_type>::param_type k,
+	     typename boost::call_traits<scalar_type>::param_type max_weight):
+  base_type(k), C(max_weight), inner_machine(k, max_weight) { }
+
+  /*! \param input an input pattern of input type I
+      \param output an output pattern of output type O */
+
+  
+
+  void push_back(input_type const &input, output_type const &output) {
+    /* Here's how it works as you push a new vector in:
+
+       1. Compare the vector, i, and its output to each <vector, output> pair we've already 
+          stored. This set could, of course, be empty.
+       2. For each vector j in our stored set which has an output not identical to ours, 
+          create a difference vector and add that difference vector to a new input set.
+       3. Call push_back on our internal classification SVM for each difference vector. */
+    
+    const_output_iterator y = ys.begin();
+
+    for (const_svec_iterator i = base_type::support_vector.begin(); 
+	 *y != ys.end() && i != base_type::support_vector.end(); 
+	  ++y, ++i) {
+      if (*y != output) {
+	input_type diff_vec;
+	std::transform(input.begin(), input.end(), i->begin(), 
+		       diff_vec.begin(), std::minus<point_type>()); 
+	inner_machine.push_back(diff_vec, (output > *y));
+      }
+    }
+    base_type::support_vector.push_back(input);
+    ys.push_back(output);
+  }
+  std::vector<output_type> ys;
+  scalar_type C;
+  online_svm<I,bool,K> inner_machine;
+};
 
 //
 //
@@ -811,14 +863,10 @@ class online_svm<I,O,K, typename boost::enable_if< boost::is_same<O,bool> >::typ
     online_svm( typename boost::call_traits<kernel_type>::param_type k,
                 typename boost::call_traits<scalar_type>::param_type max_weight ):
     base_type(k), C(max_weight) {}
-
-    
-    
     
     /*! \param input an input pattern of input type I
         \param output an output pattern of output type O */
     void push_back( input_type const &input, output_type const &output ) {
-
 
     	// if the output type is double, no conversion of +1, -1 to +1, -1 is needed?
 	// if the output type is bool, some conversions are needed to +1, -1
