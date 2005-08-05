@@ -35,7 +35,6 @@
 #include <boost/numeric/bindings/traits/ublas_vector.hpp>
 #include <boost/mpl/equal_to.hpp>
 #include <boost/type_traits/is_float.hpp>
-#include <boost/type_traits/is_integral.hpp>
 #include <boost/type_traits/is_same.hpp>
 #include <boost/utility/enable_if.hpp>
 
@@ -237,7 +236,7 @@ public:
   // Ranking SVM
 
 template<typename I, typename O, template<typename,int> class K>
-class svm<I,O,K, typename boost::enable_if<boost::is_integral<O> >::type>:
+class svm<I,O,K, typename boost::enable_if<boost::is_same<O,int> >::type>:
     public determinate<I,O,K> {
 public:
   typedef determinate<I,O,K> base_type;
