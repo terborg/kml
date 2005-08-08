@@ -37,6 +37,9 @@
 #include <boost/type_traits/is_float.hpp>
 #include <boost/type_traits/is_same.hpp>
 #include <boost/utility/enable_if.hpp>
+#include <boost/random/variate_generator.hpp>
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/random_number_generator.hpp>
 
 #include <algorithm>
 #include <vector>
@@ -67,7 +70,7 @@ public:
   // Bug fixed: use call_traits instead of const&, so can be called with both reference and non-reference
   svm( typename boost::call_traits<kernel_type>::param_type k,
        typename boost::call_traits<double>::param_type max_weight ): 
-    base_type(k), C(max_weight) {}
+    base_type(k), C(max_weight), startpt(randomness) {}
 
   result_type operator() (input_type const &x) {
     // coming soon
@@ -185,7 +188,7 @@ public:
     base_type::weight[i1] = a1;
     base_type::weight[i2] = a2;
   }
-  /*  
+  
   int examineExample(int idx) {
     output_type y2 = target[idx];
     double alpha2 = base_type::weight[idx];
@@ -197,40 +200,60 @@ public:
     result_type r2 = e2 * y2;
     if ((r2 < -(base_type::bias) && alpha2 < C) || 
 	(r2 > base_type::bias && alpha2 > 0)) {
-      typename vector<input_type>::iterator it = std::find_if(points.begin(),
-							      points.end(),
-							      TODO predicate );
-      if (it != points.end() && std::find_if(it, points.end(), TODO predicate) != points.end()) {
+      int count = std::count_if(points.begin(), points.end(), std::bind2nd(std::equal_to<scalar_type>(), 0));
+      if (count <= 1)
+	count += std::count_if(points.begin(), points.end(), std::bind2nd(std::equal_to<scalar_type>(), C));
+      if (count > 1) {
 	int i = 0; // TODO second choice heuristic stuff
 	if (takeStep(i, idx))
 	  return 1;
       }
-      for (int i = TODO see boost::random - between 0 and sv.size() ,
-	     int j = i; i % points.size() != j; ++i)
+      for (int i = startpt(points.size()),
+	     j = i; i % points.size() != j; ++i)
 	if (base_type::weight[i] != 0 && base_type::weight[i] != C)
 	  if (takeStep(i, idx))
 	    return 1;
-      for (int i = TODO see boost::random,
-	     int j = i; i % points.size() != j; ++i)
+      for (int i = startpt(points.size()),
+	     j = i; i % points.size() != j; ++i)
 	if (takeStep(i, idx))
 	  return 1;
     }
     return 0;
   }
-*/
+
   template< class IRange, class ORange >
   void learn( IRange const &input, ORange const &output ) {
     points = input;
     target = output;
+    base_type::weight = 0.0;
+    base_type::support_vector.resize(points.size());
 
-    /* and a whole lotta other stuff */
-    
+    int numChanged = 0;
+    int examineAll = 1;
+    while (numChanged > 0 || examineAll) {
+      numChanged = 0;
+      if (examineAll)
+	for (int i=0; i < points.size(); ++i)
+	  numChanged += examineExample(i);
+      else
+	for (int i=0; i < points.size(); ++i)
+	  if (base_type::support_vector[i] != 0 && base_type::support_vector[i] != C)
+	    numChanged += examineExample(i);
+      if (1 == examineAll)
+	examineAll = 0;
+      else if (0 == numChanged)
+	examineAll = 1;
+    }
   }
 
   scalar_type C;
   std::vector<double> error_cache;
   std::vector<input_type> points;
   std::vector<output_type> target;
+  boost::mt19937 randomness;
+  //  boost::normal_distribution<int> norm_dist;
+  //  boost::variate_generator<boost::mt19937, boost::normal_distribution<int> > startpt;
+  boost::random_number_generator<boost::mt19937> startpt;
 };
 
   // Ranking SVM
