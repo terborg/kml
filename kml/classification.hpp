@@ -28,8 +28,10 @@ namespace kml {
 
 template<typename I, typename O>
 class classification {
-	typedef I input_type;
-	typedef O output_type;
+public:
+  typedef classification<I,O> type;
+  typedef I input_type;
+  typedef O output_type;
 };
 
 

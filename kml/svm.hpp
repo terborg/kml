@@ -45,27 +45,28 @@
 #include <vector>
 
 #include <kml/determinate.hpp>
-
+#include <kml/classification.hpp>
+#include <kml/ranking.hpp>
+#include <kml/regression.hpp>
 
 
 namespace kml {
 
-  template<typename I, typename O, template<typename, int> class K, class Enable = void >
-  class svm: public determinate<I,O,K> {};
+  template<typename Problem, template<typename, int> class K, class Enable = void>
+  class svm: public determinate<typename Problem::input_type, typename Problem::output_type, K> {};
 
   // Classification SVM
 
-template< typename I, typename O, template<typename,int> class K >
-class svm<I,O,K, typename boost::enable_if<boost::is_same<O, bool> >::type>: 
-    public determinate<I,O,K> {
+  template<typename Problem, template<typename, int> class K>
+  class svm<Problem, K, typename boost::enable_if<is_classification<Problem> >::type >:
+    public determinate<typename Problem::input_type, typename Problem::output_type, K> {
 public:
-  typedef determinate<I,O,K> base_type;
+  typedef determinate<typename Problem::input_type, typename Problem::output_type, K> base_type;
   typedef typename base_type::kernel_type kernel_type;
   typedef typename base_type::result_type result_type;
-  typedef I input_type;
-  typedef O output_type;  
+  typedef typename Problem::input_type input_type; // I wonder if I need that extra ::type
+  typedef typename Problem::output_type output_type;  
   typedef double scalar_type;
-
 
   // Bug fixed: use call_traits instead of const&, so can be called with both reference and non-reference
   svm( typename boost::call_traits<kernel_type>::param_type k,
@@ -73,8 +74,12 @@ public:
     base_type(k), C(max_weight), startpt(randomness) {}
 
   result_type operator() (input_type const &x) {
-    // coming soon
-    return 0;
+    result_type ret;
+    for (int i=0; i<base_type::weight.size(); ++i)
+      if (base_type::weight[i] > 0)
+	ret += base_type::weight[i] * target[i] * base_type::kernel(points[i], x);
+    ret += base_type::bias;
+    return ret;
   }
 
   int takeStep(int i1, int i2) {
@@ -84,7 +89,7 @@ public:
     output_type y1 = target[i1];
     /* p. 49, Platt: "When an error E is required by SMO, it will look up the error in the error cache if the 
        corresponding Lagrange multiplier is not at bound." */
-    if (0 != base_type::weights[i1] && C != base_type::weights[i1]) 
+    if (0 != base_type::weight[i1] && C != base_type::weight[i1]) 
       scalar_type e1 = error_cache[i1];
     else
       scalar_type e1 = operator()(points[i1]) - y1;
@@ -92,7 +97,7 @@ public:
     double alpha2 = base_type::weight[i2];
     output_type y2 = target[i2];
     /* p. 49 again */
-    if (0 != base_type::weights[i2] && C != base_type::weights[i2])
+    if (0 != base_type::weight[i2] && C != base_type::weight[i2])
       scalar_type e2 = error_cache[i2];
     else
       scalar_type e2 = (double)operator()(points[i1]) - y2;
@@ -225,7 +230,9 @@ public:
   void learn( IRange const &input, ORange const &output ) {
     points = input;
     target = output;
-    base_type::weight = 0.0;
+    base_type::weight.clear();
+    base_type::weight.resize(points.size());
+    base_type::support_vector.clear();
     base_type::support_vector.resize(points.size());
 
     int numChanged = 0;
@@ -251,34 +258,65 @@ public:
   std::vector<input_type> points;
   std::vector<output_type> target;
   boost::mt19937 randomness;
-  //  boost::normal_distribution<int> norm_dist;
-  //  boost::variate_generator<boost::mt19937, boost::normal_distribution<int> > startpt;
   boost::random_number_generator<boost::mt19937> startpt;
 };
 
   // Ranking SVM
-
+  /*
 template<typename I, typename O, template<typename,int> class K>
 class svm<I,O,K, typename boost::enable_if<boost::is_same<O,int> >::type>:
     public determinate<I,O,K> {
-public:
-  typedef determinate<I,O,K> base_type;
-  typedef typename base_type::kernel_type kernel_type;
-  typedef double scalar_type;
+  */
 
-  svm( typename boost::call_traits<kernel_type>::param_type k,
-       typename boost::call_traits<double>::param_type max_weight ): 
-    base_type(k), C(max_weight), inner_machine(k, max_weight) {}
+  template<typename Problem, template<typename, int> class K>
+  class svm<Problem, K, typename boost::enable_if<is_ranking<Problem> >::type >:
+    public determinate<typename Problem::input_type, typename Problem::output_type, K> {
+  public:
+    typedef determinate<typename Problem::input_type, typename Problem::output_type, K> base_type;
+    typedef typename base_type::kernel_type kernel_type;
+    typedef double scalar_type;
+    typedef typename Problem::input_type input_type;
+    typedef typename Problem::output_type output_type;  
+    typedef typename base_type::result_type result_type;
 
-  template<class IRange, class ORange>
-  void learn(IRange const &input, ORange const &output) {
+    svm( typename boost::call_traits<kernel_type>::param_type k,
+	 typename boost::call_traits<double>::param_type max_weight ): 
+      base_type(k), C(max_weight), inner_machine(k, max_weight) {}
 
-  }
+    result_type operator()(input_type const &x) {
+      result_type ret;
+      for (int i=0; i<base_type::weight.size(); ++i)
+	if (base_type::weight[i] > 0)
+	  ret += base_type::weight[i] * target[i] * base_type::kernel(points[i], x);
+      ret += base_type::bias;
+      return ret;
+    }
 
-  scalar_type epsilon;
-  scalar_type C;
-  svm<I,bool,K> inner_machine;
-};
+    template<class IRange, class ORange>
+    void learn(IRange const &input, ORange const &output) {
+      std::vector<input_type> points;
+      std::vector<bool> target;
+      for (int i = input.begin(); i < input.size(); ++i)
+	for (int j = i+1; j < input.size(); ++j)
+	  if (output[i] != output[j]) {
+	    input_type diff_vec;
+	    std::transform(input[i].begin(), input[i].end(), input[j].begin, diff_vec.begin(),
+			   std::minus<typename boost::range_value<input_type>::type>());
+	    points.push_back(diff_vec);
+	    target.push_back(output[i] > output[j]);
+	  }
+      inner_machine.learn(points, target);
+      base_type::weight = inner_machine.weight;
+      base_type::support_vector = inner_machine.support_vector;
+      base_type::bias = inner_machine.bias;
+    }
+
+    scalar_type epsilon;
+    scalar_type C;
+
+    typedef kml::classification<input_type, bool> problem_type;
+    svm<problem_type, K> inner_machine;
+  };
 
 } // namespace kml
 #endif
