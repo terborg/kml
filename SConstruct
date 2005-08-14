@@ -74,7 +74,8 @@ if env['CXX'] == 'g++':
         # change default CXXflags to something which is 
 	# CXXFLAGS = ....
 	cc_flags += '-Wall -ansi -pedantic'
-	optimise_flags = '-O3 -ffast-math -fomit-frame-pointer -DNDEBUG -DNO_DEBUG'
+#	optimise_flags = '-O3 -ffast-math -fomit-frame-pointer -DNDEBUG -DNO_DEBUG'
+	optimise_flags = '-O3 -ffast-math -fomit-frame-pointer -g'
 	debug_flags += ' -g'
 	if cpu.is_PentiumIII():
    		optimise_flags += ' -march=pentium3'

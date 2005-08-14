@@ -31,6 +31,8 @@
 #ifndef SVM_HPP
 #define SVM_HPP
 
+#define EPS .00000001
+
 #include <boost/numeric/bindings/traits/std_vector.hpp>
 #include <boost/numeric/bindings/traits/ublas_vector.hpp>
 #include <boost/mpl/equal_to.hpp>
@@ -43,6 +45,8 @@
 
 #include <algorithm>
 #include <vector>
+#include <cstdlib>
+#include <functional>
 
 #include <kml/determinate.hpp>
 #include <kml/classification.hpp>
@@ -74,8 +78,8 @@ public:
     base_type(k), C(max_weight), startpt(randomness) {}
 
   result_type operator() (input_type const &x) {
-    result_type ret;
-    for (int i=0; i<base_type::weight.size(); ++i)
+    result_type ret=0;
+    for (size_t i=0; i<base_type::weight.size(); ++i)
       if (base_type::weight[i] > 0)
 	ret += base_type::weight[i] * target[i] * base_type::kernel(points[i], x);
     ret += base_type::bias;
@@ -87,32 +91,33 @@ public:
 
     double alpha1 = base_type::weight[i1];
     output_type y1 = target[i1];
+    scalar_type e1, e2, L, H, a2;
     /* p. 49, Platt: "When an error E is required by SMO, it will look up the error in the error cache if the 
        corresponding Lagrange multiplier is not at bound." */
     if (0 != base_type::weight[i1] && C != base_type::weight[i1]) 
-      scalar_type e1 = error_cache[i1];
+      e1 = error_cache[i1];
     else
-      scalar_type e1 = operator()(points[i1]) - y1;
+      e1 = operator()(points[i1]) - y1;
 
     double alpha2 = base_type::weight[i2];
     output_type y2 = target[i2];
     /* p. 49 again */
     if (0 != base_type::weight[i2] && C != base_type::weight[i2])
-      scalar_type e2 = error_cache[i2];
+      e2 = error_cache[i2];
     else
-      scalar_type e2 = (double)operator()(points[i1]) - y2;
+      e2 = (double)operator()(points[i1]) - y2;
     
     output_type s = y1 * y2;
 
     if (y1 != y2) {
-      scalar_type L = max(0, alpha2 - alpha1);
-      scalar_type H = min(C, C + alpha2 - alpha1);
+      L = std::max(0.0, alpha2 - alpha1);
+      H = std::min(C, C + alpha2 - alpha1);
     }
     else {
       /* Equation 12.3 */
-      double L = max(0, alpha1 + alpha2 - C);
+      L = std::max(0.0, alpha1 + alpha2 - C);
       /* Equation 12.4 */
-      double H = min(C, alpha1 + alpha1);
+      H = std::min(C, alpha1 + alpha1);
     }
 
     if (L == H) return 0;
@@ -125,7 +130,7 @@ public:
 
     if (eta < 0) {
       /* Equation 12.6 */
-      double a2 = alpha2 - y2 * (e1-e2) / eta;
+      a2 = alpha2 - y2 * (e1-e2) / eta;
       /* Equation 12.7 */
       if (a2 < L) a2 = L;
       else if (a2 > H) a2 = H;
@@ -143,20 +148,20 @@ public:
       scalar_type Hobj = gamma - s * H + H - .5 * k11 * (gamma - s * H) * (gamma - s * H) - .5 * k22 * L * L - s * k12 * (gamma - s * H) * H - target[i1] * (gamma - s * H) * v1 - target[i2] * H * v2;
       
       /* Now we move the Lagrangian multipliers to the endpoint which has the highest value for W */
-      if (Lobj > Hobj + eps)
-	double a2 = L;
-      else if (Lobj < Hobj - eps)
-	double a2 = H;
+      if (Lobj > Hobj + EPS)
+	a2 = L;
+      else if (Lobj < Hobj - EPS)
+	a2 = H;
       else
-	double a2 = alpha2;
+	a2 = alpha2;
     }
 
     /* If a2 is within epsilon of 0 or C, then call it a boundary example */
     if (a2 < .00000001)
       a2 = 0;
     else if (a2 > C - .00000001)
-      a2 = C;
-    if (abs(a2 - alpha2) < eps*(a2 + alpha2 + eps))
+      a2 = C;    
+    if (fabs(a2 - alpha2) < EPS*(a2 + alpha2 + EPS))
       return 0;
 
     /* Equation 12.8 */
@@ -166,18 +171,18 @@ public:
     scalar_type old_bias = base_type::bias;
     /* Equation 12.9 */
     if (0 != a1 && C != a1)
-      base_type::bias += E1 + target[i1] * (a1 - alpha1) * k11 + target[i2] * (a2 - alpha2) * k12;
+      base_type::bias += e1 + target[i1] * (a1 - alpha1) * k11 + target[i2] * (a2 - alpha2) * k12;
     else {
       if (0 != a2 && C != a2)
-	base_type::bias += E2 + target[i1] * (a1 - alpha1) * k12 + target[i2] * (a2 - alpha2) * k22;
+	base_type::bias += e2 + target[i1] * (a1 - alpha1) * k12 + target[i2] * (a2 - alpha2) * k22;
       else
-	base_type::bias = ((base_type::bias + E1 + target[i1] * (a1 - alpha1) * k11 + target[i2] * (a2 - alpha2) * k12) +
-			   (base_type::bias + E2 + target[i1] * (a1 - alpha1) * k12 + target[i2] * (a2 - alpha2) * k22)) / 2;
+	base_type::bias = ((base_type::bias + e1 + target[i1] * (a1 - alpha1) * k11 + target[i2] * (a2 - alpha2) * k12) +
+			   (base_type::bias + e2 + target[i1] * (a1 - alpha1) * k12 + target[i2] * (a2 - alpha2) * k22)) / 2;
     }
     /* TODO figure out what to do about weight vectors for linear SVMs */
 
     /* Update the error cache */
-    for (int i = 0; i < error_cache.size(); ++i) {
+    for (size_t i = 0; i < error_cache.size(); ++i) {
       if (0 != base_type::weight[i] && C != base_type::weight[i])
 	error_cache[i] += target[i1] * (a1 - alpha1) * base_type::kernel(points[i1], points[i]) + target[i2] * (a2 - alpha2) * base_type::kernel(points[i2], points[i]) + old_bias - base_type::bias;
       else
@@ -192,33 +197,35 @@ public:
 
     base_type::weight[i1] = a1;
     base_type::weight[i2] = a2;
+    return 1;
   }
   
   int examineExample(int idx) {
     output_type y2 = target[idx];
     double alpha2 = base_type::weight[idx];
-    if (alpha2 != 0 && alpha1 != C)
-      result_type e2 = error_cache[idx];
+    result_type e2;
+    if (alpha2 != 0 && alpha2 != C)
+      e2 = error_cache[idx];
     else
-      result_type e2 = operator()(points[idx]) - y2;
+      e2 = operator()(points[idx]) - y2;
 
     result_type r2 = e2 * y2;
     if ((r2 < -(base_type::bias) && alpha2 < C) || 
 	(r2 > base_type::bias && alpha2 > 0)) {
-      int count = std::count_if(points.begin(), points.end(), std::bind2nd(std::equal_to<scalar_type>(), 0));
+      int count = std::count_if(base_type::weight.begin(), base_type::weight.end(), std::bind2nd(std::equal_to<scalar_type>(), 0));
       if (count <= 1)
-	count += std::count_if(points.begin(), points.end(), std::bind2nd(std::equal_to<scalar_type>(), C));
+	count += std::count_if(base_type::weight.begin(), base_type::weight.end(), std::bind2nd(std::equal_to<scalar_type>(), C));
       if (count > 1) {
 	int i = 0; // TODO second choice heuristic stuff
 	if (takeStep(i, idx))
 	  return 1;
       }
-      for (int i = startpt(points.size()),
+      for (size_t i = startpt(points.size()),
 	     j = i; i % points.size() != j; ++i)
 	if (base_type::weight[i] != 0 && base_type::weight[i] != C)
 	  if (takeStep(i, idx))
 	    return 1;
-      for (int i = startpt(points.size()),
+      for (size_t i = startpt(points.size()),
 	     j = i; i % points.size() != j; ++i)
 	if (takeStep(i, idx))
 	  return 1;
@@ -240,11 +247,11 @@ public:
     while (numChanged > 0 || examineAll) {
       numChanged = 0;
       if (examineAll)
-	for (int i=0; i < points.size(); ++i)
+	for (size_t i=0; i < points.size(); ++i)
 	  numChanged += examineExample(i);
       else
-	for (int i=0; i < points.size(); ++i)
-	  if (base_type::support_vector[i] != 0 && base_type::support_vector[i] != C)
+	for (size_t i=0; i < points.size(); ++i)
+	  if (base_type::weight[i] != 0 && base_type::weight[i] != C)
 	    numChanged += examineExample(i);
       if (1 == examineAll)
 	examineAll = 0;

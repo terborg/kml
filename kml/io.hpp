@@ -24,6 +24,7 @@
 #include <boost/tokenizer.hpp>
 #include <boost/range/size.hpp>
 #include <boost/range/value_type.hpp>
+#include <boost/type_traits/is_same.hpp>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -80,6 +81,7 @@ void read_svm_light( char* file_name, I &inputs, O &outputs ) {
     // PASS 1: determine some file statistics
     while( !data.eof() ) {
         std::getline( data, line_buffer );
+
         if ( line_buffer[0] != static_cast<char>('#') ) {
             boost::tokenizer<boost::char_separator<char> > tokens( line_buffer, separator );
             typedef boost::tokenizer<boost::char_separator<char> >::iterator iter;
@@ -107,9 +109,9 @@ void read_svm_light( char* file_name, I &inputs, O &outputs ) {
         }
     }
 
-    //     std::cout << "Number of samples: " << number_of_samples << std::endl;
-    //     std::cout << "Maximum nonzeros:  " << maximum_nonzeros << std::endl;
-    //     std::cout << "Maximum index:     " << maximum_index << std::endl;
+    //         std::cout << "Number of samples: " << number_of_samples << std::endl;
+    //         std::cout << "Maximum nonzeros:  " << maximum_nonzeros << std::endl;
+    //         std::cout << "Maximum index:     " << maximum_index << std::endl;
 
     // resize the inputs and outputs containers accordingly
     inputs.resize( number_of_samples );
@@ -121,56 +123,52 @@ void read_svm_light( char* file_name, I &inputs, O &outputs ) {
     data.clear();
     data.seekg(std::ios::beg);
     while( !data.eof() ) {
-
-        // read a line
-        std::getline( data, line_buffer );
-
-        // ignore entire line if first character is a #
-        if ( line_buffer[0] != static_cast<char>('#') ) {
-
-            // instantiate a tokenizer, of which the tokens will be iterated through
-            // From doc: parsing is done on demand (!!) as the tokens are accessed via the iterator provided by begin.
-            // This implies that the size is unknown
-            boost::tokenizer<boost::char_separator<char> > tokens( line_buffer, separator );
-            typedef boost::tokenizer<boost::char_separator<char> >::iterator iter;
-
-            // go to the first token. This should be the output.
-            iter i=tokens.begin();
-
-            // only if more than one token
-            if ( i != tokens.end() ) {
-
-                // translate the output type from string to the requested output type
-                // add this output to the outputs (which has to comply to a back inserter container)
-                outputs[ sample_index ] = boost::lexical_cast< output_type >( *i );
-
-                // proceed to the first input attribute
-                ++i;
-
-                // TODO Sparse allocation!
-                // Create an input_type object of the right size (we assume its a DENSE vector a.t.m., sparse to be done!!)
-
-                // DENSE
-                inputs[ sample_index ] = input_type( maximum_index );
-
-                // SPARSE
-                // inputs[ sample_index ] = input_type( maximum_index, maximum_nonzeros );
-
-                // Right part of this condition is not evaluated if at end, as per
-                // language standards. So (*i)[0] exists if it reaches that part.
-                while( (i != tokens.end()) && ((*i)[0] != static_cast<char>('#')) ) {
-                    // Figure out the attribute number. This is 1-based, so subtract 1
-                    unsigned int attribute_nr = boost::lexical_cast< unsigned int >( *i++ ) - 1;
-                    if ( i == tokens.end() ) {
-                        std::cerr << "Error in input file!" << std::endl;
-                        break;
-                    }
-                    // read the input into the input container
-                    inputs[sample_index][attribute_nr] = boost::lexical_cast< scalar_type >( *i++ );
-                }
-                ++sample_index;
-            }
-        }
+      // read a line
+      std::getline( data, line_buffer );
+      // ignore entire line if first character is a #
+      if ( line_buffer[0] != static_cast<char>('#') ) {
+	// instantiate a tokenizer, of which the tokens will be iterated through
+	// From doc: parsing is done on demand (!!) as the tokens are accessed via the iterator provided by begin.
+	// This implies that the size is unknown
+	boost::tokenizer<boost::char_separator<char> > tokens( line_buffer, separator );
+	typedef boost::tokenizer<boost::char_separator<char> >::iterator iter;
+	// go to the first token. This should be the output.
+	iter i=tokens.begin();
+	// only if more than one token
+	if ( i != tokens.end() ) {
+	  // translate the output type from string to the requested output type
+	  // add this output to the outputs (which has to comply to a back inserter container)
+	  if (boost::is_same<output_type, bool>::value)
+	    outputs[sample_index] = (boost::lexical_cast<int>(*i) > 0); // because who would have a float-type class label?
+	  else
+	    outputs[ sample_index ] = boost::lexical_cast< output_type >( *i ); 
+	  // proceed to the first input attribute
+	  ++i;
+	  
+	  // TODO Sparse allocation!
+	  // Create an input_type object of the right size (we assume its a DENSE vector a.t.m., sparse to be done!!)
+	  
+	  // DENSE
+	  inputs[ sample_index ] = input_type( maximum_index );
+	  
+	  // SPARSE
+	  // inputs[ sample_index ] = input_type( maximum_index, maximum_nonzeros );
+	  
+	  // Right part of this condition is not evaluated if at end, as per
+	  // language standards. So (*i)[0] exists if it reaches that part.
+	  while( (i != tokens.end()) && ((*i)[0] != static_cast<char>('#')) ) {
+	    // Figure out the attribute number. This is 1-based, so subtract 1
+	    unsigned int attribute_nr = boost::lexical_cast< unsigned int >( *i++ ) - 1;
+	    if ( i == tokens.end() ) {
+	      std::cerr << "Error in input file!" << std::endl;
+	      break;
+	    }
+	    // read the input into the input container
+	    inputs[sample_index][attribute_nr] = boost::lexical_cast< scalar_type >( *i++ );
+	  }
+	  ++sample_index;
+	}
+      }
     }
     data.close();
 }
