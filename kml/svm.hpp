@@ -31,10 +31,11 @@
 #ifndef SVM_HPP
 #define SVM_HPP
 
-#define EPS .00000001
+#define EPS .001
 
 #include <boost/numeric/bindings/traits/std_vector.hpp>
 #include <boost/numeric/bindings/traits/ublas_vector.hpp>
+#include <boost/lexical_cast.hpp>
 #include <boost/mpl/equal_to.hpp>
 #include <boost/type_traits/is_float.hpp>
 #include <boost/type_traits/is_same.hpp>
@@ -46,7 +47,8 @@
 #include <algorithm>
 #include <vector>
 #include <cstdlib>
-#include <functional>
+#include <ext/functional>
+#include <iostream>
 
 #include <kml/determinate.hpp>
 #include <kml/classification.hpp>
@@ -75,26 +77,26 @@ public:
   // Bug fixed: use call_traits instead of const&, so can be called with both reference and non-reference
   svm( typename boost::call_traits<kernel_type>::param_type k,
        typename boost::call_traits<double>::param_type max_weight ): 
-    base_type(k), C(max_weight), startpt(randomness) {}
+    base_type(k), C(max_weight), tol(.001), startpt(randomness) { }
 
   result_type operator() (input_type const &x) {
     result_type ret=0;
     for (size_t i=0; i<base_type::weight.size(); ++i)
-      if (base_type::weight[i] > 0)
+      if (base_type::weight[i] > 0) 
 	ret += base_type::weight[i] * target[i] * base_type::kernel(points[i], x);
-    ret += base_type::bias;
+    ret -= base_type::bias;
     return ret;
   }
 
   int takeStep(int i1, int i2) {
-    if (i1 == i2) return 0;
+    if (i1 == i2) return 0; 
 
     double alpha1 = base_type::weight[i1];
     output_type y1 = target[i1];
     scalar_type e1, e2, L, H, a2;
     /* p. 49, Platt: "When an error E is required by SMO, it will look up the error in the error cache if the 
        corresponding Lagrange multiplier is not at bound." */
-    if (0 != base_type::weight[i1] && C != base_type::weight[i1]) 
+    if (0 != alpha1 && C != alpha1) 
       e1 = error_cache[i1];
     else
       e1 = operator()(points[i1]) - y1;
@@ -102,10 +104,10 @@ public:
     double alpha2 = base_type::weight[i2];
     output_type y2 = target[i2];
     /* p. 49 again */
-    if (0 != base_type::weight[i2] && C != base_type::weight[i2])
+    if (0 != alpha2 && C != alpha2)
       e2 = error_cache[i2];
     else
-      e2 = (double)operator()(points[i1]) - y2;
+      e2 = (double)operator()(points[i2]) - y2;
     
     output_type s = y1 * y2;
 
@@ -117,17 +119,18 @@ public:
       /* Equation 12.3 */
       L = std::max(0.0, alpha1 + alpha2 - C);
       /* Equation 12.4 */
-      H = std::min(C, alpha1 + alpha1);
+      H = std::min(C, alpha1 + alpha2);
     }
 
-    if (L == H) return 0;
+    if (L == H) return 0; 
 
-    output_type k11 = base_type::kernel(points[i1], points[i1]);
-    output_type k12 = base_type::kernel(points[i1], points[i2]);
-    output_type k22 = base_type::kernel(points[i2], points[i2]);
+    scalar_type k11 = base_type::kernel(points[i1], points[i1]);
+    scalar_type k12 = base_type::kernel(points[i1], points[i2]);
+    scalar_type k22 = base_type::kernel(points[i2], points[i2]);
+
     /* Equation 12.5 -- the second derivative of W, the objective function */
     double eta = 2 * k12 - k11 - k22;
-
+    std::cerr << "eta == " << eta << std::endl;
     if (eta < 0) {
       /* Equation 12.6 */
       a2 = alpha2 - y2 * (e1-e2) / eta;
@@ -136,8 +139,8 @@ public:
       else if (a2 > H) a2 = H;
     }
     else {  /* This block handles corner cases; usually this means a training vector has been repeated */
-      output_type f1 = operator()(points[i1]);
-      output_type f2 = operator()(points[i2]);
+      scalar_type f1 = operator()(points[i1]);
+      scalar_type f2 = operator()(points[i2]);
       /* Equation 12.21 */
       scalar_type v1 = f1 + base_type::bias - target[i1] * alpha1 * k11 - target[i2] * alpha2 * k12;
       scalar_type v2 = f2 + base_type::bias - target[i1] * alpha1 * k12 - target[i2] * alpha2 * k22;
@@ -161,34 +164,46 @@ public:
       a2 = 0;
     else if (a2 > C - .00000001)
       a2 = C;    
-    if (fabs(a2 - alpha2) < EPS*(a2 + alpha2 + EPS))
+    if (fabs(a2 - alpha2) < EPS*(a2 + alpha2 + EPS)) 
       return 0;
+    
 
     /* Equation 12.8 */
     double a1 = alpha1 + s*(alpha2 - a2);
+    if (a1 < 0) {
+      a2 += s*a1;
+      a1 = 0;
+    }
+    else if (a1 > C) {
+      a2 += s * (a1 - C);
+      a1 = C;
+    }
 
-    /* TODO Update threshold to reflect change in Lagrange multipliers */
     scalar_type old_bias = base_type::bias;
     /* Equation 12.9 */
     if (0 != a1 && C != a1)
-      base_type::bias += e1 + target[i1] * (a1 - alpha1) * k11 + target[i2] * (a2 - alpha2) * k12;
+      base_type::bias += e1 + y1 * (a1 - alpha1) * k11 + y2 * (a2 - alpha2) * k12;
     else {
       if (0 != a2 && C != a2)
-	base_type::bias += e2 + target[i1] * (a1 - alpha1) * k12 + target[i2] * (a2 - alpha2) * k22;
-      else
-	base_type::bias = ((base_type::bias + e1 + target[i1] * (a1 - alpha1) * k11 + target[i2] * (a2 - alpha2) * k12) +
-			   (base_type::bias + e2 + target[i1] * (a1 - alpha1) * k12 + target[i2] * (a2 - alpha2) * k22)) / 2;
+	base_type::bias += e2 + y1 * (a1 - alpha1) * k12 + y2 * (a2 - alpha2) * k22;
+      else 
+	base_type::bias = ((base_type::bias + e1 + y1 * (a1 - alpha1) * k11 + y2 * (a2 - alpha2) * k12) +
+			   (base_type::bias + e2 + y1 * (a1 - alpha1) * k12 + y2 * (a2 - alpha2) * k22)) / 2;
     }
+
     /* TODO figure out what to do about weight vectors for linear SVMs */
 
     /* Update the error cache */
     for (size_t i = 0; i < error_cache.size(); ++i) {
-      if (0 != base_type::weight[i] && C != base_type::weight[i])
-	error_cache[i] += target[i1] * (a1 - alpha1) * base_type::kernel(points[i1], points[i]) + target[i2] * (a2 - alpha2) * base_type::kernel(points[i2], points[i]) + old_bias - base_type::bias;
-      else
+      if (0 != base_type::weight[i] && C != base_type::weight[i]) {
+	error_cache[i] += y1 * (a1 - alpha1) * base_type::kernel(points[i1], points[i]) + target[i2] * (a2 - alpha2) * base_type::kernel(points[i2], points[i]) - (base_type::bias - old_bias);
+      }
+      else {
 	/* This may not actually be necessary -- I'm not convinced any code paths will ever get here -- but since Platt
 	   says we only keep cached error values if the Lagrange multiplier is non-bound, I'm covering my bases. */
-	error_cache[i] = 0;
+	if (error_cache[i] > 0)
+	  error_cache[i] = 0;
+      }
     }
     /* p. 49, Platt: "When a Lagrange multiplier is non-bound and is involved in a joint optimization, its cached error
        is set to zero." But, hey, if it's a bound multiplier, we don't cache its error. So just make it zero anyway. */
@@ -206,67 +221,83 @@ public:
     result_type e2;
     if (alpha2 != 0 && alpha2 != C)
       e2 = error_cache[idx];
-    else
+    else 
       e2 = operator()(points[idx]) - y2;
-
+    
     result_type r2 = e2 * y2;
-    if ((r2 < -(base_type::bias) && alpha2 < C) || 
-	(r2 > base_type::bias && alpha2 > 0)) {
-      int count = std::count_if(base_type::weight.begin(), base_type::weight.end(), std::bind2nd(std::equal_to<scalar_type>(), 0));
-      if (count <= 1)
-	count += std::count_if(base_type::weight.begin(), base_type::weight.end(), std::bind2nd(std::equal_to<scalar_type>(), C));
-      if (count > 1) {
-	int i = 0; // TODO second choice heuristic stuff
-	if (takeStep(i, idx))
+    if ((r2 < -tol && alpha2 < C) || (r2 > tol && alpha2 > 0)) {
+      int count = std::count_if(base_type::weight.begin(), 
+				base_type::weight.end(), 
+				__gnu_cxx::compose2(std::logical_and<bool>(),
+						    std::bind2nd(std::not_equal_to<scalar_type>(), 0),
+						    std::bind2nd(std::not_equal_to<scalar_type>(), C)));
+
+      if (count > 1) { // use second choice heuristic
+	scalar_type tmp = 0, tmp2 = 0;
+	int k = 0;
+	for (size_t i = 0; i < error_cache.size(); ++i) {
+	  tmp2 = fabs(error_cache[idx] - error_cache[i]);
+	  if (tmp2 > tmp) {
+	    tmp = tmp2;
+	    k = i;
+	  }
+	}
+	if (takeStep(idx, k))
 	  return 1;
       }
       for (size_t i = startpt(points.size()),
-	     j = i; i % points.size() != j; ++i)
-	if (base_type::weight[i] != 0 && base_type::weight[i] != C)
-	  if (takeStep(i, idx))
+	      j = i; i % points.size() != j; ++i) 
+	if (base_type::weight[i%points.size()] != 0 && base_type::weight[i%points.size()] != C) 
+	  if (takeStep(idx, i%points.size())) 
 	    return 1;
+	  
+	
       for (size_t i = startpt(points.size()),
-	     j = i; i % points.size() != j; ++i)
-	if (takeStep(i, idx))
+	      j = i-1; i % points.size() != j; ++i) 
+	if (takeStep(idx, i%points.size())) 
 	  return 1;
     }
     return 0;
   }
-
-  template< class IRange, class ORange >
-  void learn( IRange const &input, ORange const &output ) {
-    points = input;
-    target = output;
-    base_type::weight.clear();
-    base_type::weight.resize(points.size());
-    base_type::support_vector.clear();
-    base_type::support_vector.resize(points.size());
-
-    int numChanged = 0;
-    int examineAll = 1;
-    while (numChanged > 0 || examineAll) {
-      numChanged = 0;
-      if (examineAll)
-	for (size_t i=0; i < points.size(); ++i)
-	  numChanged += examineExample(i);
-      else
-	for (size_t i=0; i < points.size(); ++i)
-	  if (base_type::weight[i] != 0 && base_type::weight[i] != C)
+    
+    template< class IRange, class ORange >
+    void learn( IRange const &input, ORange const &output ) {
+      points = input;
+      target = output;
+      base_type::weight.clear();
+      base_type::weight.resize(points.size());
+      base_type::support_vector.clear();
+      base_type::support_vector.resize(points.size());
+      error_cache.clear();
+      error_cache.resize(points.size());
+      
+      int numChanged = 0;
+      int examineAll = 1;
+      while (numChanged > 0 || examineAll) {
+	numChanged = 0;
+	if (examineAll) 
+	  for (size_t i=0; i < points.size(); ++i) 
 	    numChanged += examineExample(i);
-      if (1 == examineAll)
-	examineAll = 0;
-      else if (0 == numChanged)
-	examineAll = 1;
+	else 
+	  for (size_t i=0; i < points.size(); ++i)
+	    if (base_type::weight[i] != 0 && base_type::weight[i] != C) 
+	      numChanged += examineExample(i);
+	    
+	if (1 == examineAll) 
+	  examineAll = 0;
+	else if (0 == numChanged) 
+	  examineAll = 1;
+      }
     }
-  }
-
-  scalar_type C;
-  std::vector<double> error_cache;
-  std::vector<input_type> points;
-  std::vector<output_type> target;
-  boost::mt19937 randomness;
-  boost::random_number_generator<boost::mt19937> startpt;
-};
+    
+    scalar_type C;
+    scalar_type tol;
+    std::vector<double> error_cache;
+    std::vector<input_type> points;
+    std::vector<output_type> target;
+    boost::mt19937 randomness;
+    boost::random_number_generator<boost::mt19937> startpt;
+  };
 
   // Ranking SVM
   /*
