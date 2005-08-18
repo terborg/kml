@@ -32,8 +32,8 @@ typedef std::vector<ublas::vector<double> >::iterator vec_iter;
 int main(int argc, char *argv[]) {
 
   if (argc < 2) {
-    cout << "Error: need an input file to train on." << endl 
-	      << "usage: svm_classification (filename)" << endl;
+    cout << "Error: need an input file to train and test on." << endl 
+	      << "usage: svm_classification (trainfile) (testfile)" << endl;
     return 0;
   }
 
@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
   cerr << "Reading in vector...";
   kml::read_svm_light(argv[1], points, target);
   cerr << "Done, " << points.size() << " points of size " << points[0].size() << endl;
-  kml::svm<problem_type, kml::gaussian> my_machine(1.0, 1.0);
+  kml::svm<problem_type, kml::gaussian> my_machine(3.162277, 1.0);
   my_machine.learn(points, target);
   cerr << "Done training" << endl;
   for (std::vector<double>::iterator i = my_machine.weight.begin();
@@ -58,4 +58,5 @@ int main(int argc, char *argv[]) {
   cerr << "Done, " << testpoints.size() << " points of size " << testpoints[0].size() << endl;
   for (vec_iter i = testpoints.begin(); i != testpoints.end(); ++i)
     cout << my_machine(*i) << endl;
+  return 0;
 }

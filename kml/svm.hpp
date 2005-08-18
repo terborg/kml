@@ -130,7 +130,6 @@ public:
 
     /* Equation 12.5 -- the second derivative of W, the objective function */
     double eta = 2 * k12 - k11 - k22;
-    std::cerr << "eta == " << eta << std::endl;
     if (eta < 0) {
       /* Equation 12.6 */
       a2 = alpha2 - y2 * (e1-e2) / eta;
@@ -351,6 +350,8 @@ class svm<I,O,K, typename boost::enable_if<boost::is_same<O,int> >::type>:
 
     scalar_type epsilon;
     scalar_type C;
+    std::vector<input_type> points;
+    std::vector<output_type> target;
 
     typedef kml::classification<input_type, bool> problem_type;
     svm<problem_type, K> inner_machine;

@@ -1,0 +1,52 @@
+#!/usr/bin/env python
+## dst2data: convert J. Platt's .dst file to my data file for SMO
+## By Xianping Ge.
+
+import os
+import sys
+if len(sys.argv) > 1 and (sys.argv[1] == '-h'
+                         or sys.argv[1] == '--help'
+                         or sys.argv[1] == '-help'):
+    os.execl('/bin/sed','-e','/^##/s/^## //p','-n',sys.argv[0])
+
+import string
+
+i_variable = -1
+s = ''
+fp = sys.stdin
+lineno = 0
+while 1:
+    lineno = lineno + 1
+    line = fp.readline()
+    if line == '':
+        break
+    line = string.strip(line)
+    if line[0] == 'C':
+        if i_variable >= 0:
+           for i in range(i_variable, 123):
+               s = s + ' 0'
+           print target + ' ' + s[1:]
+           s = ''
+        i_variable = 0
+        continue
+    if line[0] == 'V':
+        words = string.split(line,',')
+        id = int(words[1])
+        val = words[2]
+        if id == 1000:
+           if val == '0':
+              target = '-1'
+           else:
+              target = '+1'
+        else:
+           id = id - 1001
+           for i in range(i_variable,id):
+               s = s + ' 0'
+           s = s + ' ' + val
+           i_variable = id+1
+fp.close()
+if s != '':
+   for i in range(i_variable, 123):
+       s = s + ' 0'
+   print target + ' ' + s[1:]
+   s = ''

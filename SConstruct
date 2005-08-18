@@ -1,4 +1,3 @@
-
 import cpuinfo, os
 
 env = Environment()
@@ -17,7 +16,7 @@ atlas_link_libs = []
 if env['PLATFORM'] == 'posix':
    boost_search_path = ['/usr/include/boost']
    atlas_search_path = ['/usr/include', '/usr/include/atlas' ]
-   atlas_link_libs = ['cblas','atlas']
+   atlas_link_libs = ['cblas','atlas', 'tcmalloc']
 elif env['PLATFORM'] == 'win32':
    env.Replace( ENV = os.environ )
    boost_search_path = ['/boost']
@@ -74,9 +73,8 @@ if env['CXX'] == 'g++':
         # change default CXXflags to something which is 
 	# CXXFLAGS = ....
 	cc_flags += '-Wall -ansi -pedantic'
-#	optimise_flags = '-O3 -ffast-math -fomit-frame-pointer -DNDEBUG -DNO_DEBUG'
-	optimise_flags = '-O3 -ffast-math -fomit-frame-pointer -g'
-	debug_flags += ' -g'
+	optimise_flags = '-O3 -ffast-math -fomit-frame-pointer -DNDEBUG -DNO_DEBUG'
+	debug_flags += ' -g -pg'
 	if cpu.is_PentiumIII():
    		optimise_flags += ' -march=pentium3'
 	elif cpu.is_PentiumIV(): 
@@ -134,7 +132,7 @@ if env['PLATFORM'] == 'win32':
 	SConscript( dirs=['lib'] )
 
 # Deligate to build scripts
-env.Replace( CXXFLAGS = cc_flags + ' ' + optimise_flags )
+env.Replace( CXXFLAGS = cc_flags + ' ' + optimise_flags)
 SConscript( dirs=['example'] )
 
 
