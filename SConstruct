@@ -13,10 +13,13 @@ lib_path = []
 boost_search_path = []
 atlas_search_path = []
 atlas_link_libs = []
+tcmalloc_link_libs = []
+
 if env['PLATFORM'] == 'posix':
    boost_search_path = ['/usr/include/boost']
    atlas_search_path = ['/usr/include', '/usr/include/atlas' ]
-   atlas_link_libs = ['cblas','atlas', 'tcmalloc']
+   atlas_link_libs = ['cblas', 'atlas']
+   tcmalloc_link_libs = ['tcmalloc']
 elif env['PLATFORM'] == 'win32':
    env.Replace( ENV = os.environ )
    boost_search_path = ['/boost']
@@ -73,7 +76,7 @@ if env['CXX'] == 'g++':
         # change default CXXflags to something which is 
 	# CXXFLAGS = ....
 	cc_flags += '-Wall -ansi -pedantic'
-	optimise_flags = '-O3 -ffast-math -fomit-frame-pointer -DNDEBUG -DNO_DEBUG'
+	optimise_flags = '-O3 -ffast-math -fomit-frame-pointer -falign-loops=16 -DNDEBUG -DNO_DEBUG'
 	debug_flags += ' -g -pg'
 	if cpu.is_PentiumIII():
    		optimise_flags += ' -march=pentium3'
@@ -126,6 +129,7 @@ elif env['CXX'] == '$CC' and env['CC'] == 'cl':
 # Export the environment variables
 Export( 'env' )
 Export( 'atlas_link_libs' )
+Export( 'tcmalloc_link_libs' )
 
 # If requested, convert te libatlas.a etc. to .dll and .lib files
 if env['PLATFORM'] == 'win32':
@@ -134,5 +138,3 @@ if env['PLATFORM'] == 'win32':
 # Deligate to build scripts
 env.Replace( CXXFLAGS = cc_flags + ' ' + optimise_flags)
 SConscript( dirs=['example'] )
-
-

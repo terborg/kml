@@ -65,90 +65,97 @@ using namespace boost::lambda;
 // however, compiler seems to complain (at a first try)
 
 
-namespace kml { namespace detail {
+namespace kml { 
+  namespace detail {
 
 
-template<typename Range>
-struct range_comp: public std::binary_function<Range,Range,bool> {
-	bool operator()(Range const &u, Range const &v) {
-		typename Range::const_iterator iter_u = u.begin();
-		typename Range::const_iterator iter_v = v.begin();
-		while( (iter_u != u.end()) && (*iter_u == *iter_v) ) {
-			++iter_u;
-			++iter_v;
-		}
-		if (iter_u == u.end())
-		  return false;
-		else
-		  return *iter_u < *iter_v;
+    template<typename Range>
+    struct range_comp: public std::binary_function<Range,Range,bool> {
+      bool operator()(Range const &u, Range const &v) {
+	typename Range::const_iterator iter_u = u.begin();
+	typename Range::const_iterator iter_v = v.begin();
+	while( (iter_u != u.end()) && (*iter_u == *iter_v) ) {
+	  ++iter_u;
+	  ++iter_v;
 	}
-};
-
-template<typename Range>
-struct range_equal: public std::binary_function<Range,Range,bool> {
-	bool operator()(Range const &u, Range const &v) {
-		return ( distance_square( u,v) < 1e-6 );
-
-	}
-};
-
-
-
-template<typename Range>
-struct has_NaNs: public std::unary_function<Range,bool> {
-	bool operator()(Range const &u) {
-		typedef typename boost::range_value<Range>::type scalar_type;
-		return (std::find_if( boost::begin(u), boost::end(u), bind( std::not_equal_to<scalar_type>(),_1,_1) ) != u.end());
-	}
-};
-
-
-
-template<typename T>
-inline T scalar_square( T const x ) {
-	return x*x;
-}
-
-
-struct scalar_distance_square {
-    template<typename T>
-    inline
-    static T compute( T const x, T const y ) {
-	return scalar_square(x-y);
-    }
-};
-
-struct vector_distance_square {
-    template<typename T>
-    inline
-    static typename boost::range_value<T>::type compute( T const &u, T const &v ) {
+	if (iter_u == u.end())
+	  return false;
+	else
+	  return *iter_u < *iter_v;
+      }
+    };
+    
+    template<typename Range>
+    struct range_equal: public std::binary_function<Range,Range,bool> {
+      bool operator()(Range const &u, Range const &v) {
+	return ( distance_square( u,v) < 1e-6 );
+	
+      }
+    };
+    
+    
+    
+    template<typename Range>
+    struct has_NaNs: public std::unary_function<Range,bool> {
+      bool operator()(Range const &u) {
+	typedef typename boost::range_value<Range>::type scalar_type;
+	return (std::find_if( boost::begin(u), boost::end(u), bind( std::not_equal_to<scalar_type>(),_1,_1) ) != u.end());
+      }
+    };
+    
+    
+    
+    struct scalar_square {
+      template <typename T>
+      T operator()(const T& x) {
+	return x * x;
+      }
+    };
+    
+    struct scalar_distance_square {
+    private:
+      static scalar_square ss;
+    public:
+      template <typename T>
+      static T compute(const T& x, const T& y) {
+	return ss(x-y);
+      }
+    };
+    
+    struct vector_distance_square {
+    private:
+      static scalar_square ss;
+    public:
+      template<typename T>
+      inline
+      static typename boost::range_value<T>::type compute( T const &u, T const &v ) {
 	typename boost::range_value<T>::type result(0);
 	for( typename boost::range_size<T>::type i = 0; i < boost::size(u); ++i ) {
-	  result += scalar_square(u[i]-v[i]);
+	  result += ss(u[i]-v[i]);
 	}
 	return result;
-    }
-};
-
-} // namespace detail
-
-
-// distance_square function which works on both scalars and vectors
-// complex numbers not taken into account :-)
-
-template<typename T>
-typename mpl::eval_if<
-	boost::is_scalar<T>,
-	mpl::identity<T>,
-	boost::range_value<T> >::type
-distance_square( T const &u, T const &v ) {
+      }
+    };
+    
+  } // namespace detail
+  
+  
+  // distance_square function which works on both scalars and vectors
+  // complex numbers not taken into account :-)
+  
+  template<typename T>
+  typename mpl::eval_if<
+    boost::is_scalar<T>,
+    mpl::identity<T>,
+    boost::range_value<T> >::type
+  distance_square( T const &u, T const &v ) {
     return mpl::if_<
-           boost::is_scalar<T>,
-           detail::scalar_distance_square,
-           detail::vector_distance_square
-           >::type::compute( u, v );
-}
-
+      boost::is_scalar<T>,
+      detail::scalar_distance_square,
+      detail::vector_distance_square
+      >::type::compute( u, v );
+  }
+  
 
 
 } // namespace kml

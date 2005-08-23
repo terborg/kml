@@ -298,7 +298,7 @@ public:
     boost::random_number_generator<boost::mt19937> startpt;
   };
 
-  // Ranking SVM
+  // Ranking SVM. TODO: Test ASAP!
   /*
 template<typename I, typename O, template<typename,int> class K>
 class svm<I,O,K, typename boost::enable_if<boost::is_same<O,int> >::type>:
