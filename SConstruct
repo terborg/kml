@@ -13,13 +13,11 @@ lib_path = []
 boost_search_path = []
 atlas_search_path = []
 atlas_link_libs = []
-tcmalloc_link_libs = []
 
 if env['PLATFORM'] == 'posix':
    boost_search_path = ['/usr/include/boost']
    atlas_search_path = ['/usr/include', '/usr/include/atlas' ]
    atlas_link_libs = ['cblas', 'atlas']
-   tcmalloc_link_libs = ['tcmalloc']
 elif env['PLATFORM'] == 'win32':
    env.Replace( ENV = os.environ )
    boost_search_path = ['/boost']
@@ -51,20 +49,24 @@ else:
 env.Replace( CPPPATH = cpp_path )
 env.Replace( LIBPATH = lib_path )
 
+
+
 #
 # Alright, perform some basic compile tests (of available libraries etc.)
 #
 
-#conf = Configure(env)
+conf = Configure(env)
 
-# First, make sure some prerequisites have been met
-#if not conf.CheckCHeader('atlas/cblas.h'):
-#	print 'atlas/cblas.h not found! Please check ATLAS installation.'
-#	Exit(1)
+if env['PLATFORM'] == 'posix':
+	conf.CheckLib( 'tcmalloc', autoadd=1 )
 
-#env = conf.Finish()
+env = conf.Finish()
 
 
+
+#
+# Detect CPU type
+#
 
 cpu = cpuinfo.cpuinfo()
 
@@ -129,7 +131,6 @@ elif env['CXX'] == '$CC' and env['CC'] == 'cl':
 # Export the environment variables
 Export( 'env' )
 Export( 'atlas_link_libs' )
-Export( 'tcmalloc_link_libs' )
 
 # If requested, convert te libatlas.a etc. to .dll and .lib files
 if env['PLATFORM'] == 'win32':
