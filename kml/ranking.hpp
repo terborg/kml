@@ -26,6 +26,7 @@ namespace kml {
 
 template<typename I, typename O>
 class ranking {
+public:
   typedef ranking<I,O> type;
   typedef I input_type;
   typedef O output_type;

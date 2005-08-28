@@ -39,10 +39,10 @@ public:
 // Define templates is_classification so we can recognise the classification type of problems
 
 template<typename T>
-struct is_classification: mpl::bool_<false> {};
+struct is_classification: boost::mpl::bool_<false> {};
 
 template<typename I, typename O>
-struct is_classification<classification<I,O> >: mpl::bool_<true> {};
+struct is_classification<classification<I,O> >: boost::mpl::bool_<true> {};
 
 
 }

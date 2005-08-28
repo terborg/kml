@@ -43,6 +43,7 @@
 #include <boost/random/variate_generator.hpp>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/random_number_generator.hpp>
+#include <boost/range/value_type.hpp>
 
 #include <algorithm>
 #include <vector>
