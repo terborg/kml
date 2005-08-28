@@ -30,6 +30,7 @@ namespace kml {
 
 template<typename I, typename O>
 class regression {
+public:
 	typedef regression type;
 	typedef I input_type;
 	typedef O output_type;

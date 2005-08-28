@@ -50,7 +50,9 @@ int main(int argc, char *argv[]) {
     }
 
     std::cout << "Training AO-SVR..." << std::endl;
-    kml::online_svm< ublas::vector<double>, double, kml::gaussian > my_machine( 1.6, 0.1, 10.0 );
+
+    typedef kml::regression< ublas::vector<double>, double > problem;
+    kml::online_svm< problem, kml::gaussian > my_machine( 1.6, 0.1, 10.0 );
     my_machine.learn( x, y );
 
     std::cout << "Making predictions..." << std::endl;

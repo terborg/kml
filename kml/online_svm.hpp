@@ -33,6 +33,10 @@
 #include <kml/matrix_view.hpp>
 #include <kml/symmetric_view.hpp>
 
+#include <kml/regression.hpp>
+#include <kml/classification.hpp>
+#include <kml/ranking.hpp>
+
 
 
 namespace atlas = boost::numeric::bindings::atlas;
@@ -104,8 +108,8 @@ Classification: \f$ Q_{ij}= y_i y_j k(x_i,x_j) \f$
 */
 
 
-template< typename I, typename O, template<typename,int> class K, class Enable = void >
-class online_svm: public online_determinate<I,O,K> {};
+template< typename Problem, template<typename,int> class K, class Enable = void >
+class online_svm: public online_determinate<typename Problem::input_type, typename Problem::output_type,K> {};
 
 
 //
@@ -114,15 +118,15 @@ class online_svm: public online_determinate<I,O,K> {};
 //
 //
 
-template< typename I, typename O, template<typename,int> class K>
-class online_svm<I,O,K, typename boost::enable_if< boost::is_float<O> >::type >: 
-         public online_determinate<I,O,K> {
+template< typename Problem, template<typename,int> class K>
+class online_svm<Problem,K, typename boost::enable_if< is_regression<Problem> >::type >: 
+         public online_determinate<typename Problem::input_type, typename Problem::output_type,K> {
 public:
-    typedef online_determinate<I,O,K> base_type;
+    typedef online_determinate<typename Problem::input_type, typename Problem::output_type,K> base_type;
     typedef typename base_type::kernel_type kernel_type;
     typedef typename base_type::result_type result_type;
-    typedef I input_type;
-    typedef O output_type;
+    typedef typename Problem::input_type input_type;
+    typedef typename Problem::output_type output_type;
     typedef double scalar_type;
     typedef ublas::symmetric_matrix<double> symmetric_type;
     typedef ublas::matrix<double> matrix_type;
@@ -789,16 +793,20 @@ public:
 
 // ON-LINE SVM RANKING ALGORITHM
 
-template<typename I, typename O, template<typename,int> class K>
-/* this will eventually take a problem_type, right? */
-class online_svm<I,O,K, typename boost::enable_if< boost::is_same<O,int> >::type >:
-    public online_determinate<I,O,K> {
+template< typename Problem, template<typename,int> class K>
+class online_svm<Problem,K, typename boost::enable_if< is_ranking<Problem> >::type >: 
+         public online_determinate<typename Problem::input_type, typename Problem::output_type,K> {
 
-  typedef online_determinate<I,O,K> base_type;
-  typedef I input_type;
-  typedef O output_type;
-  typedef typename base_type::kernel_type kernel_type;
-  typedef double scalar_type;
+    typedef online_determinate<typename Problem::input_type, typename Problem::output_type,K> base_type;
+    typedef typename base_type::kernel_type kernel_type;
+    typedef typename base_type::result_type result_type;
+    typedef typename Problem::input_type input_type;
+    typedef typename Problem::output_type output_type;
+    typedef double scalar_type;
+    typedef ublas::symmetric_matrix<double> symmetric_type;
+    typedef ublas::matrix<double> matrix_type;
+    typedef ublas::vector<double> vector_type;
+
   typedef typename boost::range_value<input_type>::type point_type;
   typedef typename output_type::const_iterator const_output_iterator;
   typedef typename std::vector<input_type>::const_iterator const_svec_iterator;
@@ -838,7 +846,9 @@ class online_svm<I,O,K, typename boost::enable_if< boost::is_same<O,int> >::type
   }
   std::vector<output_type> ys;
   scalar_type C;
-  online_svm<I,bool,K> inner_machine;
+
+  typedef classification<input_type,bool> inner_problem;
+  online_svm<inner_problem,K> inner_machine;
 };
 
 //
@@ -850,15 +860,19 @@ class online_svm<I,O,K, typename boost::enable_if< boost::is_same<O,int> >::type
 // it will become something like this:
 // template<typename P, template<typename,int> class K>
 
-template<typename I, typename O, template<typename,int> class K>
-class online_svm<I,O,K, typename boost::enable_if< boost::is_same<O,bool> >::type >: 
-         public online_determinate<I,O,K> {
-	 
-    typedef online_determinate<I,O,K> base_type;
-    typedef I input_type;
-    typedef O output_type;
+template< typename Problem, template<typename,int> class K>
+class online_svm<Problem,K, typename boost::enable_if< is_classification<Problem> >::type >: 
+         public online_determinate<typename Problem::input_type, typename Problem::output_type,K> {
+
+    typedef online_determinate<typename Problem::input_type, typename Problem::output_type,K> base_type;
     typedef typename base_type::kernel_type kernel_type;
+    typedef typename base_type::result_type result_type;
+    typedef typename Problem::input_type input_type;
+    typedef typename Problem::output_type output_type;
     typedef double scalar_type;
+    typedef ublas::symmetric_matrix<double> symmetric_type;
+    typedef ublas::matrix<double> matrix_type;
+    typedef ublas::vector<double> vector_type;
 
     online_svm( typename boost::call_traits<kernel_type>::param_type k,
                 typename boost::call_traits<scalar_type>::param_type max_weight ):
