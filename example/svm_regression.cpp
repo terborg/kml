@@ -53,7 +53,9 @@ int main(int argc, char *argv[]) {
 
     typedef kml::regression< ublas::vector<double>, double > problem;
     kml::online_svm< problem, kml::gaussian > my_machine( 1.6, 0.1, 10.0 );
-    my_machine.learn( x, y );
+
+    for( int i=0; i<N; ++i )
+    	my_machine.push_back( x[i], y[i] );
 
     std::cout << "Making predictions..." << std::endl;
     ublas::vector<double> y_test(N);

@@ -37,6 +37,10 @@
 #include <kml/classification.hpp>
 #include <kml/ranking.hpp>
 
+#include <kml/kernel_machine.hpp>
+
+#include <boost/numeric/ublas/io.hpp>
+
 
 
 namespace atlas = boost::numeric::bindings::atlas;
@@ -75,7 +79,6 @@ matrix Q and R as referred to in [1-3], and hence the \e coefficient \e sensitiv
 \e margin \e sensitivities differ.
 
 Regression: \f$ Q_{ij}=k(x_i,x_j) \f$
-
 Classification: \f$ Q_{ij}= y_i y_j k(x_i,x_j) \f$
 
 
@@ -94,10 +97,6 @@ Classification: \f$ Q_{ij}= y_i y_j k(x_i,x_j) \f$
 
 \section bibliography References
 
--# Gert Cauwenberghs and Tomaso Poggio. Incremental and Decremental Support Vector
-   Machine Learning. In Todd Leen and Thomas Dietterich and Volker Tresp, editors,
-   Advances in Neural Information Processing Systems (NIPS'00).
-   http://tinyurl.com/7cydn
 -# Junshui Ma et al., 2003. Accurate On-Line Support Vector Regression.
    \e Neural \e Computation, pp. 2700-2701.
    http://tinyurl.com/5g2bb
@@ -108,8 +107,8 @@ Classification: \f$ Q_{ij}= y_i y_j k(x_i,x_j) \f$
 */
 
 
-template< typename Problem, template<typename,int> class K, class Enable = void >
-class online_svm: public online_determinate<typename Problem::input_type, typename Problem::output_type,K> {};
+template<typename Problem,template<typename> class Kernel,class Enable = void>
+class online_svm: public kernel_machine<Problem,Kernel> {};
 
 
 //
@@ -118,11 +117,11 @@ class online_svm: public online_determinate<typename Problem::input_type, typena
 //
 //
 
-template< typename Problem, template<typename,int> class K>
-class online_svm<Problem,K, typename boost::enable_if< is_regression<Problem> >::type >: 
-         public online_determinate<typename Problem::input_type, typename Problem::output_type,K> {
+template<typename Problem,template<typename> class Kernel>
+class online_svm<Problem,Kernel,typename boost::enable_if< is_regression<Problem> >::type>:
+         public kernel_machine<Problem,Kernel> {
 public:
-    typedef online_determinate<typename Problem::input_type, typename Problem::output_type,K> base_type;
+    typedef kernel_machine<Problem,Kernel> base_type;
     typedef typename base_type::kernel_type kernel_type;
     typedef typename base_type::result_type result_type;
     typedef typename Problem::input_type input_type;
@@ -349,11 +348,6 @@ public:
 // 		std::cout << "  weight " << base_type::weight[i] << std::endl;
 // 	    }
 
-
-	    // A swap on R, the matrix inverse view, must be possible ....  ! !! ! ! ! !
-
-
-
             // compute all margin sensitivities
             atlas::gemv( H.view(), coef_sense, margin_sense );
             atlas::xpy( candidate_column, margin_sense );
@@ -526,9 +520,6 @@ public:
                     std::cin >> qqq;
                 }
 
-
-
-
             weight_t += delta_weight_t;
             // std::cout << "update weight_t to " << weight_t << std::endl;
 
@@ -685,9 +676,9 @@ public:
         unsigned int old_size = R.size1();
         unsigned int new_size = old_size + 1;
 
-
         // adjust inverse matrix
         if (new_size==2) {
+
             // initialise the R matrix
             R.grow_row_column();
             R.matrix(0,0) = base_type::kernel( base_type::support_vector[idx], base_type::support_vector[idx] );
@@ -791,13 +782,636 @@ public:
 };
 
 
+
+/*!
+
+On-line SVM classification algorithm. 
+
+
+
+\section bibliography2 References
+
+-# Gert Cauwenberghs and Tomaso Poggio. Incremental and Decremental Support Vector
+   Machine Learning. In Todd Leen and Thomas Dietterich and Volker Tresp, editors,
+   Advances in Neural Information Processing Systems (NIPS'00).
+   http://tinyurl.com/7cydn
+
+*/
+
+
+template<typename Problem,template<typename> class Kernel>
+class online_svm<Problem,Kernel,typename boost::enable_if< is_classification<Problem> >::type >:
+public kernel_machine< Problem, Kernel > {
+public:
+
+    typedef kernel_machine<Problem,Kernel> base_type;
+    typedef typename base_type::kernel_type kernel_type;
+    typedef typename base_type::result_type result_type;
+    typedef typename Problem::input_type input_type;
+    typedef typename Problem::output_type output_type;
+    typedef double scalar_type;
+    typedef ublas::symmetric_matrix<double> symmetric_type;
+    typedef ublas::matrix<double> matrix_type;
+    typedef ublas::vector<double> vector_type;
+
+    online_svm( typename boost::call_traits<kernel_type>::param_type k,
+                typename boost::call_traits<scalar_type>::param_type max_weight ):
+    base_type(k), C(max_weight) {}
+    
+    
+    output_type operator()( typename boost::call_traits<input_type>::param_type x ) {
+    	return (evaluate_f(x) >= 0.0);
+    }
+    
+    // a non-classifying prediction function
+    // is needed to compute condition figures
+    scalar_type evaluate_f( typename boost::call_traits<input_type>::param_type x ) {
+        scalar_type result(base_type::bias);
+        // temp_K[i], not temp_K[i+1]
+        if (margin_set.size()>0) {
+            vector_type temp_K( margin_set.size() );
+            for( unsigned int i=0; i < margin_set.size(); ++i ) {
+	        int idx = margin_set[i];
+		if ( outputs[idx] )
+		   temp_K[i] = base_type::kernel( base_type::support_vector[idx], x );
+		else
+		   temp_K[i] = -base_type::kernel( base_type::support_vector[idx], x );
+	    }
+            result += atlas::dot( temp_K, base_type::weight );
+        }
+        if (error_set.size()>0) {
+            scalar_type temp_K(0);
+            for( unsigned int i=0; i < error_set.size(); ++i ) {
+		int idx = error_set[i];
+		if ( outputs[idx] )
+                    temp_K += kernel( base_type::support_vector[idx], x );
+                else
+                    temp_K -= kernel( base_type::support_vector[idx], x );
+
+           }
+            result += C * temp_K;	   
+	}
+	return result;
+    }
+    
+
+        
+    /*! \param input an input pattern of input type I
+        \param output an output pattern of output type O */
+    void push_back( input_type const &input, output_type const &output ) {
+
+        int index = base_type::support_vector.size();
+
+        if (debug)
+            std::cout << "Starting incremental SVM algorithm with " << index << " prior points" << std::endl;
+
+	// record condition figure
+	if ( output )
+        	condition.push_back( evaluate_f(input) - 1.0 );
+        else
+        	condition.push_back( -evaluate_f(input) - 1.0 );
+        
+	// store the input and output 
+	base_type::support_vector.push_back( input );
+	outputs.push_back( output );
+	
+	
+/*	std::cout << "Predicting history..." << std::endl;
+	for( int i=0; i<base_type::support_vector.size(); ++i) 
+		std::cout << i << ": " << evaluate_f( base_type::support_vector[i] ) << std::endl;*/
+	
+	
+	if (debug)
+	   std::cout << "The output is " << output << std::endl;
+
+        // add to support vector buffer
+        //     preserved_resize( all_vectors, index+1, x_t.size() );
+        //     row( all_vectors, index ).assign( x_t );
+        //     preserved_resize( h, index+1 );
+
+
+        if ( index == 0 ) {
+
+            // first point, initialise machine
+            if (debug)
+                std::cout << "Initialising the Accurate Online Support Vector Machine" << std::endl;
+
+	    // set f(x_i) == y_i
+            base_type::bias = (output ? 1.0 : -1.0);
+            condition.back() = 0.0;
+            
+	    // put this first point (with index 0) in the remaining set
+	    remaining_set.push_back( 0 );
+
+            // initialise the inverse matrix with a zero only
+	    R.grow_row_column();
+            R.matrix(0,0) = 0.0;
+
+            // initialise "design" matrix with the value associated with the output
+            H.grow_row_column();
+    	    H.matrix(0,0) = ( output ? 1.0 : -1.0 );
+
+	    if (debug) 
+	    	std::cout << std::endl;
+
+        } else {
+
+
+            // resize (view in) design matrix
+            H.grow_row();
+
+            if (debug) {
+                std::cout << "H is now " << H.size1() << " by " << H.size2();
+		std::cout << " #conditions " << condition.size();
+		std::cout << " #svs " << base_type::support_vector.size();
+		std::cout << " #weights " << base_type::weight.size();
+		std::cout << " #outputs " << outputs.size() << std::endl;
+	    }
+
+            // fill last ROW of matrix H with this input sample
+	    // TODO this should be an optimised function call
+            H.matrix( index, 0 ) = ( output ? 1.0 : -1.0 );
+	    
+	    if ( output ) {
+	            for( unsigned int i=0; i < margin_set.size(); ++i )
+		        if ( outputs[margin_set[i]] )
+        	          H.matrix(index,i+1) = base_type::kernel( base_type::support_vector[margin_set[i]], input );
+			else 
+        	          H.matrix(index,i+1) = -base_type::kernel( base_type::support_vector[margin_set[i]], input );
+	    } else {
+	            for( unsigned int i=0; i < margin_set.size(); ++i )
+		        if ( outputs[margin_set[i]] )
+        	          H.matrix(index,i+1) = -base_type::kernel( base_type::support_vector[margin_set[i]], input );
+			else 
+        	          H.matrix(index,i+1) = base_type::kernel( base_type::support_vector[margin_set[i]], input );
+	    }
+	    
+/*	    std::cout << "Filled H to ";
+    	    std::cout << H.view() << std::endl;*/
+	    
+        
+	    
+	    if (debug)
+	    	std::cout << "condition[index] is " << condition.back() << std::endl;
+	    if ( condition.back() >= 0.0 ) {
+		if (debug) 
+			std::cout << "adding to remaining set..." << std::endl;	    
+	        remaining_set.push_back( index );
+                if (debug)
+			std::cout << std::endl;
+	    } else {
+		if (debug)
+			std::cout << "Satisfying KKT conditions... " << std::endl;
+	    	satisfy_KKT_conditions( index, 0.0 );
+	    }
+	}
+
+    
+/*	std::cout << "Predicting history..." << std::endl;
+	for( int i=0; i<base_type::support_vector.size(); ++i) 
+		std::cout << i << ": " << evaluate_f( base_type::support_vector[i] ) << std::endl;*/
+    
+    	if (debug) {
+	std::cout << "---------------------------------------------------------------------------------------------" << std::endl;
+ 	int qqq;
+ 	std::cin >> qqq;
+	}
+    
+    }
+
+
+    
+    
+    
+    
+    
+    inline
+    void satisfy_KKT_conditions( int index, double init_weight ) {
+
+        scalar_type weight_t = init_weight;
+        	
+	// create a candidate COLUMN of design matrix H; this column also includes the point under consideration
+        vector_type candidate_column( base_type::support_vector.size() );
+	if ( outputs[index] ) {
+		for( unsigned int i=0; i<base_type::support_vector.size(); ++i )
+		  if ( outputs[i] )
+            	     candidate_column[i] = base_type::kernel( base_type::support_vector[index], base_type::support_vector[i] );
+		  else 
+            	     candidate_column[i] = -base_type::kernel( base_type::support_vector[index], base_type::support_vector[i] );
+	} else {
+		for( unsigned int i=0; i<base_type::support_vector.size(); ++i )
+		  if ( outputs[i] )
+            	     candidate_column[i] = -base_type::kernel( base_type::support_vector[index], base_type::support_vector[i] );
+		  else 
+            	     candidate_column[i] = base_type::kernel( base_type::support_vector[index], base_type::support_vector[i] );
+	}
+	if (debug)
+		std::cout << "Computed candidate column" << std::endl;
+	
+	// initialise the margin and coefficient sensitivity vectors
+	vector_type margin_sense( base_type::support_vector.size() );
+        vector_type coef_sense;
+        
+        int migrate_action = 99;
+        while( migrate_action > 2 ) {
+            
+	    
+	    // compute all coefficient sensitivities
+            coef_sense.resize( margin_set.size()+1, false );
+            ublas::matrix_range< ublas::matrix<double> > R_range( R.view() );
+            ublas::symmetric_adaptor< ublas::matrix_range< ublas::matrix<double> > > R_view( R_range );
+            atlas::symv( R_view, H.row(index), coef_sense );
+	    if (debug)
+      	        std::cout << "Coefficient sensitivities: " << coef_sense << std::endl;
+	
+            // compute all margin sensitivities
+            atlas::gemv( H.view(), coef_sense, margin_sense );
+            atlas::xpy( candidate_column, margin_sense );
+	    if (debug)
+	    	std::cout << "Margin sensitivities: " << margin_sense << std::endl;
+	    
+
+	    if (debug) {
+	        std::cout << "Condition numbers: ";
+	 	for( unsigned int i=0;i<condition.size();++i) std::cout << condition[i] << ",";
+	    	std::cout << std::endl;
+	    }
+		            
+	    // seek for the largest possible increment in weight[index]
+	    scalar_type delta_weight_t;
+            scalar_type max_var;
+            int migrate_index;
+            int migrate_index_2;
+	    	
+            
+            if (debug)
+                std::cout << "weight_t -------> " << weight_t << std::endl;
+            
+            
+
+            // CHECK END CONDITIONS OF CURRENT POINT
+
+	    // -> INCREMENTAL ALGORITHM
+	    // current point directly to the margin set?
+            delta_weight_t = -condition[index] / margin_sense[index];
+            migrate_action = 0;
+            migrate_index = 0;
+            migrate_index_2 = index;
+
+            // -> INCREMENTAL ALGORITHM
+            // current point directly to the error set?
+            max_var = C - weight_t;
+            if (max_var < delta_weight_t) {
+                migrate_action = 1;
+                delta_weight_t = max_var;
+                migrate_index = 0;
+                migrate_index_2 = index;
+            }
+
+
+            // Check for migration from margin set to any of the other sets (remainder,error)
+            for( unsigned int i=0; i < margin_set.size(); ++i ) {
+
+		if ( coef_sense[i+1] < 0.0 ) {
+	                
+			// Check for migration from margin set to remaining set
+                 	max_var = -base_type::weight[i] / coef_sense[i+1];
+                	if (debug)
+			   std::cout << "margin -> remaining: " << max_var << std::endl;
+                 	if (max_var < delta_weight_t) {
+                       	migrate_action = 3;
+                       	delta_weight_t = max_var;
+                       	migrate_index = i;
+                       	migrate_index_2 = margin_set[i];
+                 	}
+		 } else {
+                        
+			// Check for migration from margin set to error set
+			
+			max_var = (C-base_type::weight[i]) / coef_sense[i+1];
+                	if (debug)
+			   std::cout << "margin -> error: " << max_var << std::endl;
+                	if (max_var < delta_weight_t) {
+                            	migrate_action = 4;
+                            	delta_weight_t = max_var;
+                            	migrate_index = i;
+                            	migrate_index_2 = margin_set[i];
+               		}
+		}
+            }
+	    
+	    
+	    
+	    // Check for migration from error set to margin set
+            for( unsigned int i=0; i<error_set.size(); ++i ) {
+                int idx = error_set[i];
+		
+		if ( margin_sense[idx] > 0.0 ) {
+		
+                max_var = -condition[idx] / margin_sense[idx];
+                	if (debug)
+			   std::cout << "error -> margin: " << max_var << std::endl;
+                if ( max_var < delta_weight_t) {
+                    migrate_action = 6;
+                    delta_weight_t = max_var;
+                    migrate_index = i;
+                    migrate_index_2 = error_set[i];
+                }
+		}
+            }
+
+
+            // Check for migration from the remaining set to the margin set
+            for( unsigned int i=0; i<remaining_set.size(); ++i ) {
+                int idx = remaining_set[i];
+		if (margin_sense[idx] < 0.0 ) {
+		
+                max_var = -condition[idx] / margin_sense[idx];
+                	if (debug)
+			   std::cout << "remaining -> margin: " << max_var << std::endl;
+                if (max_var < delta_weight_t) {
+                    migrate_action = 8;
+                    delta_weight_t = max_var;
+                    migrate_index = i;
+                    migrate_index_2 = remaining_set[i];
+                }
+		}
+            }
+
+            if (debug)
+                std::cout << "delta weight_t:            " << delta_weight_t << std::endl;
+            if (debug)
+                std::cout << "Migration action chosen:   " << migrate_action << std::endl;
+            if (debug)
+                std::cout << "Affected index:            " << migrate_index << std::endl;
+            if (debug)
+                std::cout << "Affected index 2:          " << migrate_index_2 << std::endl;
+            if (debug)
+                std::cout << "Next candidate for weight: " << weight_t + delta_weight_t << std::endl;
+		
+            
+	    // update the weight of the point under consideration
+	    weight_t += delta_weight_t;
+            // std::cout << "update weight_t to " << weight_t << std::endl;
+
+            // update weight vector and bias
+            atlas::axpy( delta_weight_t, ublas::vector_range<vector_type>(coef_sense,ublas::range(1,coef_sense.size())), base_type::weight );
+            base_type::bias += coef_sense[0] * delta_weight_t;
+	    
+	    if (debug) {
+	    std::cout << "Updated weights to: ";
+	    for( unsigned int i=0; i<base_type::weight.size(); ++i ) std::cout << base_type::weight[i] << " ";
+	    std::cout << std::endl;
+	    std::cout << "Bias is now: " << base_type::bias << std::endl;
+	    }
+
+            // update condition vector
+	    atlas::axpy( delta_weight_t, margin_sense, condition );
+
+	    if (debug) {
+	    std::cout << "Updated conditions to: ";
+	    for( unsigned int i=0; i<condition.size(); ++i ) std::cout << condition[i] << " ";
+	    std::cout << std::endl;
+	    }
+	    
+	    
+	    
+	    // TODO give the cases names instead of these numbers
+            switch( migrate_action ) {
+
+
+            case 0: {
+		    // End-condition reached. The point under consideration (located at index) is
+                    // added to the margin set, and the algorithm will terminate.
+                    // new sample -> margin set
+                    add_to_margin( index );
+		    base_type::weight.push_back( weight_t );
+                    if (debug)
+                        std::cout << "moved " << index << " to the margin set" << std::endl;
+                    break;
+                }
+
+            case 1: {
+                    // End-condition reached. The point under consideration is added
+                    // to the error set or error star set, and the algorithm will terminate.
+                    // new sample -> error/error-star set
+                    error_set.push_back( index );
+                    if (debug)
+                        std::cout << "moved " << index << " to the error set" << std::endl;
+                    break;
+                }
+            case 3: {
+                    // A sample has to migrate from the margin set to the
+                    // remaining set (weight=0)
+                    remove_from_margin( migrate_index );
+                    remaining_set.push_back(migrate_index_2);
+                    if (debug)
+                        std::cout << "moved " << migrate_index_2 << " from the margin set to the remaining set" << std::endl;
+                    break;
+                }
+
+
+            case 4: {
+                    // A sample has to migrate from the margin set to the error set (weight=C)
+                    remove_from_margin( migrate_index );
+                    error_set.push_back(migrate_index_2);
+                    if (debug)
+                        std::cout << "moved " << migrate_index_2 << " from the margin set to the error set" << std::endl;
+                    break;
+                }
+		
+            case 6: {
+                    // A sample has to migrate from the error set to the margin set, while
+                    // temporarily keeping its weight (=C)
+                    // error set -> margin set
+                    add_to_margin( migrate_index_2 );
+		    // quick (constant time) removal: swap with latest element in vector
+		    error_set[ migrate_index ] = error_set.back();
+		    error_set.pop_back();
+		    base_type::weight.push_back( C );
+                    if (debug)
+                        std::cout << "moved " << migrate_index_2 << " from the error set to the margin set" << std::endl;
+                    break;
+                }
+
+	    case 8: {
+                    // A sample has to migrate from the remaining set to the margin set, while
+                    // temporarily keeping its weight (=0)
+                    // remaining set -> margin set
+                    add_to_margin( migrate_index_2 );
+		    // quick (constant time) removal: swap with latest element in vector
+		    remaining_set[ migrate_index ] = remaining_set.back();
+		    remaining_set.pop_back();
+		    base_type::weight.push_back( 0.0 );
+                    if (debug)
+                        std::cout << "moved " << migrate_index_2 << " from the remaining set to the margin set" << std::endl;
+                    break;
+                }
+
+
+            default: {
+                    std::cout << "BUG IN Incremental SVM ROUTINE!!!" << std::endl;
+                    int qqq;
+                    std::cin >> qqq;
+                    break;
+                }
+
+	    }
+
+
+  	    //migrate_action = 0;
+	}
+	
+
+	if (debug)
+		std::cout << std::endl;
+
+    }
+    
+
+    // if a point is added to the margin set, additional actions have to be taken
+    // the inverse matrix has to be updated
+    // the system/design matrix has to be updated
+    void add_to_margin( int idx ) {
+
+        unsigned int old_size = R.size1();
+        unsigned int new_size = old_size + 1;
+
+        // adjust inverse matrix
+        if (new_size==2) {
+
+            // initialise the R matrix
+            R.grow_row_column();
+	    
+	    // this is correct: Q_ii == K(x_i,x_i)
+            R.matrix(0,0) = base_type::kernel( base_type::support_vector[idx], base_type::support_vector[idx] );
+            
+	    if (outputs[idx])	    
+	    	R.matrix(1,0) = -1.0;
+	    else
+	        R.matrix(1,0) = 1.0;
+            R.matrix(1,1) = 0.0;
+
+        } else {
+            // grow the R matrix
+            R.grow_row_column();
+
+            // fetch a view into the matrix _without_ the new row and columns
+            ublas::matrix_range< ublas::matrix<double> > R_range( R.shrinked_view() );
+            ublas::symmetric_adaptor< ublas::matrix_range< ublas::matrix<double> > > R_symm_view( R_range );
+
+            // fetch a view into the last row of the matrix of the _old_ size
+            ublas::matrix_row< ublas::matrix_range< ublas::matrix<double> > > R_row_part( R.shrinked_row(old_size) );
+
+            // compute the unscaled last row of R (similar to the coefficient sensitivities)
+            atlas::symv( R_symm_view, H.row(idx), R_row_part );
+
+            // compute the scaling factor
+
+            // BAIL OUT HERE IF NECESSARY
+
+            R.matrix(old_size,old_size) = -1.0 / (base_type::kernel( base_type::support_vector[idx], base_type::support_vector[idx] ) +
+                                                  atlas::dot( H.row(idx), R_row_part ));
+
+            // perform a rank-1 update of the R matrix
+            atlas::syr( R.matrix(old_size,old_size), R_row_part, R_symm_view );
+
+            // scale the last row with the scaling factor
+            atlas::scal( R.matrix(old_size,old_size), R_row_part );
+        }
+
+        // adjust "design" matrix
+        // NOTE has to be done AFTER the update of the R matrix!!  (to check ... )
+        // because a row of the "old" design matrix is used in the determination of "delta", see above.
+        H.grow_column();
+	if ( outputs[idx] ) {
+		for( unsigned int i=0; i<base_type::support_vector.size(); ++i )
+		  if ( outputs[i] )
+            	     H.matrix(i,old_size) = base_type::kernel( base_type::support_vector[idx], base_type::support_vector[i] );
+		  else 
+            	     H.matrix(i,old_size) = -base_type::kernel( base_type::support_vector[idx], base_type::support_vector[i] );
+	} else {
+		for( unsigned int i=0; i<base_type::support_vector.size(); ++i )
+		  if ( outputs[i] )
+            	     H.matrix(i,old_size) = -base_type::kernel( base_type::support_vector[idx], base_type::support_vector[i] );
+		  else 
+            	     H.matrix(i,old_size) = base_type::kernel( base_type::support_vector[idx], base_type::support_vector[i] );
+	}
+	
+// 	for( unsigned int i=0; i<base_type::support_vector.size(); ++i )
+//             H.matrix(i,old_size) = base_type::kernel( base_type::support_vector[i],base_type::support_vector[idx] );
+
+        // perform the actual set transition
+	margin_set.push_back( idx );
+    }
+
+
+
+    void remove_from_margin( unsigned int idx ) {
+
+        // remove from design matrix
+        H.swap_remove_column( idx+1 );
+
+        // remove from the inverse matrix
+        if (R.size1()==2) {
+            R.remove_row_col(1);
+            R.matrix(0,0)=0.0;
+        } else {
+
+	    ublas::matrix_range< ublas::matrix<double> > R_range( R.view() );
+            ublas::symmetric_adaptor< ublas::matrix_range< ublas::matrix<double> > > R_view( R_range );
+
+            vector_type R_row( row(R_view, idx+1) );
+            atlas::syr( -1.0/R.matrix(idx+1,idx+1), R_row, R_view );
+
+            // efficient removal from inverse matrix R
+	    R.swap_remove_row_col( idx+1 );
+        }
+	
+	// constant time removal from margin set index vector
+        margin_set[ idx ] = margin_set.back();
+        margin_set.pop_back();
+
+        // constant time removal from weight vector
+	base_type::weight[ idx ] = base_type::weight.back();
+	base_type::weight.pop_back();
+    }
+    
+    
+
+    static const bool debug = false;
+
+    matrix_view< ublas::matrix<double> > H;					// "design matrix" Q (not as in the paper!)
+    symmetric_view< ublas::matrix<double> > R;					// matrix inverse
+
+    // keep a copy of all outputs (this is needed)
+    std::vector<bool> outputs;
+    std::vector<scalar_type> condition;						// vector "g" containing conditions
+
+
+    scalar_type C;
+
+
+    /*! A vector containing the indices of the margin vectors (y_i f(x_i) == 1 */
+    std::vector<unsigned int> margin_set;
+    
+    /*! A vector containing the indices of the error vectors (exceeding the margin) */
+    std::vector<unsigned int> error_set;
+    
+    /*! A vector containing the indices of the remaining vectors (within the margin) */
+    std::vector<unsigned int> remaining_set;
+};
+
+
+
+
 // ON-LINE SVM RANKING ALGORITHM
 
-template< typename Problem, template<typename,int> class K>
-class online_svm<Problem,K, typename boost::enable_if< is_ranking<Problem> >::type >: 
-         public online_determinate<typename Problem::input_type, typename Problem::output_type,K> {
+template<typename Problem,template<typename> class Kernel>
+class online_svm<Problem,Kernel,typename boost::enable_if< is_ranking<Problem> >::type >: 
+         public kernel_machine<Problem,Kernel> {
 
-    typedef online_determinate<typename Problem::input_type, typename Problem::output_type,K> base_type;
+    typedef kernel_machine<Problem,Kernel> base_type;
     typedef typename base_type::kernel_type kernel_type;
     typedef typename base_type::result_type result_type;
     typedef typename Problem::input_type input_type;
@@ -848,103 +1462,12 @@ class online_svm<Problem,K, typename boost::enable_if< is_ranking<Problem> >::ty
   scalar_type C;
 
   typedef classification<input_type,bool> inner_problem;
-  online_svm<inner_problem,K> inner_machine;
+  online_svm<inner_problem,Kernel> inner_machine;
 };
-
-//
-//
-// ON-LINE SVM CLASSIFICATION ALGORITHM
-//
-//
-
-// it will become something like this:
-// template<typename P, template<typename,int> class K>
-
-template< typename Problem, template<typename,int> class K>
-class online_svm<Problem,K, typename boost::enable_if< is_classification<Problem> >::type >: 
-         public online_determinate<typename Problem::input_type, typename Problem::output_type,K> {
-
-    typedef online_determinate<typename Problem::input_type, typename Problem::output_type,K> base_type;
-    typedef typename base_type::kernel_type kernel_type;
-    typedef typename base_type::result_type result_type;
-    typedef typename Problem::input_type input_type;
-    typedef typename Problem::output_type output_type;
-    typedef double scalar_type;
-    typedef ublas::symmetric_matrix<double> symmetric_type;
-    typedef ublas::matrix<double> matrix_type;
-    typedef ublas::vector<double> vector_type;
-
-    online_svm( typename boost::call_traits<kernel_type>::param_type k,
-                typename boost::call_traits<scalar_type>::param_type max_weight ):
-    base_type(k), C(max_weight) {}
-    
-    /*! \param input an input pattern of input type I
-        \param output an output pattern of output type O */
-    void push_back( input_type const &input, output_type const &output ) {
-
-    	// if the output type is double, no conversion of +1, -1 to +1, -1 is needed?
-	// if the output type is bool, some conversions are needed to +1, -1
-    
-	// This seems to be a MUCH simpler case than regression
-	
-	
-        //vector_type margin_sense( base_type::support_vector.size() );
-
-        //vector_type maximum_values( margin_sense.size() );
-
-        //vector_type coef_sense;
-
-	
-	
-	
-	
-	
-	
-	
-	
-	    
-    }
-
-
-
-
-
-
-
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    scalar_type C;
-
-    /*! A vector containing the indices of the margin vectors (y_i f(x_i) == 1 */
-    std::vector<unsigned int> margin_set;
-    
-    /*! A vector containing the indices of the error vectors (exceeding the margin) */
-    std::vector<unsigned int> error_set;
-    
-    /*! A vector containing the indices of the remaining vectors (within the margin) */
-    std::vector<unsigned int> remaining_set;
-};
-
-
-
-
 
 
 
 } //namespace kml
 
 #endif
-
-
-
 
