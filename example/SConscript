@@ -3,8 +3,8 @@ Import('env')
 Import('atlas_link_libs')
 
 env.Program('gaussian.cpp')
-env.Program('svm_regression.cpp', LIBS=env['LIBS'] + atlas_link_libs )
+env.Program('svm_regression.cpp', LIBS=atlas_link_libs )
 #env.Program('svm_ranking.cpp', LIBS=atlas_link_libs )
 
 env.Program('svm_classification.cpp' )
-env.Program('online_svm_classification.cpp', LIBS=env['LIBS'] + atlas_link_libs )
+env.Program('online_svm_classification.cpp', LIBS=atlas_link_libs )
