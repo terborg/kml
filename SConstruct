@@ -127,7 +127,9 @@ elif env['CXX'] == '$CC' and env['CC'] == 'cl':
 	elif cpu.has_sse():
 		optimise_flags += ' /arch:SSE'
 
-
+# For convenience, attach the environment's LIBS to the atlas_link_libs
+atlas_link_libs += env['LIBS']
+		
 # Export the environment variables
 Export( 'env' )
 Export( 'atlas_link_libs' )

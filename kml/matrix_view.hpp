@@ -21,6 +21,7 @@
 #define MATRIX_VIEW_HPP
 
 #include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/vector_proxy.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/bindings/atlas/cblas.hpp>
 
@@ -219,9 +220,14 @@ public:
         return ublas::matrix_range<M>(matrix, ublas::range(0,view_rows-1),ublas::range(0,view_cols-1));
     }
 
-    inline ublas::matrix_row< ublas::matrix_range<M> > const row( int nr ) {
-        return ublas::row( ublas::matrix_range<M>(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols)), nr );
+    
+    inline ublas::matrix_vector_slice<M> const row( int nr ) {
+        return ublas::matrix_vector_slice<M>( matrix, ublas::slice( nr, 0, view_cols ), ublas::slice( 0, 1, view_cols ) );
     }
+    
+//     inline ublas::matrix_row< ublas::matrix_range<M> > const row( int nr ) {
+//         return ublas::row( ublas::matrix_range<M>(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols)), nr );
+//     }
 
     inline ublas::matrix_row< ublas::matrix_range<M> > const shrinked_row( int nr ) {
         return ublas::row( ublas::matrix_range<M>(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols-1)), nr );

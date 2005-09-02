@@ -164,7 +164,6 @@ public:
     friend class boost::serialization::access;
     typedef typename input_value<Input>::type scalar_type;
     typedef typename mpl::int_<N>::type derivative_order;
-
     
     /*! Construct an uninitialised Gaussian kernel */
     gaussian() {}
@@ -263,7 +262,6 @@ public:
     friend class boost::serialization::access;
     typedef typename input_value<Input>::type scalar_type;
     typedef typename mpl::int_<0>::type derivative_order;
-    typedef scalar_type precomp_type;
 
     /*! Construct an uninitialised Gaussian kernel */
     gaussian() {}
@@ -278,24 +276,6 @@ public:
     */
     typename power_value<Input,0>::type operator()( Input const &u, Input const &v ) const {
         return std::exp( exp_factor * distance_square( u, v ) );
-    }
-
-    /*! \param u input pattern u
-	\param dot_uu precomputed dot(u,u) for input pattern u
-        \param v input pattern v
-	\param dot_vv precomputed dot(v,v) for input pattern v
-	\return the result of the evaluation of the Gaussian kernel for these points. This version
-                does not compute pairwise differences (u_i-v_i), but evaluates (u-v)^2=u^2-2uv+v^2.
-    */
-    typename power_value<Input,0>::type operator()( Input const &u, precomp_type dot_uu,
-		     			            Input const &v, precomp_type dot_vv ) const {
-        // don't multiply with 2.0, but subtract twice
-	double dot_uv = atlas::dot( u, v );
-	return std::exp( exp_factor * ( dot_uu + dot_vv - dot_uv - dot_uv ) );
-    }
-
-    void precompute( Input const &u, precomp_type &precomp ) {
-	precomp = atlas::dot( u, u );
     }
 
     void set_width( typename boost::call_traits<scalar_type>::param_type sigma ) {

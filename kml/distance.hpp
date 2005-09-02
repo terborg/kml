@@ -104,9 +104,9 @@ namespace kml {
     };
     
     
-    
     struct scalar_square {
       template <typename T>
+      inline
       T operator()(const T& x) {
 	return x * x;
       }

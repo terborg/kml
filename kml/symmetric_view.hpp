@@ -21,6 +21,7 @@
 #define SYMMETRIC_VIEW_HPP
 
 #include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/vector_proxy.hpp>
 #include <boost/numeric/ublas/symmetric.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/bindings/atlas/cblas.hpp>
@@ -188,9 +189,14 @@ public:
         return ublas::row( ublas::matrix_range<M>(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols)), nr );
     }
 
-    inline ublas::matrix_row< ublas::matrix_range<M> > const shrinked_row( size_type const nr ) {
-        return ublas::row( ublas::matrix_range<M>(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols-1)), nr );
+    
+    inline ublas::matrix_vector_slice<M> const shrinked_row( size_type const nr ) {
+    	return ublas::matrix_vector_slice<M>( matrix, ublas::slice( nr, 0, view_cols-1 ), ublas::slice( 0, 1, view_cols-1 ) );
     }
+    
+//     inline ublas::matrix_row< ublas::matrix_range<M> > const shrinked_row( size_type const nr ) {
+//         return ublas::row( ublas::matrix_range<M>(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols-1)), nr );
+//     }
 
     inline ublas::matrix_column< ublas::matrix_range<M> > const column( size_type const nr ) {
         return ublas::column( ublas::matrix_range<M>(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols)), nr );

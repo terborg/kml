@@ -25,6 +25,7 @@
 #include <boost/range/size.hpp>
 #include <boost/range/value_type.hpp>
 #include <boost/type_traits/is_same.hpp>
+#include <kml/input_value.hpp>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -62,9 +63,7 @@ void read_svm_light( char* file_name, I &inputs, O &outputs ) {
 
     typedef typename boost::range_value<I>::type input_type;
     typedef typename boost::range_value<O>::type output_type;
-
-    // TODO
-    typedef double scalar_type;
+    typedef typename input_value<input_type>::type scalar_type;
 
     std::size_t number_of_samples = 0;
     std::size_t maximum_nonzeros = 0;
