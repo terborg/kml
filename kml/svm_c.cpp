@@ -45,8 +45,18 @@ typedef kml::classification<std::vector<double>, int> class_double;
 typedef kml::ranking<std::vector<double>, double> rank_double;
   
 extern "C" {  
+  void printweights(void *v) {
+    kml::svm<class_double, kml::gaussian>* m = (kml::svm<class_double, kml::gaussian> *) v;
+    m->printweights();
+  }
+
   void* kml_new_classification_double_gaussian(double k, double s) { 
     return (void *) new kml::svm<class_double, kml::gaussian>(k, s);
+  }
+
+  void* kml_copy_classification_double_gaussian(void *v) {
+    kml::svm<class_double, kml::gaussian>* m = (kml::svm<class_double, kml::gaussian> *) v;
+    return (void *) new kml::svm<class_double, kml::gaussian>(*m);
   }
 
   void kml_delete_classification_double_gaussian(void *v) {
@@ -61,12 +71,17 @@ extern "C" {
       points.push_back(std::vector<double>(*p, (*p) + sz_col));
       ++p;
     }
-    m->learn(points, std::vector<int>(t, t + sz_col));
+    std::vector<int> target(t, t+sz_row);
+    m->learn(points, target);
+    std::cerr << "Back in the wrapper, done learning" << std::endl;
   }
 
-  int kml_classify_double_gaussian(void *v, double *i, int sz) {
+  double kml_classify_double_gaussian(void *v, double *i, int sz) {
     kml::svm<class_double, kml::gaussian>* m = (kml::svm<class_double, kml::gaussian> *) v;
-    return (*m)(std::vector<double>(i, i+sz)) > 0;
+    if (m->operator()(std::vector<double>(i, i+sz)) > 0)
+      return 1;
+    else
+      return 0;
   }
 
   void* kml_new_ranking_double_gaussian(double k, double s) {

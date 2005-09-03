@@ -26,8 +26,8 @@ using std::getline; using std::cerr;
 
 namespace ublas = boost::numeric::ublas;
 
-typedef kml::classification<ublas::vector<double>, int> problem_type;
-typedef std::vector<ublas::vector<double> >::iterator vec_iter;
+typedef kml::classification<std::vector<double>, int> problem_type;
+typedef std::vector<std::vector<double> >::iterator vec_iter;
 
 int main(int argc, char *argv[]) {
 
@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
-  std::vector<ublas::vector<double> > points;
+  std::vector<std::vector<double> > points;
   std::vector<int> target;
 
   cerr << "Reading in vector...";
@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
     cout << boost::lexical_cast<double>(*i) << " ";
   cout << endl;
 
-  std::vector<ublas::vector<double> > testpoints;
+  std::vector<std::vector<double> > testpoints;
   std::vector<int> testtarget;
   cerr << "Reading in test vector...";
   kml::read_svm_light(argv[2], testpoints, testtarget);

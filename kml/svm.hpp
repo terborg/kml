@@ -242,18 +242,16 @@ public:
 	    k = i;
 	  }
 	}
-	if (takeStep(idx, k))
-	  return 1;
+	if (takeStep(idx, k)) 
+	  return 1;	
       }
-      for (size_t i = startpt(points.size()),
-	      j = i; i % points.size() != j; ++i) 
+
+      for (size_t i = startpt(points.size()), j = i; i<j+points.size(); ++i) 
 	if (base_type::weight[i%points.size()] != 0 && base_type::weight[i%points.size()] != C) 
 	  if (takeStep(idx, i%points.size())) 
 	    return 1;
-	  
 	
-      for (size_t i = startpt(points.size()),
-	      j = i-1; i % points.size() != j; ++i) 
+      for (size_t i = startpt(points.size()), j = i; i<j+points.size(); ++i) 
 	if (takeStep(idx, i%points.size())) 
 	  return 1;
     }
@@ -282,12 +280,18 @@ public:
 	  for (size_t i=0; i < points.size(); ++i)
 	    if (base_type::weight[i] != 0 && base_type::weight[i] != C) 
 	      numChanged += examineExample(i);
-	    
+
 	if (1 == examineAll) 
 	  examineAll = 0;
 	else if (0 == numChanged) 
 	  examineAll = 1;
       }
+    }
+
+    void printweights() {
+      for (int i=0; i<base_type::weight.size(); ++i)
+	std::cout << base_type::weight[i] << " ";
+      std::cout << std::endl;
     }
     
     scalar_type C;
