@@ -27,7 +27,7 @@ namespace kml {
 template<typename I, typename O>
 class ranking {
 public:
-  typedef ranking<I,O> type;
+  typedef ranking type;
   typedef I input_type;
   typedef O output_type;
 };
@@ -35,10 +35,10 @@ public:
   // Define templates is_ranking so we can recognise the ranking type of problems
 
 template<typename T>
-struct is_ranking: mpl::bool_<false> {};
+struct is_ranking: boost::mpl::bool_<false> {};
 
 template<typename I, typename O>
-struct is_ranking<ranking<I,O> >: mpl::bool_<true> {};
+struct is_ranking<ranking<I,O> >: boost::mpl::bool_<true> {};
 
 }
 
