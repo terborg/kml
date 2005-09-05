@@ -9,7 +9,7 @@ print "Compiler:", env['CXX']
 cpp_path = ['#']
 lib_path = []
 
-# Improve platform dependent (?) settings
+# Improve platform dependent settings
 boost_search_path = []
 atlas_search_path = []
 atlas_link_libs = []
@@ -119,7 +119,7 @@ elif env['CXX'] == '$CC' and env['CC'] == 'cl':
 	# /GL is whole program optimisation
 	optimise_flags = '/O2'
 	if cpu.is_PentiumPro() or cpu.is_PentiumII() or cpu.is_pentiumIII():
-		optimize_flags += ' /G6'
+		optimise_flags += ' /G6'
 	if cpu.is_PentiumIV() or cpu.is_Athlon():
    		optimise_flags += ' /G7'
 	if cpu.has_sse2():
@@ -134,7 +134,7 @@ atlas_link_libs += env['LIBS']
 Export( 'env' )
 Export( 'atlas_link_libs' )
 
-# If requested, convert te libatlas.a etc. to .dll and .lib files
+# If requested, convert the libatlas.a etc. to .dll and .lib files
 if env['PLATFORM'] == 'win32':
 	SConscript( dirs=['lib'] )
 
