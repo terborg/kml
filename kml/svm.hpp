@@ -289,7 +289,7 @@ public:
     }
 
     void printweights() {
-      for (int i=0; i<base_type::weight.size(); ++i)
+      for ( std::size_t i=0; i<base_type::weight.size(); ++i)
 	std::cout << base_type::weight[i] << " ";
       std::cout << std::endl;
     }

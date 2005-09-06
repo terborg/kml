@@ -107,8 +107,8 @@ public:
 	                           weight.end(),
 				   support_vector.begin(),
 				   bias,
-                                   std::plus<result_type>(), bind(detail::multiplies<double,result_type>(), _1,
-                                                             bind(kernel,x,_2)) );
+                                   std::plus<result_type>(), bind(detail::multiplies<double,result_type>(), boost::lambda::_1,
+                                                             bind(kernel,x,boost::lambda::_2)) );
     }
 
     template<class Archive>
@@ -163,8 +163,8 @@ public:
 		                           boost::begin( machine.get().support_vector ),
 					   bias,
                                            std::plus<result_type>(), 
-					   bind(detail::multiplies<double,result_type>(),_1, 
-					          bind(kernel,x,_2)) );
+					   bind(detail::multiplies<double,result_type>(),boost::lambda::_1, 
+					          bind(kernel,x,boost::lambda::_2)) );
 	}
 
 	kernel_type kernel;
