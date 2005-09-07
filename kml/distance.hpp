@@ -59,7 +59,7 @@ This should work on any kernel function.
 #include <numeric>
 
 namespace mpl = boost::mpl;
-using namespace boost::lambda;
+namespace lambda = boost::lambda;
 
 // TODO use call_traits for best possible parameter and return type selection
 // however, compiler seems to complain (at a first try)
@@ -99,7 +99,7 @@ namespace kml {
     struct has_NaNs: public std::unary_function<Range,bool> {
       bool operator()(Range const &u) {
 	typedef typename boost::range_value<Range>::type scalar_type;
-	return (std::find_if( boost::begin(u), boost::end(u), bind( std::not_equal_to<scalar_type>(),_1,_1) ) != u.end());
+	return (std::find_if( boost::begin(u), boost::end(u), lambda::bind( std::not_equal_to<scalar_type>(),lambda::_1,lambda::_1) ) != u.end());
       }
     };
     

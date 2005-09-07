@@ -21,10 +21,13 @@
 #ifndef KERNEL_MACHINE_HPP
 #define KERNEL_MACHINE_HPP
 
+#include <boost/lambda/bind.hpp>
 #include <boost/utility/enable_if.hpp>
 #include <kml/regression.hpp>
 #include <kml/classification.hpp>
 #include <kml/ranking.hpp>
+
+namespace lambda = boost::lambda;
 
 
 namespace kml {
@@ -61,8 +64,8 @@ public:
 	                           weight.end(),
 				   support_vector.begin(),
 				   bias,
-                                   std::plus<output_type>(), bind(detail::multiplies<double,output_type>(), _1,
-                                                             bind(kernel,x,_2)) );
+                                   std::plus<output_type>(), lambda::bind(detail::multiplies<double,output_type>(), lambda::_1,
+                                                             lambda::bind(kernel,x,lambda::_2)) );
     }
 
     void clear() {
@@ -105,8 +108,8 @@ public:
 	                           weight.end(),
 				   support_vector.begin(),
 				   bias,
-                                   std::plus<output_type>(), bind(detail::multiplies<double,output_type>(), _1,
-                                                             bind(kernel,x,_2)) ) >= 0.0;
+                                   std::plus<output_type>(), boost::lambda::bind(detail::multiplies<double,output_type>(), boost::lambda::_1,
+                                                             boost::lambda::bind(kernel,x,boost::lambda::_2)) ) >= 0.0;
     }
 
     void clear() {
