@@ -1,0 +1,6 @@
+
+Import('env')
+
+env.Program('statistics.cpp' )
+env.Program('scale.cpp' )
+
