@@ -140,4 +140,4 @@ if env['PLATFORM'] == 'win32':
 
 # Deligate to build scripts
 env.Replace( CXXFLAGS = cc_flags + ' ' + optimise_flags)
-SConscript( dirs=['example', 'kml'] )
+SConscript( dirs=['example', 'kml','test'] )
