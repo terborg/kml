@@ -11,7 +11,6 @@
 #include <boost/random/normal_distribution.hpp>
 #include <kml/gaussian.hpp>
 #include <kml/svm.hpp>
-#include <kml/statistics.hpp>
 #include <kml/io.hpp>
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/numeric/ublas/vector.hpp>

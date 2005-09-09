@@ -10,11 +10,7 @@
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/normal_distribution.hpp>
 #include <kml/gaussian.hpp>
-#include <kml/svm.hpp>
-#include <kml/statistics.hpp>
-
 #include <kml/online_svm.hpp>
-
 #include <kml/io.hpp>
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/numeric/ublas/vector.hpp>
