@@ -22,7 +22,7 @@
 #include <boost/numeric/ublas/vector.hpp> 
 #include <boost/numeric/ublas/io.hpp> 
 #include <vector> 
-
+#include <list>
 
 
 namespace ublas = boost::numeric::ublas;
@@ -34,6 +34,7 @@ int main(int argc, char *argv[])
 
 	ublas::vector<double> rand_vector(100);
 	ublas::vector<double> rand_vector_2(100);
+
 	for( int i=0; i<100; ++i ) {
 		rand_vector[i] = double(i);
 	}
@@ -58,8 +59,12 @@ int main(int argc, char *argv[])
 
 	// but, sum should also work on a vector!
 	std::vector< ublas::vector<double> > vec_of_vec;
-	for( int i=0; i<100; ++i )
+	std::list< ublas::vector<double> > list_of_vec;
+
+	for( int i=0; i<100; ++i ) {
 		vec_of_vec.push_back( rand_vector );
+		list_of_vec.push_back( rand_vector );
+	}
 	
 	// answer should be a vector of lenght 100 containing 0,100,...,9900
 	std::cout << kml::sum( vec_of_vec ) << std::endl;
@@ -77,8 +82,9 @@ int main(int argc, char *argv[])
 	std::cout << kml::variance( vec_of_vec ) << std::endl;
 	std::cout << kml::standard_deviation( vec_of_vec ) << std::endl;
 	std::cout << kml::root_mean_square( rand_vector ) << std::endl;
-		
 
+	std::cout << "List container: " << std::endl;	
+	std::cout << kml::minimum( list_of_vec ) << std::endl;
 }
 
 
