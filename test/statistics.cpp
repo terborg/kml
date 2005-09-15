@@ -85,6 +85,9 @@ int main(int argc, char *argv[])
 
 	std::cout << "List container: " << std::endl;	
 	std::cout << kml::minimum( list_of_vec ) << std::endl;
+
+
+	return EXIT_SUCCESS;
 }
 
 

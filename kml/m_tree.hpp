@@ -20,13 +20,9 @@
 #ifndef M_TREE_HPP
 #define M_TREE_HPP
 
-
-
 /*!
 
 M-tree: An Efficient Access Method for Similarity Search in Metric Spaces
-
-
 
 Two types of nodes:
 
@@ -36,60 +32,108 @@ Two types of nodes:
   root of a subtree called the covering tree of the routing object. It also keeps a 
   covering radius, and the distance and pointer to its parent node. 
 
+--> internal nodes do not store objects, only leaf nodes do. 2 types of nodes?
+  
+  
 
+New type of tree proposed? 
 
-
-
-
-
-
+Hierarchical gonzales
+--> Anchors hierarchy?? (can insert, remove operations be implemented in this kind?)
 
 */
 
 
-
-
-
+#include <boost/graph/adjacency_list.hpp>
 
 
 namespace kml {
 
 
+
+class node {
+
+	typedef int PointDescriptor;
+	
+	// a centroid is not present in the M-tree's routing object kind of node.
+	// but how to determine the distance in a query to a routing object?
+	// centroid could be the "first" edge?
+/*	PointDiscriptor centroid;
+	double radius;	*/
+	
+	// can be empty?
+/*	std::vector< PointDescriptor > points;*/
+};
+
+
+
+
+
 class m_tree {
 
+	// define an internal property map?
 
-
+	// covering radius of a node
+	// distance to parent of the node! 
 
 
 	/*! Insert a point into the M-tree. */
-	void insert( ... ) {
 	
-		// search a suitable routing node
+	// DataMap is our data
+	void insert() { // VertexDescriptor point, DataMap map ) {
+	
+		// do we have a root node?
+		
+		if (!root) {
+			
+			root = add_vertex( my_graph );
+		} else {
+			
+			// find a suitable 
 		
 		
-		// the M-tree grows bottom-up
 		
 		
+		}
+	}
+
+
+	
+	void range () {
+		// BFS visitor ! ! ! ! 
+	}
 	
 	
+	
+	void split( ) {
+		// basically peform a 2-center on the data of the node that will be split,
+		// forming 2 seperate nodes. These nodes are then linked by a new parent node.
+		// but how to reference that parent node?   
 	
 	
 	
 	
 	}
+	
+	
+	
+	
+
+
+	typedef boost::adjacency_list< boost::vecS,   // the way the out-edges are stored
+	                               boost::vecS    // the way the vertex set is stored
+				       > graph_type;
+	
+	graph_type my_graph;
+
+	// the root_node
+	boost::graph_traits< graph_type >::vertex_descriptor root;
+
+};
 
 
 
 
-
-
-
-
-
-
-
-
-}
 
 
 } //namespace kml

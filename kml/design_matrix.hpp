@@ -80,7 +80,6 @@ void design_matrix( Range const &source, Range const &target, Kernel const &kern
 
     for( unsigned int s = 0; s < boost::size( source ); ++s ) {
         for( unsigned int t = 0; t < boost::size( target ); ++t ) {
-            // TODO use cleaner syntax as soon as Boost.Range supports an ::at operator
             // or is [] usable already as well?
             result( t, s+1 ) = kernel( *(boost::begin(source) + s),
                                        *(boost::begin(target) + t) );

@@ -36,7 +36,7 @@
 #include <boost/range/value_type.hpp>
 #include <vector>
 
-#include "svm_c.h"
+#include "kml/svm_c.h"
 
 namespace ublas = boost::numeric::ublas;
 namespace mpl = boost::mpl;

@@ -134,10 +134,6 @@ atlas_link_libs += env['LIBS']
 Export( 'env' )
 Export( 'atlas_link_libs' )
 
-# If requested, convert the libatlas.a etc. to .dll and .lib files
-if env['PLATFORM'] == 'win32':
-	SConscript( dirs=['lib'] )
-
 # Deligate to build scripts
 env.Replace( CXXFLAGS = cc_flags + ' ' + optimise_flags)
-SConscript( dirs=['example', 'kml','test'] )
+SConscript( dirs=['example', 'lib','test'] )

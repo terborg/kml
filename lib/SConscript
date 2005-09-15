@@ -2,30 +2,40 @@
 # win32 cblas.dll and cblas.lib construction script
 #
 
-import os.path
 Import( 'env' )
 
-gcc_bin = env.FindFile( 'gcc.exe', ['/mingw/bin','/cygwin/bin'] )
 
-env.AppendENVPath('PATH', os.path.dirname(gcc_bin.abspath) )
+env.SharedLibrary('kml', ['svm_c.cpp'])
 
-dll_builder = Builder( action='gcc -mno-cygwin -shared -o $TARGET ' \
-'${TARGET.base}.def $SOURCES -Wl,--enable-auto-import -Wl,--no-whole-archive',
-		    suffix = '.dll',src_suffix = '.a' )
-lib_builder = Builder( action='link /lib /machine:ix86 /def:$SOURCES /out:$TARGET',
-                       suffix = '.lib', src_suffix = '.def' )
+#
+# In case of a Windows platform, build the win32 cblas.dll file on the basis of a ATLAS installation
+#
+if env['PLATFORM'] == 'win32':
+	import os.path
+	gcc_bin = env.FindFile( 'gcc.exe', ['/mingw/bin','/cygwin/bin'] )
 
-env.Append( BUILDERS = {'DLL': dll_builder } )
-env.Append( BUILDERS = {'LIB': lib_builder } )
+	env.AppendENVPath('PATH', os.path.dirname(gcc_bin.abspath) )
 
-env.DLL( 'cblas', [
-'/atlas/lib/winnt_p4sse2/liblapack.a',
-'/atlas/lib/winnt_p4sse2/libcblas.a',
-'/atlas/lib/winnt_p4sse2/libf77blas.a',
-'/atlas/lib/winnt_p4sse2/libatlas.a'
-] )
+	dll_builder = Builder( action='gcc -mno-cygwin -shared -o $TARGET ' \
+	'${TARGET.base}.def $SOURCES -Wl,--enable-auto-import -Wl,--no-whole-archive',
+			suffix = '.dll',src_suffix = '.a' )
+	lib_builder = Builder( action='link /lib /machine:ix86 /def:$SOURCES /out:$TARGET',
+			suffix = '.lib', src_suffix = '.def' )
 
-env.LIB( 'cblas.lib', 'cblas.def' )
+	env.Append( BUILDERS = {'DLL': dll_builder } )
+	env.Append( BUILDERS = {'LIB': lib_builder } )
+
+	env.DLL( 'cblas', [
+		'/atlas/lib/winnt_p4sse2/liblapack.a',
+		'/atlas/lib/winnt_p4sse2/libcblas.a',
+		'/atlas/lib/winnt_p4sse2/libf77blas.a',
+		'/atlas/lib/winnt_p4sse2/libatlas.a'
+	] )
+
+	env.LIB( 'cblas.lib', 'cblas.def' )
+	
+
+
 
 
 

@@ -21,10 +21,6 @@
 #define STATISTICS_HPP
 
 #include <boost/iterator/iterator_traits.hpp>
-
-//#include <boost/mpl/eval_if.hpp>
-#include <boost/mpl/if.hpp>
-
 #include <boost/range/begin.hpp>
 #include <boost/range/empty.hpp>
 #include <boost/range/end.hpp>
@@ -37,31 +33,20 @@
 #include <kml/input_value.hpp>
 #include <numeric>
 
-#include <boost/lambda/bind.hpp>
-
+#include <boost/bind.hpp>
+#include <kml/detail/prod_element.hpp>
+#include <kml/detail/div_element.hpp>
+#include <kml/detail/min_element.hpp>
+#include <kml/detail/max_element.hpp>
+#include <kml/detail/zero_element.hpp>
+#include <kml/detail/sqrt_element.hpp>
 
 #include <iostream>
-
-
-namespace mpl = boost::mpl;
-namespace lambda = boost::lambda;
-
 
 
 namespace kml {
 
 namespace detail {
-
-template<typename T>
-struct multiply_vector {
-	typedef typename input_value<T>::type scalar_type;
-	inline T operator()( T const &x, T const &y ) {
-		T answer(boost::size(x));
-		std::transform( boost::begin(x), boost::end(x), boost::begin(y), boost::begin(answer), std::multiplies<scalar_type>() );
-		return answer;
-	}
-};
-
 
 // multiplied difference, (x-mu_1)(y-mu_2), used by covariance estimator
 // used as binary_op2 in std::inner_product (explains operator())
@@ -69,10 +54,9 @@ struct multiply_vector {
 template<typename T>
 class multiply_diff: public std::binary_function<T const&, T const &, T> {
 public:
-    typedef typename mpl::if_< boost::is_scalar<T>, std::multiplies<T>, multiply_vector<T> >::type prod_op;
     multiply_diff( T const &m_x, T const &m_y ): mean_x(m_x), mean_y(m_y) {}
     inline T operator()(T const &x, T const &y) const {
-        return prod_op()(x-mean_x, y-mean_y);
+        return prod_element(x-mean_x, y-mean_y);
     }
     T mean_x;
     T mean_y;
@@ -85,72 +69,13 @@ public:
 template<typename T>
 class squared_diff: public std::binary_function<T const&, T const &, T> {
 public:
-    typedef typename mpl::if_< boost::is_scalar<T>, std::multiplies<T>, multiply_vector<T> >::type prod_op;
     squared_diff( T const &m ): mean(m) {}
     inline T operator()(T const &x, T const &y) const {
         T temp = y-mean;
-        return (x+prod_op()(temp,temp));
+        return (x+prod_element(temp,temp));
     }
     T mean;
 };
-
-template<typename T>
-class minimise_scalar: public std::binary_function<T const&, T const &, T> {
-public:
-    minimise_scalar() {}
-    inline T operator()(T const &x, T const &y) const {
-    	return std::min( x, y );
-    }
-};
-
-template<typename T>
-class maximise_scalar: public std::binary_function<T const&, T const &, T> {
-public:
-    maximise_scalar() {}
-    inline T operator()(T const &x, T const &y) const {
-    	return std::max( x, y );
-    }
-};
-
-template<typename T, template<typename> class Operation>
-class vector_functor: public std::binary_function<T const&, T const &, T> {
-public:
-    typedef typename boost::range_value<T>::type value_type;
-    typedef typename boost::range_const_iterator<T>::type const_iterator_type;
-    vector_functor() {}
-    inline T operator()(T const &x, T const &y) const {
-    	T result( boost::size(x) );
-	std::transform( boost::begin(x), boost::end(x), boost::begin(y), boost::begin(result), Operation<value_type>() );
-	return result;
-    }
-};
-
-template<typename T>
-struct scalar_op {
-	static inline T zero( T const ) {
-		return static_cast<T>(0);
-	}
-	static inline T sqrt( T const x ) {
-		return std::sqrt( x );
-	}
-};
-
-template<typename T>
-struct vector_op {
-    	typedef typename boost::range_value<T>::type value_type;
-    typedef typename boost::range_iterator<T>::type iterator_type;
-	static inline T zero( T const &x ) {
-		T answer( boost::size(x) );
-		std::fill( boost::begin(answer), boost::end(answer), static_cast<value_type>(0) );
-		return answer;
-	}
-	static inline T sqrt( T const &x ) {
-		T answer( x );
-		std::transform( boost::begin(x), boost::end(x), boost::begin(answer), lambda::bind( scalar_op<value_type>::sqrt, lambda::_1 ) );
-		return answer;
-	}
-};
-
 
 } // namespace detail
 
@@ -189,14 +114,13 @@ template<typename Range>
 typename boost::range_value<Range>::type minimum( Range const &x ) {
     typedef typename boost::range_value<Range>::type value_type;
     typedef typename boost::range_const_iterator<Range>::type const_iterator_type;
-    typedef typename mpl::if_< boost::is_scalar<value_type>, detail::minimise_scalar<value_type>
-                                      , detail::vector_functor<value_type, detail::minimise_scalar> >::type binary_op;
     if ( boost::size(x) == 1 )
     	return *boost::begin(x);
     else {
 	const_iterator_type my_iterator = boost::begin(x);
 	++my_iterator;
-    	return std::accumulate( my_iterator, boost::end(x), static_cast<value_type>(*boost::begin(x)), binary_op() );
+    	return std::accumulate( my_iterator, boost::end(x), static_cast<value_type>(*boost::begin(x)), 
+	                        boost::bind( &detail::min_element<value_type>, _1, _2 ) );
     }
 }
 
@@ -213,14 +137,13 @@ template<typename Range>
 typename boost::range_value<Range>::type maximum( Range const &x ) {
     typedef typename boost::range_value<Range>::type value_type;
     typedef typename boost::range_const_iterator<Range>::type const_iterator_type;
-    typedef typename mpl::if_< boost::is_scalar<value_type>, detail::maximise_scalar<value_type>
-                                      , detail::vector_functor<value_type, detail::maximise_scalar> >::type binary_op;
     if ( boost::size(x) == 1 )
     	return *boost::begin(x);
     else {
 	const_iterator_type my_iterator = boost::begin(x);
 	++my_iterator;
-    	return std::accumulate( my_iterator, boost::end(x), static_cast<value_type>(*boost::begin(x)), binary_op() );
+    	return std::accumulate( my_iterator, boost::end(x), static_cast<value_type>(*boost::begin(x)), 
+				boost::bind( &detail::max_element<value_type>, _1, _2 ) );
     }
 }
 
@@ -256,13 +179,10 @@ template<typename Range>
 typename boost::range_value<Range>::type variance( Range const &x ) {
     typedef typename boost::range_value<Range>::type value_type;
     typedef typename input_value<value_type>::type scalar_type;
-    typedef typename boost::range_const_iterator<Range>::type const_iterator_type;
-    typedef typename mpl::if_< boost::is_scalar<value_type>, detail::scalar_op<value_type>
-                                      , detail::vector_op<value_type> >::type value_type_op;
     if (boost::size(x)<2)
         return std::numeric_limits<value_type>::quiet_NaN();
     else {
-        return std::accumulate( boost::begin(x), boost::end(x), value_type_op::zero(*boost::begin(x)),
+        return std::accumulate( boost::begin(x), boost::end(x), detail::zero_element(*boost::begin(x)),
                                 detail::squared_diff<value_type>(mean(x)) ) /
                static_cast<scalar_type>(boost::size(x)-1);
     }
@@ -278,10 +198,7 @@ In case of vector values, it will return a vector with the standard deviation fo
 
 template<typename Range>
 typename boost::range_value<Range>::type standard_deviation( Range const &x ) {
-    typedef typename boost::range_value<Range>::type value_type;
-    typedef typename mpl::if_< boost::is_scalar<value_type>, detail::scalar_op<value_type>
-                                      , detail::vector_op<value_type> >::type value_type_op;
-    return value_type_op::sqrt( variance(x) );
+    return detail::sqrt_element( variance(x) );
 }
 
 
@@ -298,13 +215,10 @@ template<typename Range>
 typename boost::range_value<Range>::type mean_square( Range const &x ) {
     typedef typename boost::range_value<Range>::type value_type;
     typedef typename input_value<value_type>::type scalar_type;
-    typedef typename boost::range_const_iterator<Range>::type const_iterator_type;
-    typedef typename mpl::if_< boost::is_scalar<value_type>, detail::scalar_op<value_type>
-                                      , detail::vector_op<value_type> >::type value_type_op;
     if (boost::empty(x))
         return std::numeric_limits<value_type>::quiet_NaN();
     else
-        return std::accumulate( boost::begin(x), boost::end(x), value_type_op::zero(*boost::begin(x)),
+        return std::accumulate( boost::begin(x), boost::end(x), detail::zero_element(*boost::begin(x)),
                                 detail::squared_diff<value_type>(mean(x)) ) /
                static_cast<scalar_type>(boost::size(x));
 }
@@ -320,12 +234,33 @@ In case of vector values, it will return a vector with the root-mean-square for 
 
 template<typename Range>
 typename boost::range_value<Range>::type root_mean_square( Range const &x ) {
-    typedef typename boost::range_value<Range>::type value_type;
-    typedef typename mpl::if_< boost::is_scalar<value_type>, detail::scalar_op<value_type>
-                                      , detail::vector_op<value_type> >::type value_type_op;
-    return value_type_op::sqrt( mean_square(x) );
+    return detail::sqrt_element( mean_square(x) );
 }
 
+
+/*!
+Normalised-mean-square
+
+\param x a range of scalar values or vectors
+\return normalised_mean_square(x) = sqrt(mean_square(x))
+
+In case of vector values, it will return a vector with the normalised-mean-square for each element
+
+TODO
+*/
+
+
+template<typename Range>
+typename boost::range_value<Range>::type normalised_mean_square( Range const &x ) {
+    typedef typename boost::range_value<Range>::type value_type;
+    typedef typename input_value<value_type>::type scalar_type;
+    if (boost::empty(x))
+        return std::numeric_limits<value_type>::quiet_NaN();
+    else
+        return std::accumulate( boost::begin(x), boost::end(x), detail::zero_element(*boost::begin(x)),
+                                detail::squared_diff<value_type>(mean(x)) ) /
+               static_cast<scalar_type>(boost::size(x));
+}
 
 
 /*!
@@ -334,20 +269,18 @@ Unbiased estimator for the population covariance
 \param y a range of scalar values or vectors
 \return cov(x,y) = 1/(n-1) * sum( (x_i-mean(x))*(y_i-mean(y)) )
 
-In case of vector values, it will return a vector with the covariance per element
+In case of vector values, it will return a vector with the covariance per element -- not a covariance matrix
 */
 
 template<typename Range>
 typename boost::range_value<Range>::type covariance( Range const &x, Range const &y ) {
     typedef typename boost::range_value<Range>::type value_type;
     typedef typename input_value<value_type>::type scalar_type;
-    typedef typename mpl::if_< boost::is_scalar<value_type>, detail::scalar_op<value_type>
-                                      , detail::vector_op<value_type> >::type value_type_op;
     if ( (boost::size(x) != boost::size(y)) || (boost::size(x)<2) )
         return std::numeric_limits<value_type>::quiet_NaN();
     else
         return std::inner_product( boost::begin(x), boost::end(x), boost::begin(y),
-                                   value_type_op::zero(*boost::begin(x)),
+                                   detail::zero_element(*boost::begin(x)),
                                    std::plus<value_type>(),
                                    detail::multiply_diff<value_type>(mean(x), mean(y)) ) /
                static_cast<scalar_type>(boost::size(x)-1);
@@ -359,15 +292,13 @@ Statistical correlation of two ranges
 \param y a range of scalar values or vectors
 \return cor(x,y) = cov(x,y) / ( sd(x)*sd(y) )
 
-\todo vector types
+In case of vector values, it will return a vector with the correlation per element
 */
 
 template<typename Range>
 typename boost::range_value<Range>::type correlation( Range const &x, Range const &y ) {
-    return covariance(x,y) / (standard_deviation(x)*standard_deviation(y));
+    return detail::div_element( covariance(x,y), detail::prod_element( standard_deviation(x), standard_deviation(y) ) );
 }
-
-
 
 
 } // namespace kml

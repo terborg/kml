@@ -1,5 +1,32 @@
 
 These are generic installation instructions.
 
+Please be sure to have installed the following packages:
+
+Scons  http://www.scons.org
+Boost  http://www.boost.org
+ATLAS  http://math-atlas.sourceforge.net
+
+The Boost Numeric.Bindings are included in the Kernel-Machine library, but can also 
+be downloaded seperately through Boost's sandbox CVS.
+
+The KML contains a few optional bindings as well, these are included mostly for testing 
+purposes. 
+
+libfann - The fast Artificial Neural Network Library, which can do basic feed-forward neural
+nets at decent speeds.
+
+
+If all is installed, go to the top-level KML directory, and run scons
+
+$ cd /foo/bar/kml
+$ scons
+
+to get the examples, test programs, some libraries, and under Windows, a CBLAS dll to be built.
+
+
+
+
+
 
 

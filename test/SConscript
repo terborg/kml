@@ -3,4 +3,6 @@ Import('env')
 
 env.Program('statistics.cpp' )
 env.Program('scale.cpp' )
+env.Program('m_tree.cpp' )
+env.Program('matrix_vector_ops.cpp')
 

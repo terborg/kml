@@ -21,49 +21,21 @@
 #define SCALE_HPP
 
 #include <kml/statistics.hpp>
+#include <kml/detail/reciprocal_element.hpp>
+#include <kml/detail/prod_element.hpp>
 
-
-namespace lambda = boost::lambda;
-
-namespace kml {
-
-namespace detail {
+namespace kml { namespace detail {
 
 template<typename T>
 class linear_transform: public std::unary_function<T const&, T> {
 public:
-    // multiply vector is defined in statistics.hpp
-    typedef typename mpl::if_< boost::is_scalar<T>, std::multiplies<T>, multiply_vector<T> >::type prod_op;
     linear_transform( T const &a, T const &m ): add(a), mult(m) {}
     inline T operator()(T const &x) const {
-        return prod_op()(mult, x+add);
+        return prod_element<T>( mult, x+add );
     }
     T add;
     T mult;
 };
-
-template<typename T>
-struct reciprocal_scalar {
-	static inline T eval( T const x ) {
-		if (std::fabs(x) < std::numeric_limits<T>::epsilon())
-			return static_cast<T>(1);
-		else
-			return static_cast<T>(1) / x;
-	}
-};
-
-template<typename T>
-struct reciprocal_vector {
-    typedef typename boost::range_value<T>::type value_type;
-	static inline T eval( T const &x ) {
-		T answer( boost::size(x) );
-		std::transform( boost::begin(x), boost::end(x), boost::begin(answer), lambda::bind( reciprocal_scalar<value_type>::eval, lambda::_1 ) );
-		return answer;
-	}
-};
-
-
-
 
 } // namespace detail
 
@@ -75,21 +47,19 @@ Scale a range of data, with mean to mean (default 0) and standard deviation to s
 \pre length of range > 1 (to compute standard deviation)
 \pre standard_deviation(range) > machine epsilon (to be able to devide by standard deviation)
 \returns x_i = (x_i - mean(x)) / sd(x)
+
+If a standard deviation happens to be (too close to) zero, it is forced to be 1. The mean will 
+be subtracted in that case, so that element will be 0 for all samples.
 */
 
 template<typename Range>
 void scale_mean_sd( Range &x ) {
     typedef typename boost::range_value<Range>::type value_type;
-    typedef typename mpl::if_< boost::is_scalar<value_type>, detail::reciprocal_scalar<value_type>, 
-                                       detail::reciprocal_vector<value_type> >::type reciprocal_op;
     // to compute the standard deviation, we need at least two samples
     if (boost::size(x)>1) {
-	// compute the sd
-        value_type sd(standard_deviation(x));
-        // we have to divide by the standard deviation
-        // if the sd is too small, do nothing
         std::transform( boost::begin(x), boost::end(x), boost::begin(x),
-                        detail::linear_transform<value_type>(-mean(x), reciprocal_op::eval(sd)));
+                        detail::linear_transform<value_type>(-mean(x), 
+			detail::reciprocal_element(standard_deviation(x))) );
     }
 }
 
@@ -105,16 +75,12 @@ Scale a range of data, with minimum to min (default 0) and maximum to max (defau
 template<typename Range>
 void scale_min_max( Range &x ) {
     typedef typename boost::range_value<Range>::type value_type;
-    typedef typename mpl::if_< boost::is_scalar<value_type>, detail::reciprocal_scalar<value_type>, 
-                                       detail::reciprocal_vector<value_type> >::type reciprocal_op;
     // to get a different a minimum and maximum, we need at least two samples
     if (boost::size(x)>1) {
         value_type min(minimum(x));
-	value_type diff=maximum(x)-min;
-	// we have to divide by the difference of min and max
-        // if that value if too small, do nothing
         std::transform( boost::begin(x), boost::end(x), boost::begin(x),
-                            detail::linear_transform<value_type>(-min, reciprocal_op::eval(diff) ));
+                        detail::linear_transform<value_type>(-min, 
+                        detail::reciprocal_element<value_type>(maximum(x)-min) ));
     }
 }
 

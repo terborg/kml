@@ -694,7 +694,7 @@ public:
             ublas::symmetric_adaptor< ublas::matrix_range< ublas::matrix<double> > > R_symm_view( R_range );
 
             // fetch a view into the last row of the matrix of the _old_ size
-            ublas::matrix_row< ublas::matrix_range< ublas::matrix<double> > > R_row_part( R.shrinked_row(old_size) );
+	    ublas::matrix_vector_slice< ublas::matrix<double> > R_row_part( R.shrinked_row(old_size) );
 
             // compute the unscaled last row of R (similar to the coefficient sensitivities)
             atlas::symv( R_symm_view, H.row(idx), R_row_part );
@@ -787,7 +787,26 @@ public:
 
 On-line SVM classification algorithm. 
 
+Duplicate data points (we're not yet discussing linear dependent points) cause the original algorithm to 
+malfunction. This could be solved by introducing a weight per point, with the weight the number of 
+times a point is present the data set.
 
+Of course, the remaining points could be never measured at all: so we don't know (or care) whether duplicates 
+are present in that kind of points. 
+
+The original algorithm will crash only when a duplicate point enters the margin_set 
+
+The algorithm will be able to detect whether a duplicate is being entered when it runs the 
+satisfy_KKT_conditions; the distance between a new point and an existing point will be 0. 
+
+In case of duplicate points, a weight of a prior point could be increased by 1 to represent that point. In 
+case of linear dependent points; the weight of a number of prior points could be increased by the projection
+weights (and that linear dependent point can be left out).
+
+\todo
+- introduce weighted examples
+- be able to process contradicting examples (weight==0, then answer indeterminate or something)
+- Unlearning of examples
 
 \section bibliography2 References
 
@@ -861,9 +880,18 @@ public:
     void push_back( input_type const &input, output_type const &output ) {
 
         int index = base_type::support_vector.size();
+        
+	debug = false;
+	//if (index > 581) debug=true;
+	
+	
+	//if (debug)
+	std::cout << "Starting incremental SVM algorithm with " << index << " prior points" << std::endl;
 
-        if (debug)
-            std::cout << "Starting incremental SVM algorithm with " << index << " prior points" << std::endl;
+	
+		//if (index > 615 ) debug = true; else debug = false;
+	
+        //if (debug)
 
 	// record condition figure
 	if ( output )
@@ -896,7 +924,7 @@ public:
             if (debug)
                 std::cout << "Initialising the Accurate Online Support Vector Machine" << std::endl;
 
-	    // set f(x_i) == y_i
+	    // set f(x_i) to y_i
             base_type::bias = (output ? 1.0 : -1.0);
             condition.back() = 0.0;
             
@@ -948,9 +976,8 @@ public:
 	    
 /*	    std::cout << "Filled H to ";
     	    std::cout << H.view() << std::endl;*/
-	    
-        
-	    
+
+	    	    
 	    if (debug)
 	    	std::cout << "condition[index] is " << condition.back() << std::endl;
 	    if ( condition.back() >= 0.0 ) {
@@ -991,7 +1018,13 @@ public:
         scalar_type weight_t = init_weight;
         	
 	// create a candidate COLUMN of design matrix H; this column also includes the point under consideration
-        vector_type candidate_column( base_type::support_vector.size() );
+        
+	//
+	// TODO
+	// TODO Duplicate detection can be done right here (distance function using kernels etc.)
+	// TODO
+	//
+	vector_type candidate_column( base_type::support_vector.size() );
 	if ( outputs[index] ) {
 		for( unsigned int i=0; i<base_type::support_vector.size(); ++i )
 		  if ( outputs[i] )
@@ -1016,7 +1049,7 @@ public:
         while( migrate_action > 2 ) {
             
 	    
-	    // compute all coefficient sensitivities
+	    // Equation 10: compute all coefficient sensitivities
             coef_sense.resize( margin_set.size()+1, false );
             ublas::matrix_range< ublas::matrix<double> > R_range( R.view() );
             ublas::symmetric_adaptor< ublas::matrix_range< ublas::matrix<double> > > R_view( R_range );
@@ -1024,13 +1057,12 @@ public:
 	    if (debug)
       	        std::cout << "Coefficient sensitivities: " << coef_sense << std::endl;
 	
-            // compute all margin sensitivities
+            // Equation 12: compute all margin sensitivities
             atlas::gemv( H.view(), coef_sense, margin_sense );
             atlas::xpy( candidate_column, margin_sense );
 	    if (debug)
 	    	std::cout << "Margin sensitivities: " << margin_sense << std::endl;
-	    
-
+		
 	    if (debug) {
 	        std::cout << "Condition numbers: ";
 	 	for( unsigned int i=0;i<condition.size();++i) std::cout << condition[i] << ",";
@@ -1038,7 +1070,7 @@ public:
 	    }
 		            
 	    // seek for the largest possible increment in weight[index]
-	    scalar_type delta_weight_t;
+	    scalar_type delta_weight_t(0);
             scalar_type max_var;
             int migrate_index;
             int migrate_index_2;
@@ -1047,26 +1079,38 @@ public:
             if (debug)
                 std::cout << "weight_t -------> " << weight_t << std::endl;
             
-            
-
+	    // TODO
+	    // BUG!! Use adult-1a.data to get this bug to work
+	    // TODO
+	    if ( margin_sense[index] < 0.0 ) {
+	    	std::cout << "Something seems to be wrong, algorithm will get stuck now" << std::endl;
+		std::cout << "Current index: " << index << std::endl;
+		std::cout << "Matrix R: " << R.view() << std::endl;
+		int qqq;
+		std::cin >> qqq;
+	    }
+	    
             // CHECK END CONDITIONS OF CURRENT POINT
-
-	    // -> INCREMENTAL ALGORITHM
+            // -> INCREMENTAL ALGORITHM
 	    // current point directly to the margin set?
-            delta_weight_t = -condition[index] / margin_sense[index];
+	    delta_weight_t = -condition[index] / margin_sense[index];
+	    if (debug)
+	    std::cout << "point -> margin: " << delta_weight_t << std::endl;
             migrate_action = 0;
             migrate_index = 0;
             migrate_index_2 = index;
 
-            // -> INCREMENTAL ALGORITHM
-            // current point directly to the error set?
+      	    // current point directly to the error set?
             max_var = C - weight_t;
-            if (max_var < delta_weight_t) {
-                migrate_action = 1;
-                delta_weight_t = max_var;
-                migrate_index = 0;
-                migrate_index_2 = index;
-            }
+    	    if (debug)
+    	    std::cout << "point -> error: " << max_var << std::endl;
+      	    if (max_var < delta_weight_t) {
+               	migrate_action = 1;
+               	delta_weight_t = max_var;
+               	migrate_index = 0;
+               	migrate_index_2 = index;
+      	    }
+
 
 
             // Check for migration from margin set to any of the other sets (remainder,error)
@@ -1076,7 +1120,7 @@ public:
 	                
 			// Check for migration from margin set to remaining set
                  	max_var = -base_type::weight[i] / coef_sense[i+1];
-                	if (debug)
+                	if (debug || max_var > 1e10)
 			   std::cout << "margin -> remaining: " << max_var << std::endl;
                  	if (max_var < delta_weight_t) {
                        	migrate_action = 3;
@@ -1087,9 +1131,8 @@ public:
 		 } else {
                         
 			// Check for migration from margin set to error set
-			
 			max_var = (C-base_type::weight[i]) / coef_sense[i+1];
-                	if (debug)
+                	if (debug || max_var > 1e10)
 			   std::cout << "margin -> error: " << max_var << std::endl;
                 	if (max_var < delta_weight_t) {
                             	migrate_action = 4;
@@ -1100,8 +1143,6 @@ public:
 		}
             }
 	    
-	    
-	    
 	    // Check for migration from error set to margin set
             for( unsigned int i=0; i<error_set.size(); ++i ) {
                 int idx = error_set[i];
@@ -1109,7 +1150,7 @@ public:
 		if ( margin_sense[idx] > 0.0 ) {
 		
                 max_var = -condition[idx] / margin_sense[idx];
-                	if (debug)
+                	if (debug || max_var > 1e10)
 			   std::cout << "error -> margin: " << max_var << std::endl;
                 if ( max_var < delta_weight_t) {
                     migrate_action = 6;
@@ -1127,7 +1168,7 @@ public:
 		if (margin_sense[idx] < 0.0 ) {
 		
                 max_var = -condition[idx] / margin_sense[idx];
-                	if (debug)
+                	if (debug || max_var > 1e10)
 			   std::cout << "remaining -> margin: " << max_var << std::endl;
                 if (max_var < delta_weight_t) {
                     migrate_action = 8;
@@ -1149,23 +1190,24 @@ public:
             if (debug)
                 std::cout << "Next candidate for weight: " << weight_t + delta_weight_t << std::endl;
 		
-            
-	    // update the weight of the point under consideration
+		
+	    // Update the weight of the point under consideration
 	    weight_t += delta_weight_t;
-            // std::cout << "update weight_t to " << weight_t << std::endl;
-
-            // update weight vector and bias
+            
+	    // Equation 8: update bias using its coefficient sensitivities and the change in the weight_t
+            base_type::bias += delta_weight_t * coef_sense[0];
+            
+	    // Equation 9: update weight vector using the coefficient sensitivities and the change in the weight_t
             atlas::axpy( delta_weight_t, ublas::vector_range<vector_type>(coef_sense,ublas::range(1,coef_sense.size())), base_type::weight );
-            base_type::bias += coef_sense[0] * delta_weight_t;
 	    
 	    if (debug) {
-	    std::cout << "Updated weights to: ";
-	    for( unsigned int i=0; i<base_type::weight.size(); ++i ) std::cout << base_type::weight[i] << " ";
-	    std::cout << std::endl;
-	    std::cout << "Bias is now: " << base_type::bias << std::endl;
+	    	std::cout << "Updated weights to: ";
+	    	for( unsigned int i=0; i<base_type::weight.size(); ++i ) std::cout << base_type::weight[i] << " ";
+	    	std::cout << std::endl;
+	    	std::cout << "Bias is now: " << base_type::bias << std::endl;
 	    }
 
-            // update condition vector
+            // Equation 11: update condition vector
 	    atlas::axpy( delta_weight_t, margin_sense, condition );
 
 	    if (debug) {
@@ -1194,7 +1236,7 @@ public:
             case 1: {
                     // End-condition reached. The point under consideration is added
                     // to the error set or error star set, and the algorithm will terminate.
-                    // new sample -> error/error-star set
+                    // new sample -> error set
                     error_set.push_back( index );
                     if (debug)
                         std::cout << "moved " << index << " to the error set" << std::endl;
@@ -1229,8 +1271,9 @@ public:
 		    error_set[ migrate_index ] = error_set.back();
 		    error_set.pop_back();
 		    base_type::weight.push_back( C );
-                    if (debug)
+                    if (debug) 
                         std::cout << "moved " << migrate_index_2 << " from the error set to the margin set" << std::endl;
+			//std::cout << delta_weight_t << std::endl;
                     break;
                 }
 
@@ -1258,6 +1301,12 @@ public:
 
 	    }
 
+            if (debug) {
+	    	int qqq;
+		std::cin >> qqq;
+	    	
+	    }
+
 
   	    //migrate_action = 0;
 	}
@@ -1277,6 +1326,9 @@ public:
         unsigned int old_size = R.size1();
         unsigned int new_size = old_size + 1;
 
+	// if a point moves to the margin set, by definition, its condition equals 0.
+	condition[ idx ] = 0.0;
+
         // adjust inverse matrix
         if (new_size==2) {
 
@@ -1285,11 +1337,7 @@ public:
 	    
 	    // this is correct: Q_ii == K(x_i,x_i)
             R.matrix(0,0) = base_type::kernel( base_type::support_vector[idx], base_type::support_vector[idx] );
-            
-	    if (outputs[idx])	    
-	    	R.matrix(1,0) = -1.0;
-	    else
-	        R.matrix(1,0) = 1.0;
+      	    R.matrix(1,0) = ( outputs[idx] ? -1.0 : 1.0 );
             R.matrix(1,1) = 0.0;
 
         } else {
@@ -1301,24 +1349,70 @@ public:
             ublas::symmetric_adaptor< ublas::matrix_range< ublas::matrix<double> > > R_symm_view( R_range );
 
             // fetch a view into the last row of the matrix of the _old_ size
-            ublas::matrix_row< ublas::matrix_range< ublas::matrix<double> > > R_row_part( R.shrinked_row(old_size) );
-
+            //ublas::matrix_row< ublas::matrix_range< ublas::matrix<double> > > R_row_part( R.shrinked_row(old_size) );
+            ublas::matrix_vector_slice< ublas::matrix<double> > R_row_part( R.shrinked_row(old_size) );
+	    
             // compute the unscaled last row of R (similar to the coefficient sensitivities)
             atlas::symv( R_symm_view, H.row(idx), R_row_part );
 
             // compute the scaling factor
 
             // BAIL OUT HERE IF NECESSARY
-
-            R.matrix(old_size,old_size) = -1.0 / (base_type::kernel( base_type::support_vector[idx], base_type::support_vector[idx] ) +
+	    
+	    double divisor = (base_type::kernel( base_type::support_vector[idx], base_type::support_vector[idx] ) +
                                                   atlas::dot( H.row(idx), R_row_part ));
+	    
+	    // Pseudoinverse of a SVD:
+	    // in this case: fill that part of R with zeros! 
+	    // see http://kwon3d.com/theory/jkinem/svd.html
+	    // for values on the diagonal
+	    // if w_i > epsilon, then w_i  = 1/w_i
+	    // else w_i = 0
+	    // i.e. infinity is replaced with 0.
+	    // So, that row (and column) of R should become 0.
+	    
+	    // --->>> Sample 65 is identical to 582!!
+	    // So, their distance is 0.
+	    // So, the max_weight of 65 = 2C?!!
+	    
+	    // At the moment, let the algorithm crash, because adding 0 to R is not a final solution (although it works!).
+	    if (std::fabs( divisor ) < 1e-12 ) {
+	    	
+		// from http://bach.ece.jhu.edu/pub/gert/slides/kernel.pdf
+		// When the incremental inverse jacobian is (near) ill conditioned, a direct L1-norm minimisation
+		// of the \alpha coefficients yields an optimally sparse solution
+		
+		std::cout << std::endl;
+		std::cout << "k_tt + dot( H.row(idx), R_row_part ) = " << divisor << std::endl;
+	    	std::cout << "Problem detected, algorithm will get stuck real soon now." << std::endl;
+		std::cout << "Point to be added to the margin set: " << idx << std::endl;
+		std::cout << H.row(idx) << std::endl;
+		std::cout << R_row_part << std::endl;
+		
+		for( unsigned int i=0; i<margin_set.size(); ++i ) {
+			std::cout << margin_set[i] << " ";
+		}
+		std::cout << std::endl << std::endl;
+		
+		int qqq;
+		std::cin >> qqq;
+		
+		//atlas::set( 0.0, R_row_part );
+		//R.matrix( old_size, old_size ) = 0.0;
+		
+		
+	    }
 
+            // the divisor is within acceptable bounds; increase the R matrix as usual
+            R.matrix(old_size,old_size) = -1.0 / divisor;
+						  
             // perform a rank-1 update of the R matrix
             atlas::syr( R.matrix(old_size,old_size), R_row_part, R_symm_view );
 
             // scale the last row with the scaling factor
             atlas::scal( R.matrix(old_size,old_size), R_row_part );
-        }
+        
+	}
 
         // adjust "design" matrix
         // NOTE has to be done AFTER the update of the R matrix!!  (to check ... )
@@ -1358,11 +1452,22 @@ public:
             R.matrix(0,0)=0.0;
         } else {
 
+	    
+	    double divisor = R.matrix(idx+1,idx+1);
+	    
+	    if ( std::fabs( divisor ) < 1e-12 ) {
+	    	std::cout << "A problem occured when removing from the margin, small divisor detected." << std::endl;
+	        std::cout << "Divisor value: " << divisor << std::endl;
+		int qqq;
+		std::cin >> qqq;
+	    }
+	    
+	    
 	    ublas::matrix_range< ublas::matrix<double> > R_range( R.view() );
             ublas::symmetric_adaptor< ublas::matrix_range< ublas::matrix<double> > > R_view( R_range );
 
             vector_type R_row( row(R_view, idx+1) );
-            atlas::syr( -1.0/R.matrix(idx+1,idx+1), R_row, R_view );
+            atlas::syr( -1.0/divisor, R_row, R_view );
 
             // efficient removal from inverse matrix R
 	    R.swap_remove_row_col( idx+1 );
@@ -1375,11 +1480,47 @@ public:
         // constant time removal from weight vector
 	base_type::weight[ idx ] = base_type::weight.back();
 	base_type::weight.pop_back();
+	
     }
     
-    
 
-    static const bool debug = false;
+    //
+    // leave-one-out crossvalidation error estimate
+    // section 3.1 of "Incremental and Decremental Support Vector Machine Learning"
+    // 
+    double loocv() {
+    
+	    // all remaining samples: "correct"
+	    
+	    for( unsigned int i=0; i<margin_set.size(); ++i ) {
+	    	unsigned int idx = margin_set[i];
+	    
+	    	if (condition[idx] < -1.0) {
+			// sample is "incorrect"
+		} else {
+		        // condition is >= -1.0:
+			// perform decremental algorithm until a stopping criterion
+			// satisfy_KKT_conditions( idx, base_type::weight[i] );
+			
+			if ( condition[idx] < -1.0 ) {
+			   // sample is "incorrect"
+			} else {
+			   // sample is correct, because the other stopping criterion has been met
+			   // i.e. the condition that weight[i]==0
+			}
+		}
+	    }
+
+	    	for( unsigned int i=0; i<error_set.size(); ++i ) {
+	    		// do the same for the error vectors as done for the margin vectors
+		}
+	    
+	    return 0.0;
+	}
+
+    
+    //static const bool debug = false;
+    bool debug;
 
     matrix_view< ublas::matrix<double> > H;					// "design matrix" Q (not as in the paper!)
     symmetric_view< ublas::matrix<double> > R;					// matrix inverse
@@ -1388,9 +1529,7 @@ public:
     std::vector<bool> outputs;
     std::vector<scalar_type> condition;						// vector "g" containing conditions
 
-
     scalar_type C;
-
 
     /*! A vector containing the indices of the margin vectors (y_i f(x_i) == 1 */
     std::vector<unsigned int> margin_set;
@@ -1400,6 +1539,7 @@ public:
     
     /*! A vector containing the indices of the remaining vectors (within the margin) */
     std::vector<unsigned int> remaining_set;
+    
 };
 
 

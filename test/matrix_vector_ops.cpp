@@ -1,0 +1,74 @@
+/***************************************************************************
+ *  The Kernel-Machine Library                                             *
+ *  Copyright (C) 2004, 2005 by Rutger W. ter Borg                         *
+ *                                                                         *
+ *  This program is free software; you can redistribute it and/or          *
+ *  modify it under the terms of the GNU General Public License            *
+ *  as published by the Free Software Foundation; either version 2         *
+ *  of the License, or (at your option) any later version.                 *
+ *                                                                         *
+ *  This program is distributed in the hope that it will be useful,        *
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of         *
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
+ *  GNU General Public License for more details.                           *
+ *                                                                         *
+ *  You should have received a copy of the GNU General Public License      *
+ *  along with this program; if not, write to the Free Software            *
+ *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307  *
+ ***************************************************************************/
+
+
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/io.hpp>
+#include <iostream>
+ 
+#include <kml/detail/prod_element.hpp>
+
+namespace ublas = boost::numeric::ublas;
+ 
+  
+int main(int argc, char *argv[])
+{
+
+	ublas::matrix< ublas::vector<double > > test_matrix;
+	
+	test_matrix.resize( 2, 2 );
+	
+	
+	std::cout << test_matrix << std::endl;
+
+	ublas::vector<double> u(2);
+	ublas::vector<double> v(2);
+	ublas::vector<double> w(2);
+	
+	u[0] = 1.0;
+	u[1] = -1.0;
+	v[0] = 0.0;
+	v[1] = 2.0;
+	w[0] = 0.5;
+	w[1] = 0.5;
+	
+	test_matrix(0,0) = u;
+	test_matrix(0,1) = v;
+	test_matrix(1,0) = w;
+	test_matrix(1,1) = u;
+	
+	std::cout << test_matrix << std::endl;
+
+	//std::cout << ublas::prod( test_matrix, w ) << std::endl;
+	
+	ublas::vector<double> z = kml::detail::prod_element( u, v );
+	std::cout << z << std::endl;
+	
+	
+	
+
+	return EXIT_SUCCESS;
+}
+
+
+
+
+
+  
