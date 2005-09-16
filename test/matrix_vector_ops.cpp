@@ -25,14 +25,18 @@
  
 #include <kml/detail/prod_element.hpp>
 
+#include <kml/detail/gemv.hpp>
+
 namespace ublas = boost::numeric::ublas;
  
   
 int main(int argc, char *argv[])
 {
 
+	ublas::matrix< double > normal_matrix;
 	ublas::matrix< ublas::vector<double > > test_matrix;
 	
+	normal_matrix.resize( 2, 2 );
 	test_matrix.resize( 2, 2 );
 	
 	
@@ -56,13 +60,24 @@ int main(int argc, char *argv[])
 	
 	std::cout << test_matrix << std::endl;
 
-	//std::cout << ublas::prod( test_matrix, w ) << std::endl;
 	
 	ublas::vector<double> z = kml::detail::prod_element( u, v );
 	std::cout << z << std::endl;
 	
+	ublas::vector< ublas::vector<double> > test_vector(2);
+	kml::detail::gemv( test_matrix, u, test_vector );
+	std::cout << "A " << test_matrix << " times " << u << " equals " << test_vector << std::endl;
+
+	kml::detail::gemv( normal_matrix, u, z );
 	
-	
+
+
+
+
+
+
+
+
 
 	return EXIT_SUCCESS;
 }

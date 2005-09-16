@@ -1,8 +1,10 @@
 
 Import('env')
+Import('atlas_link_libs')
+
 
 env.Program('statistics.cpp' )
 env.Program('scale.cpp' )
 env.Program('m_tree.cpp' )
-env.Program('matrix_vector_ops.cpp')
+env.Program('matrix_vector_ops.cpp', LIBS=atlas_link_libs )
 
