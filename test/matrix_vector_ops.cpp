@@ -71,14 +71,6 @@ int main(int argc, char *argv[])
 	kml::detail::gemv( normal_matrix, u, z );
 	
 
-
-
-
-
-
-
-
-
 	return EXIT_SUCCESS;
 }
 
