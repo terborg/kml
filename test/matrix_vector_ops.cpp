@@ -58,9 +58,13 @@ int main(int argc, char *argv[])
 	test_matrix(1,0) = w;
 	test_matrix(1,1) = u;
 	
+	std::cout << "scale_or_dot of " << u << " and " << v << " is " << kml::detail::scale_or_dot( u, v ) << std::endl;
+	std::cout << "scale_or_dot of " << 0.2 << " and " << 0.3 << " is " << kml::detail::scale_or_dot( 0.2, 0.3 ) << std::endl;
+	std::cout << "scale_or_dot of " << u << " and " << 0.2 << " is " << kml::detail::scale_or_dot( u, 0.2 ) << std::endl;
+	std::cout << "scale_or_dot of " << 0.2 << " and " << u << " is " << kml::detail::scale_or_dot( 0.2, u ) << std::endl;
+
 	std::cout << test_matrix << std::endl;
 
-	
 	ublas::vector<double> z = kml::detail::prod_element( u, v );
 	std::cout << z << std::endl;
 	
@@ -68,7 +72,11 @@ int main(int argc, char *argv[])
 	kml::detail::gemv( test_matrix, u, test_vector );
 	std::cout << "A " << test_matrix << " times " << u << " equals " << test_vector << std::endl;
 
-	kml::detail::gemv( normal_matrix, u, z );
+	kml::detail::gemv( test_matrix, test_vector, u );
+	std::cout << "A " << test_matrix << " times " << test_vector << " equals " << u << std::endl;
+	
+
+	//kml::detail::gemv( normal_matrix, u, z );
 	
 
 	return EXIT_SUCCESS;

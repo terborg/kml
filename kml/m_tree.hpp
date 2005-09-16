@@ -24,6 +24,9 @@
 
 M-tree: An Efficient Access Method for Similarity Search in Metric Spaces
 
+
+Two types of entities are used: Nodes and Objects.
+
 Two types of nodes:
 
 - leaf nodes: store all indexed objects, either the key or the features of the data
@@ -32,14 +35,13 @@ Two types of nodes:
   root of a subtree called the covering tree of the routing object. It also keeps a 
   covering radius, and the distance and pointer to its parent node. 
 
---> internal nodes do not store objects, only leaf nodes do. 2 types of nodes?
-  
-  
+In other words:
 
-New type of tree proposed? 
+Lead nodes keep the vast majority of objects in the tree, whereas the internal nodes keep one
+single object for routing reasons. 
 
-Hierarchical gonzales
---> Anchors hierarchy?? (can insert, remove operations be implemented in this kind?)
+Split strategy that I will use: Gonzales' algorithm
+
 
 */
 
@@ -54,15 +56,11 @@ namespace kml {
 class node {
 
 	typedef int PointDescriptor;
+
+	// covering radius of a node
+	// distance to parent of the node
+
 	
-	// a centroid is not present in the M-tree's routing object kind of node.
-	// but how to determine the distance in a query to a routing object?
-	// centroid could be the "first" edge?
-/*	PointDiscriptor centroid;
-	double radius;	*/
-	
-	// can be empty?
-/*	std::vector< PointDescriptor > points;*/
 };
 
 
@@ -73,8 +71,6 @@ class m_tree {
 
 	// define an internal property map?
 
-	// covering radius of a node
-	// distance to parent of the node! 
 
 
 	/*! Insert a point into the M-tree. */
@@ -105,12 +101,9 @@ class m_tree {
 	
 	
 	
+	// split policy: Gonzales
 	void split( ) {
-		// basically peform a 2-center on the data of the node that will be split,
-		// forming 2 seperate nodes. These nodes are then linked by a new parent node.
-		// but how to reference that parent node?   
-	
-	
+
 	
 	
 	}

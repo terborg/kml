@@ -17,73 +17,59 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307  *
  ***************************************************************************/
 
-#ifndef GEMV_HPP
-#define GEMV_HPP
+#ifndef SCALE_OR_DOT_HPP
+#define SCALE_OR_DOT_HPP
 
 #include <boost/range/begin.hpp>
 #include <boost/range/end.hpp>
 #include <boost/range/size.hpp>
 #include <boost/range/value_type.hpp>
-#include <boost/mpl/if.hpp>
+#include <boost/mpl/eval_if.hpp>
+#include <boost/mpl/or.hpp>
+#include <boost/mpl/and.hpp>
+#include <boost/mpl/identity.hpp>
 #include <boost/type_traits/is_scalar.hpp>
+#include <boost/type_traits/is_same.hpp>
 
-#include <boost/numeric/bindings/atlas/cblas.hpp>
-#include <boost/numeric/bindings/traits/ublas_vector.hpp>
-#include <boost/numeric/bindings/traits/ublas_matrix.hpp>
-
-#include <kml/detail/zero_element.hpp>
-#include <kml/detail/scale_or_dot.hpp>
-
-#include <boost/call_traits.hpp>
-
+#include <numeric>
 #include <iostream>
 
-namespace atlas = boost::numeric::bindings::atlas;
 namespace mpl = boost::mpl;
-
 
 namespace kml { namespace detail {
 
+// TypeX   TypeY   Result  Handled by
+// scalar  scalar  scalar  scale_product
+// vector  scalar  vector  scale_product
+// scalar  vector  vector  scale_product
+// vector  vector  scalar  dot_product
 
-struct atlas_gemv {
-	template<typename Matrix, typename VectorX, typename VectorB>
-	static void compute( Matrix const &A, VectorX const &x, VectorB &b ) {
-		std::cout << "ATLAS gemv..." << std::endl;
-		atlas::gemv( A, x, b );
+template<typename TypeX, typename TypeY>
+struct scale_or_dot_type: mpl::eval_if< mpl::or_< boost::is_scalar<TypeX>, boost::is_scalar<TypeY> >, 
+                   mpl::eval_if< boost::is_same<TypeX,TypeY>, mpl::identity<TypeX>, mpl::if_< boost::is_scalar<TypeX>, TypeY, TypeX > >,
+                   boost::range_value<TypeX> > {};
+
+struct scale_product {
+	template<typename TypeX, typename TypeY>
+	static typename scale_or_dot_type<TypeX,TypeY>::type compute( TypeX const &x, TypeY const &y ) {
+		return x * y;
 	}
 };
 
-struct exotic_gemv {
-	template<typename Matrix, typename VectorX, typename VectorB>
-	static void compute( Matrix const &A, VectorX const &x, VectorB &b ) {
-		typedef typename boost::range_value<VectorB>::type value_type;
-		std::cout << "exotic gemv..." << std::endl;
-
-		// indexed for now ...
-		for( unsigned int m = 0; m < A.size1(); ++m ) {
-			value_type result = scale_or_dot( A(m,0), x[0] );
-			for( unsigned int n = 1; n < A.size2(); ++n )
-				result += scale_or_dot( A(m,n), x[n] );
-			b[m] = result;
-		}
+struct dot_product {
+	template<typename TypeX, typename TypeY>
+	static typename scale_or_dot_type<TypeX,TypeY>::type compute( TypeX const &x, TypeY const &y ) {
+		typedef typename boost::range_value<TypeX>::type value_type;
+		// TODO pass on to a inner-prod specialisation
+		return std::inner_product( boost::begin(x), boost::end(x), boost::begin(y), static_cast<value_type>(0) );
 	}
 };
 
-
-
-
-/*! 
-Matrix A has to be a matrix that is 
-
-*/
-
-template<typename Matrix, typename VectorX, typename VectorB>
-void gemv( Matrix const &A, VectorX const &x, VectorB &b ) {
+template<typename TypeX, typename TypeY>
+typename scale_or_dot_type<TypeX,TypeY>::type scale_or_dot( TypeX const &x, TypeY const &y ) {
 	// figure out what to do (during compile-time)
-	mpl::if_< boost::is_scalar<typename Matrix::value_type>, atlas_gemv, exotic_gemv >::type::compute( A, x, b );
+	return mpl::if_< mpl::or_< boost::is_scalar<TypeX>, boost::is_scalar<TypeY> >, scale_product, dot_product >::type::compute( x, y );
 }
-
-
 
 }} // namespace kml::detail
 
