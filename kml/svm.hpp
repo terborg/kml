@@ -35,20 +35,15 @@
 
 #include <boost/numeric/bindings/traits/std_vector.hpp>
 #include <boost/numeric/bindings/traits/ublas_vector.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/mpl/equal_to.hpp>
-#include <boost/type_traits/is_float.hpp>
-#include <boost/type_traits/is_same.hpp>
 #include <boost/utility/enable_if.hpp>
 #include <boost/random/variate_generator.hpp>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/random_number_generator.hpp>
 #include <boost/range/value_type.hpp>
+#include <boost/lambda/lambda.hpp>
 
 #include <algorithm>
 #include <vector>
-#include <cstdlib>
-#include <ext/functional>
 #include <iostream>
 
 #include <kml/determinate.hpp>
@@ -56,6 +51,7 @@
 #include <kml/ranking.hpp>
 #include <kml/regression.hpp>
 
+namespace lambda = boost::lambda;
 
 namespace kml {
 
@@ -226,12 +222,11 @@ public:
     
     result_type r2 = e2 * y2;
     if ((r2 < -tol && alpha2 < C) || (r2 > tol && alpha2 > 0)) {
-      int count = std::count_if(base_type::weight.begin(), 
-				base_type::weight.end(), 
-				__gnu_cxx::compose2(std::logical_and<bool>(),
-						    std::bind2nd(std::not_equal_to<scalar_type>(), 0),
-						    std::bind2nd(std::not_equal_to<scalar_type>(), C)));
-
+      int count = std::count_if( base_type::weight.begin(), 
+				 base_type::weight.end(),
+				 (lambda::_1 != 0) && (lambda::_1 != C) );
+				
+				
       if (count > 1) { // use second choice heuristic
 	scalar_type tmp = 0, tmp2 = 0;
 	int k = 0;
