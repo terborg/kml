@@ -25,6 +25,7 @@
  
 #include <kml/detail/prod_element.hpp>
 
+#include <kml/detail/gemm.hpp>
 #include <kml/detail/gemv.hpp>
 
 namespace ublas = boost::numeric::ublas;
@@ -74,8 +75,13 @@ int main(int argc, char *argv[])
 
 	kml::detail::gemv( test_matrix, test_vector, u );
 	std::cout << "A " << test_matrix << " times " << test_vector << " equals " << u << std::endl;
-	
 
+	kml::detail::gemv( ublas::trans(test_matrix), u, test_vector );
+	std::cout << "A^T " << ublas::trans(test_matrix) << " times " << u << " equals " << test_vector << std::endl;
+
+	kml::detail::gemm( ublas::trans(test_matrix), test_matrix, normal_matrix );
+	std::cout << "A^T " << ublas::trans(test_matrix) << " times " << test_matrix << " equals " << normal_matrix << std::endl;
+	
 	//kml::detail::gemv( normal_matrix, u, z );
 	
 
