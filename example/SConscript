@@ -9,4 +9,6 @@ env.Program('svm_regression.cpp', LIBS=atlas_link_libs )
 env.Program('svm_classification.cpp' )
 env.Program('online_svm_classification.cpp', LIBS=atlas_link_libs )
 
-env.Program('ann_regression.cpp', LIBS=env['LIBS'] + ['doublefann'] )
+
+#env.Program('ann_regression.cpp', LIBS=env['LIBS'] + ['doublefann'] )
+

@@ -107,7 +107,7 @@ Classification: \f$ Q_{ij}= y_i y_j k(x_i,x_j) \f$
 */
 
 
-template<typename Problem,template<typename> class Kernel,class Enable = void>
+template<typename Problem,template<typename,int> class Kernel,class Enable = void>
 class online_svm: public kernel_machine<Problem,Kernel> {};
 
 
@@ -117,7 +117,7 @@ class online_svm: public kernel_machine<Problem,Kernel> {};
 //
 //
 
-template<typename Problem,template<typename> class Kernel>
+template<typename Problem,template<typename,int> class Kernel>
 class online_svm<Problem,Kernel,typename boost::enable_if< is_regression<Problem> >::type>:
          public kernel_machine<Problem,Kernel> {
 public:
@@ -818,7 +818,7 @@ weights (and that linear dependent point can be left out).
 */
 
 
-template<typename Problem,template<typename> class Kernel>
+template<typename Problem,template<typename,int> class Kernel>
 class online_svm<Problem,Kernel,typename boost::enable_if< is_classification<Problem> >::type >:
 public kernel_machine< Problem, Kernel > {
 public:
@@ -885,7 +885,7 @@ public:
 	//if (index > 581) debug=true;
 	
 	
-	//if (debug)
+	if (debug)
 	std::cout << "Starting incremental SVM algorithm with " << index << " prior points" << std::endl;
 
 	
@@ -1547,7 +1547,7 @@ public:
 
 // ON-LINE SVM RANKING ALGORITHM
 
-template<typename Problem,template<typename> class Kernel>
+template<typename Problem,template<typename,int> class Kernel>
 class online_svm<Problem,Kernel,typename boost::enable_if< is_ranking<Problem> >::type >: 
          public kernel_machine<Problem,Kernel> {
 

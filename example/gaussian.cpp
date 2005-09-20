@@ -17,22 +17,14 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307  *
  ***************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
-
 #include <kml/gaussian.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <iostream>
 
 namespace ublas = boost::numeric::ublas;
 
-using namespace std;
-
 int main(int argc, char *argv[])
 {
-
   // vector input types
   ublas::vector<double> u(2);
   ublas::vector<double> v(2);
@@ -52,11 +44,5 @@ int main(int argc, char *argv[])
 
   return EXIT_SUCCESS;
 }
-
-
-
-
-
-
 
 

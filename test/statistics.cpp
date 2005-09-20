@@ -39,23 +39,25 @@ int main(int argc, char *argv[])
 		rand_vector[i] = double(i);
 	}
 
+	std::cout << "x:       " << rand_vector << std::endl;
+	
 	// answer should be sum(0:99) == 4950
-	std::cout << kml::sum( rand_vector ) << std::endl;
+	std::cout << "sum(x):  " << kml::sum( rand_vector ) << std::endl;
 	
 	// answer should be mean(0:99) = 49.5
-	std::cout << kml::mean( rand_vector ) << std::endl;
+	std::cout << "mean(x): " << kml::mean( rand_vector ) << std::endl;
 	
 	// answer should be min(0:99) = 0
-	std::cout << kml::minimum( rand_vector ) << std::endl;
+	std::cout << "min(x):  " << kml::minimum( rand_vector ) << std::endl;
 	
 	// answer sould be max(0:99) = 99
-	std::cout << kml::maximum( rand_vector ) << std::endl;
+	std::cout << "max(x):  " << kml::maximum( rand_vector ) << std::endl;
 	
 	// population variance should be 841.6666667
-	std::cout << kml::variance( rand_vector ) << std::endl;
-	std::cout << kml::standard_deviation( rand_vector ) << std::endl;
-	std::cout << kml::mean_square( rand_vector ) << std::endl;
-	std::cout << kml::root_mean_square( rand_vector ) << std::endl;
+	std::cout << "var(x):  " << kml::variance( rand_vector ) << std::endl;
+	std::cout << "sd(x):   " << kml::standard_deviation( rand_vector ) << std::endl;
+	std::cout << "ms(x):   " << kml::mean_square( rand_vector ) << std::endl;
+	std::cout << "rms(x):  " << kml::root_mean_square( rand_vector ) << std::endl;
 
 	// but, sum should also work on a vector!
 	std::vector< ublas::vector<double> > vec_of_vec;
@@ -81,8 +83,18 @@ int main(int argc, char *argv[])
 	std::cout << kml::maximum( vec_of_vec ) << std::endl;
 	std::cout << kml::variance( vec_of_vec ) << std::endl;
 	std::cout << kml::standard_deviation( vec_of_vec ) << std::endl;
-	std::cout << kml::root_mean_square( rand_vector ) << std::endl;
-
+	
+	std::cout << std::endl;
+	std::cout << "Mean square for each element: " << std::endl;
+	std::cout << kml::mean_square( vec_of_vec ) << std::endl;
+	std::cout << std::endl;
+	
+	std::cout << "Mean dot replaces the square with the dot product: " << std::endl;
+	std::cout << kml::mean_dot( vec_of_vec ) << std::endl;
+	std::cout << "which also happens to work on a vector of scalars: " << std::endl;
+	std::cout << kml::mean_dot( rand_vector ) << std::endl;
+	std::cout << std::endl;
+	
 	std::cout << "List container: " << std::endl;	
 	std::cout << kml::minimum( list_of_vec ) << std::endl;
 

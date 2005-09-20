@@ -139,6 +139,8 @@ public:
         // Estimate the variance
         // Since the variance is added to the diagonal of the system matrix, also do some
         // singularity prevention, by setting the minimum variance estimate to N^3 * machine epsilon
+	
+	// residual_sum_squares will become mean_dot( Hw - y )
         variance_estimate = std::max<scalar_type>( residual_sum_squares( H, weight_vector, indices, output )
 	                                           / static_cast<scalar_type>(output.size()),
                                       std::numeric_limits<scalar_type>::epsilon() *

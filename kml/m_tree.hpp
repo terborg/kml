@@ -57,9 +57,10 @@ class node {
 
 	typedef int PointDescriptor;
 
-	// covering radius of a node
-	// distance to parent of the node
-
+	// a node contains at least one object (or exactly one, to be determined).
+	
+	// --> covering radius
+	// --> distance to parent
 	
 };
 

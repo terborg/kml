@@ -56,13 +56,14 @@ env.Replace( LIBPATH = lib_path )
 #
 
 conf = Configure(env)
+global_link_libs = ['']
 
 if env['PLATFORM'] == 'posix':
-	conf.CheckLib( 'tcmalloc', autoadd=1 )
+	if conf.CheckLib( 'tcmalloc' ):
+		global_link_libs += ['tcmalloc']
 
 env = conf.Finish()
-
-
+env.Replace( LIBS = global_link_libs )
 
 #
 # Detect CPU type

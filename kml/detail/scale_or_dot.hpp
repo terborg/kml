@@ -45,20 +45,20 @@ namespace kml { namespace detail {
 // vector  vector  scalar  dot_product
 
 template<typename TypeX, typename TypeY>
-struct scale_or_dot_type: mpl::eval_if< mpl::or_< boost::is_scalar<TypeX>, boost::is_scalar<TypeY> >, 
+struct scale_or_dot_value: mpl::eval_if< mpl::or_< boost::is_scalar<TypeX>, boost::is_scalar<TypeY> >, 
                    mpl::eval_if< boost::is_same<TypeX,TypeY>, mpl::identity<TypeX>, mpl::if_< boost::is_scalar<TypeX>, TypeY, TypeX > >,
                    boost::range_value<TypeX> > {};
 
 struct scale_product {
 	template<typename TypeX, typename TypeY>
-	static typename scale_or_dot_type<TypeX,TypeY>::type compute( TypeX const &x, TypeY const &y ) {
+	static typename scale_or_dot_value<TypeX,TypeY>::type compute( TypeX const &x, TypeY const &y ) {
 		return x * y;
 	}
 };
 
 struct dot_product {
 	template<typename TypeX, typename TypeY>
-	static typename scale_or_dot_type<TypeX,TypeY>::type compute( TypeX const &x, TypeY const &y ) {
+	static typename scale_or_dot_value<TypeX,TypeY>::type compute( TypeX const &x, TypeY const &y ) {
 		typedef typename boost::range_value<TypeX>::type value_type;
 		// TODO pass on to a inner-prod specialisation
 		return std::inner_product( boost::begin(x), boost::end(x), boost::begin(y), static_cast<value_type>(0) );
@@ -66,7 +66,7 @@ struct dot_product {
 };
 
 template<typename TypeX, typename TypeY>
-typename scale_or_dot_type<TypeX,TypeY>::type scale_or_dot( TypeX const &x, TypeY const &y ) {
+typename scale_or_dot_value<TypeX,TypeY>::type scale_or_dot( TypeX const &x, TypeY const &y ) {
 	// figure out what to do (during compile-time)
 	return mpl::if_< mpl::or_< boost::is_scalar<TypeX>, boost::is_scalar<TypeY> >, scale_product, dot_product >::type::compute( x, y );
 }

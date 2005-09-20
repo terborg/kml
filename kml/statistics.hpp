@@ -32,6 +32,7 @@
 #include <cmath>
 #include <kml/input_value.hpp>
 #include <numeric>
+#include <functional>
 
 #include <boost/bind.hpp>
 #include <kml/detail/prod_element.hpp>
@@ -40,6 +41,7 @@
 #include <kml/detail/max_element.hpp>
 #include <kml/detail/zero_element.hpp>
 #include <kml/detail/sqrt_element.hpp>
+#include <kml/detail/scale_or_dot.hpp>
 
 #include <iostream>
 
@@ -76,6 +78,26 @@ public:
     }
     T mean;
 };
+
+// just to compute the square for each element
+
+template<typename T>
+struct square: public std::binary_function<T const&, T const &, T> {
+    inline T operator()( T const &sum, T const &x ) const {
+        return sum + prod_element(x,x);
+    }
+};
+
+// square, accumulate inner prod for vectors
+
+template<typename T>
+struct dot_square: public std::binary_function<typename input_value<T>::type const&, T const &, typename input_value<T>::type> {
+    typedef typename input_value<T>::type value_type;
+    inline value_type operator()( value_type const &sum, T const &x ) const {
+        return sum + scale_or_dot(x,x);
+    }
+};
+
 
 } // namespace detail
 
@@ -203,12 +225,11 @@ typename boost::range_value<Range>::type standard_deviation( Range const &x ) {
 
 
 /*!
-Mean square, a biased estimator for the population variance. 
-It differs from the variance in that it is divided by N, not by N-1.
+Mean square, or the quadratic mean, see http://mathworld.wolfram.com/Root-Mean-Square.html
 \param x a range of scalar values or vectors
-\return mean_square(x) = 1/n * sum( (x_i-mean(x))^2 )
+\return mean_square(x) = 1/n * sum( x_i^2 )
 
-In case of vector values, it will return a vector with the mean square for each element
+In case of vector values, it will return a vector with the root-mean-square for each element
 */
 
 template<typename Range>
@@ -218,14 +239,15 @@ typename boost::range_value<Range>::type mean_square( Range const &x ) {
     if (boost::empty(x))
         return std::numeric_limits<value_type>::quiet_NaN();
     else
-        return std::accumulate( boost::begin(x), boost::end(x), detail::zero_element(*boost::begin(x)),
-                                detail::squared_diff<value_type>(mean(x)) ) /
+        return std::accumulate( boost::begin(x), 
+                                boost::end(x), 
+                                detail::zero_element(*boost::begin(x)),
+                                detail::square<value_type>() ) /
                static_cast<scalar_type>(boost::size(x));
 }
 
 /*!
-Root-mean-square, a biased estimator for the population standard deviation.
-It differs from the standard deviation in that it is divided by N, not by N-1.
+Root-mean-square, see http://mathworld.wolfram.com/Root-Mean-Square.html
 \param x a range of scalar values or vectors
 \return root_mean_square(x) = sqrt(mean_square(x))
 
@@ -237,31 +259,26 @@ typename boost::range_value<Range>::type root_mean_square( Range const &x ) {
     return detail::sqrt_element( mean_square(x) );
 }
 
-
 /*!
-Normalised-mean-square
+Mean-dot. In case of vectors, this function uses the dot-product instead of squaring each element separately
+\param x a range of scalar_values or vectors
+\return vector_mean_square(x) = 1/n * sum( scale_or_dot(x_i,x_i) )
 
-\param x a range of scalar values or vectors
-\return normalised_mean_square(x) = sqrt(mean_square(x))
-
-In case of vector values, it will return a vector with the normalised-mean-square for each element
-
-TODO
 */
 
-
 template<typename Range>
-typename boost::range_value<Range>::type normalised_mean_square( Range const &x ) {
+typename input_value<typename boost::range_value<Range>::type>::type mean_dot( Range const &x ) {
     typedef typename boost::range_value<Range>::type value_type;
     typedef typename input_value<value_type>::type scalar_type;
     if (boost::empty(x))
-        return std::numeric_limits<value_type>::quiet_NaN();
+        return std::numeric_limits<scalar_type>::quiet_NaN();
     else
-        return std::accumulate( boost::begin(x), boost::end(x), detail::zero_element(*boost::begin(x)),
-                                detail::squared_diff<value_type>(mean(x)) ) /
+        return std::accumulate( boost::begin(x), 
+                                boost::end(x),
+				scalar_type(0),
+                                detail::dot_square<value_type>() ) /
                static_cast<scalar_type>(boost::size(x));
 }
-
 
 /*!
 Unbiased estimator for the population covariance
