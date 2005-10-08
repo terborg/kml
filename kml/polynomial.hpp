@@ -20,17 +20,19 @@
 #ifndef POLYNOMIAL_HPP
 #define POLYNOMIAL_HPP
 
-// TODO
-
 #include <boost/call_traits.hpp>
 #include <boost/type_traits.hpp>
+#include <kml/linear.hpp>
 
+namespace kml {
 
-template<typename Range, int N>
+template<typename Range, int N=0>
 class polynomial: public std::binary_function<Range,
                                               Range,
                                               typename kml::power_return_type<Range,N>::type> {
+public:
 
+    typedef polynomial<Range,N> type;
     typedef typename boost::range_value<Range>::type scalar_type;
     typedef typename mpl::int_<N>::type derivative_order;
 
@@ -44,9 +46,23 @@ class polynomial: public std::binary_function<Range,
       */
     polynomial( typename boost::call_traits<scalar_type>::param_type gamma,
                 typename boost::call_traits<scalar_type>::param_type lambda,
-                typename boost::call_traits<scalar_type>::param_type d ) {
+                typename boost::call_traits<scalar_type>::param_type d): scale(gamma), bias(lambda), order(d) {}
+
+    scalar_type operator()( Range const &u, Range const &v ) const {
+	return std::pow( scale * linear<Range,N>()(u,v) + bias, order );
     }
 
+    friend std::ostream& operator<<(std::ostream &os, type const &k) {
+	os << "Polynomial kernel (" << k.scale << "<u,v>+" << k.bias << ")^" << k.order << std::endl;
+	return os;
+    }
+
+private:
+    scalar_type scale;
+    scalar_type bias;
+    scalar_type order;
+
+};
 
 
 }
