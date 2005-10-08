@@ -20,8 +20,10 @@
 #ifndef DESIGN_MATRIX_HPP
 #define DESIGN_MATRIX_HPP
 
+#include <boost/numeric/bindings/atlas/cblas.hpp>
 #include <boost/numeric/bindings/traits/ublas_matrix.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/range/begin.hpp>
 #include <boost/range/empty.hpp>
@@ -56,8 +58,8 @@ in conjunction with ATLAS, and resizes should only take place once in a while.
 */
 
 
-namespace atlas = ::boost::numeric::bindings::atlas;
-namespace ublas = ::boost::numeric::ublas;
+namespace atlas = boost::numeric::bindings::atlas;
+namespace ublas = boost::numeric::ublas;
 
 
 // TODO fix value types etc.
@@ -67,7 +69,6 @@ namespace kml {
 template<class Range, class Kernel>
 void design_matrix( Range const &source, Range const &target, Kernel const &kernel,
                     double const bias_value, ublas::matrix<double> &result ) {
-    double value_type;
 
     // FIXME the result should be resized already??
     // do a non-preserving resize
