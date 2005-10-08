@@ -27,10 +27,9 @@
 #include <boost/range/size.hpp>
 #include <ext/numeric>
 
-#include <inner_product.hpp>
-#include <probabilistic.hpp>
+#include <kml/kernel_machine.hpp>
+#include <kml/design_matrix.hpp>
 
-#include <design_matrix.hpp>
 // TODO fix old and kludgy algorithms from kernels.h
 #include "kernels.h"
 
@@ -203,8 +202,8 @@ public:
     }
 
     template<class Range>
-    void fill_column( int const col, Range result ) {
-        for( int s=0; s<result.size(); ++s ) {
+    void fill_column( unsigned int const col, Range result ) {
+        for( unsigned int s=0; s<result.size(); ++s ) {
             result[s] = HtH(s,col);
         }
     }
@@ -241,19 +240,24 @@ Implementation of the Fast RVM [1].
 */
 
 
-template<typename I, typename O, template<typename,int> class K >
-class rvm: public probabilistic<I,O,K> {
+
+template<typename Problem,template<typename,int> class Kernel,class Enable = void>
+class rvm: public kernel_machine<Problem,Kernel> {};
+
+
+template<typename Problem,template<typename,int> class Kernel>
+class rvm<Problem,Kernel,typename boost::enable_if< is_regression<Problem> >::type>:
+         public kernel_machine<Problem,Kernel> {
 public:
-    typedef probabilistic<I,O,K> base_type;
+    typedef kernel_machine<Problem,Kernel> base_type;
     typedef typename base_type::kernel_type kernel_type;
     typedef typename base_type::result_type result_type;
-    typedef I input_type;
-    typedef O output_type;
+    typedef typename Problem::input_type input_type;
+    typedef typename Problem::output_type output_type;
     typedef double scalar_type;
     typedef ublas::symmetric_matrix<double> symmetric_type;
     typedef ublas::matrix<double> matrix_type;
     typedef ublas::vector<double> vector_type;
-
 
     
     /*!	\param k a construction parameter for the kernel type */
@@ -286,9 +290,9 @@ public:
             std::cout << "computing Hty..." << std::flush;
         vector_type Hty( source.size() + 1 );
         Hty[0] = sum(output);
-        for( int s=0; s<source.size(); ++s ) {
+        for( unsigned int s=0; s<source.size(); ++s ) {
             double sum = 0.0;
-            for( int t=0; t<target.size(); ++t ) {
+            for( unsigned int t=0; t<target.size(); ++t ) {
                 sum += output[t] * base_type::kernel( source[s], target[t] );
             }
             Hty[s+1] = sum;
@@ -305,7 +309,7 @@ public:
         if (debug)
             std::cout << "computing diag HtH..." << std::flush;
         vector_type diag_HtH( source.size()+1 );
-        for( int i=0; i < diag_HtH.size(); ++i ) {
+        for( unsigned int i=0; i < diag_HtH.size(); ++i ) {
             diag_HtH[i] = HtH_comp( i, i );
         }
         if (debug)
@@ -342,9 +346,9 @@ public:
         // If NOT done, e.g. if we would always start with the intercept term
         // or something, this can lead to severe instability in case of an intercept term
         // for which q_i^2 > s_i does not hold. This fixes a bug that occured.
-        int max_idx;
+        unsigned int max_idx;
         double max_dl = 0.0;
-        for( int i=0; i<Hty.size(); ++i ) {
+        for( unsigned int i=0; i<Hty.size(); ++i ) {
             double q_i_2 = std::pow( Hty(i) /variance_estimate,2);
             double s_i   = diag_HtH[i]/variance_estimate;
             double delta_l = (q_i_2-s_i)/s_i + std::log( s_i / q_i_2 );
@@ -362,10 +366,10 @@ public:
         // resize the H cache
         matrix_type H_cache( target.size(), 1 );
         if( max_idx==0 )
-            for( int r=0; r<target.size(); ++r )
+            for( unsigned int r=0; r<target.size(); ++r )
                 H_cache(r,0)=1.0;
         else
-            for( int r=0; r<target.size(); ++r )
+            for( unsigned int r=0; r<target.size(); ++r )
                 H_cache(r,0)=base_type::kernel(source[max_idx-1],target[r]);
 
         // resize HtH cache
@@ -459,7 +463,7 @@ public:
 
             // initialise with a non-working move
             best_action = unknown;
-            int action_index = 0;
+            unsigned int action_index = 0;
             scalar_type delta_l_max = 0.0;
             scalar_type theta_l_max = 0.0;
 
@@ -645,10 +649,10 @@ public:
                     // increase the design matrix
                     H_cache.resize( H_cache.size1(), H_cache.size2() + 1 );
                     if( i==0 )
-                        for( int r=0; r<target.size(); ++r )
+                        for( unsigned int r=0; r<target.size(); ++r )
                             H_cache(r,old_size)=1.0;
                     else
-                        for( int r=0; r<target.size(); ++r )
+                        for( unsigned int r=0; r<target.size(); ++r )
                             H_cache(r,old_size)=base_type::kernel(source[i-1],target[r]);
 
                     // also increase HtH matrix. Do a preserved resize first
@@ -737,15 +741,16 @@ public:
         }
 
 
-
-        std::cout << "Relevance Vector Machine (Tipping, 2003)" << std::endl;
-        std::cout << "Support vectors:   " << active_set.size() << std::endl;
-        std::cout << "Variance estimate: " << variance_estimate << std::endl;
+        if (debug) {
+        	std::cout << "Relevance Vector Machine (Tipping, 2003)" << std::endl;
+        	std::cout << "Support vectors:   " << active_set.size() << std::endl;
+        	std::cout << "Variance estimate: " << variance_estimate << std::endl;
+	}
         /*    std::copy( active_set.begin(),  active_set.end(), std::ostream_iterator<scalar_type>(std::cout, " ") );
             std::cout << std::endl;*/
 
 
-        std::vector<unsigned int>::iterator bias_loc = std::find( active_set.begin(), active_set.end(), 0 );
+        std::vector<unsigned int>::iterator bias_loc = std::find( active_set.begin(), active_set.end(), static_cast<unsigned int>(0) );
 
         // copy bias to machine
         if ( bias_loc != active_set.end() ) {
@@ -759,7 +764,7 @@ public:
         // copy support vectors to base type
         base_type::support_vector.resize( active_set.size() );
         base_type::weight.resize( active_set.size() );
-        for( int i=0; i<active_set.size(); ++i ) {
+        for( unsigned int i=0; i<active_set.size(); ++i ) {
             //         ublas::matrix_row<MatT const> X_row( X, active_set[i]-1 );  // -1 for bias
             //         ublas::matrix_row<matrix_type> support_vectors_row( support_vectors, i );
             //         support_vectors_row.assign( X_row );
@@ -812,164 +817,6 @@ public:
 
 
 #endif
-
-
-
-
-
-
-
-
-
-/*
-Classic RVM algorithm
- 
- 
-    template<typename MatT, typename VecT, class KF>
-    void train( MatT const &X, VecT const &y, KF const &kernel = KF() ) {
- 
-        // create the kernel matrix (symmetric part)
-        // initialise & compute HtH, Hty
-        matrix_type H;
-        design_matrix( X, X, kernel, H );
- 
-        vector_type Hty( H.size2() );
-        atlas::gemv(trans(H), y, Hty);
- 
-        symmetric_type HtH( H.size2(), H.size2() );
-        inner_prod( H, HtH );
- 
-        // explanation of variables, following Tipping (1999)
-        // theta = 1 / alpha
- 
-        std::vector<unsigned int> indices( HtH.size1() );
-        // fill indices with 0,1,2,3,...,N-1. This is not in standard C++, but an SGI extension.
-        iota( indices.begin(), indices.end(), 0 );
- 
-        vector_type weight_vector( HtH.size1() );
-        vector_type theta( HtH.size2() );
- 
-        // theta is 1/alpha, as in Ralf Herbrich's R implementation
-        // since near-zero values are better defined than "very large" values
-        atlas::set
-            ( 1.0, theta );
-        atlas::set
-            ( 1.0, weight_vector );
- 
-        variance_estimate = 0.1;
- 
-        value_type max_diff = 1.0;
- 
-        // RVM's main loop
-        while( max_diff > 1e-3 ) {
- 
-            // Prepare the not-yet-inverted part of matrix sigma, and
-            // the non-multiplied part of vector mu
-            // NOTE not this anymore, changed to more efficient formulation
-            //      see above
-            // sigma_inv <- (HtH*(1/var)+A)  (part of eq. 5)
-            // mu        <- Hty              (part of eq. 6)
-            ublas::symmetric_matrix<double, ublas::lower, ublas::column_major> sigma_inverted( indices.size(), indices.size() );
-            vector_type mu( indices.size() );
-            for( unsigned int i=0; i<indices.size(); ++i ) {
-                unsigned int index_sv = indices[i];
-                mu( i ) = Hty( index_sv );
-                for( unsigned int col=0; col <= i; ++col ) {
-                    sigma_inverted(i,col) = HtH( index_sv, indices[col] );
-                }
-                sigma_inverted(i,i) += variance_estimate / theta(index_sv);
-            }
- 
-            // Invert matrix to form matrix sigma and compute vector mu
-            // sigma <- (HtH*(1/var)+A)^-1 (equation 5, Tipping, 1999)
-            // mu    <- (1/var)*sigma*Hty  (equation 6, Tipping, 1999)
-            // TODO symmetric adaptor can go if upper or lower is known (other call to symv)
-            // NOTE recip. variance is probably not most efficient like this.
- 
-            ublas::matrix<double, ublas::column_major> sigma( indices.size(), indices.size() );
-            // temporary workaround for boost non-compileness stuff.
-            //ublas::matrix<double, ublas::column_major> sigma( ublas::identity_matrix<double>( indices.size() ) );
-            sigma.clear();
-            for( unsigned int i=0; i<indices.size(); ++i ) {
-                sigma(i,i)=1.0;
-            }
- 
- 
-            ublas::symmetric_adaptor<ublas::matrix<double, ublas::column_major> > sigma_symm( sigma );
-            lapack::ppsv( sigma_inverted, sigma );
- 
-            // FIXME weird behaviour of atlas when doing this multiply with 2 mu's in there
-            // TODO just multiply with the right part of Hty; do not copy this to mu first
-            // TODO atlas-ify
-            //atlas::gemv( sigma, mu, mu );
-            mu = ublas::prod( sigma, mu );
- 
-            // update theta vector
-            // compute sum_i gamma_i
-            value_type gamma_summed = static_cast<value_type>(0);
-            max_diff = static_cast<value_type>(0);
-            for( unsigned int i=0; i<indices.size(); ++i ) {
-                unsigned int index_sv = indices[i];
-                value_type gamma_i = 1.0 - ((variance_estimate * sigma(i,i)) / theta(index_sv));
-                value_type theta_old = theta( index_sv );
-                theta( index_sv ) = (mu(i) * mu(i)) / gamma_i;
-                gamma_summed += gamma_i;
-                weight_vector( index_sv ) = mu(i);
-                value_type diff = std::fabs( std::log(theta_old) - log(theta(index_sv)) );
-                if ( diff > max_diff )
-                    max_diff=diff;
-            }
- 
-            // std::cout << "vector gamma: " << gamma << std::endl;
-            // std::cout << "vector theta: " << theta << std::endl;
-            variance_estimate = residual_sum_squares( H, weight_vector, indices, y ) / (static_cast<value_type>(y.size()) - gamma_summed );
- 
-            // prune support vectors on the basis of the theta vector
-            prune_indices( indices, theta );
- 
-        }
- 
- 
-        std::cout << "Relevance Vector Machine (Tipping, 1999)" << std::endl;
-        std::cout << "support vectors: ";
-        std::copy( indices.begin(), indices.end(), std::ostream_iterator<value_type>(std::cout, " ") );
-        std::cout << std::endl;
-        std::cout << "variance estimate: " << variance_estimate << std::endl;
-        std::cout << std::endl;
- 
-        //         std::cout << "weights: " << std::endl;
-        //         for( unsigned int i=0; i<indices.size(); ++i ) {
-        //           std::cout << weight_vector[i] << " ";
-        // 	}
-        //         std::cout << std::endl;
- 
-        if ( indices.front() == 0 ) {
-            bias = weight_vector(0);
-            indices.erase( indices.begin() );
-        } else {
-            bias = 0.0;
-        }
- 
-        weights.resize( indices.size() );
-        support_vectors.resize( indices.size(), X.size2() );
-        for( int i=0; i<indices.size(); ++i ) {
-            weights[ i ] = weight_vector( indices[i] );
-            ublas::matrix_row<MatT const> X_row( X, indices[i]-1 );  // -1 for bias
-            ublas::matrix_row<matrix_type> support_vectors_row( support_vectors, i );
-            support_vectors_row.assign( X_row );
-        }
- 
-        // 	int qq;
-        // 	std::cin >> qq;
- 
-    }
- 
- 
-public:
-    // locally stored
-    value_type variance_estimate;
- 
-};*/
 
 
 
