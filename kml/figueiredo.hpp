@@ -104,7 +104,7 @@ public:
     // initialise & compute H, Hty and HtH
     matrix_type H;
     // TODO traits form base_type::kernel!!
-    kml::design_matrix( source, target, base_type::kernel, 1.0, H );
+    design_matrix( source, target, base_type::kernel, 1.0, H );
 
     // TODO use a less heavy call?
     vector_type Hty( source.size()+1 );
