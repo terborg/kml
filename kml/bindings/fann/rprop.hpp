@@ -31,7 +31,7 @@ namespace kml { namespace bindings { namespace fann {
 
 
 template<typename I,typename O,typename ANN>
-void rprop( I &inputs, O &outputs, ANN &result_ann ) {
+void rprop( I &inputs, O &outputs, ANN &result_ann, unsigned int epochs = 1000 ) {
 
 	fann_set_training_algorithm( result_ann.m_fann, FANN_TRAIN_RPROP );
 	
@@ -48,7 +48,7 @@ void rprop( I &inputs, O &outputs, ANN &result_ann ) {
 		m_data.output[i] = &outputs[i];
 	}
 	
-	fann_train_on_data( result_ann.m_fann, &m_data, 100000, 100, 1e-5 );
+	fann_train_on_data( result_ann.m_fann, &m_data, epochs, 0, 1e-5 );
 
 	delete m_data.input;
 	delete m_data.output;

@@ -47,7 +47,7 @@ public:
 		fann_set_activation_function_hidden( m_fann, FANN_SIGMOID );
 		fann_set_activation_function_output( m_fann, FANN_SIGMOID );
 
-		fann_print_parameters( m_fann );
+		//fann_print_parameters( m_fann );
 	}
 
 	~ann() {
