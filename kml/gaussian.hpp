@@ -52,6 +52,7 @@ class gaussian: public std::binary_function<Input, Input, typename input_value<I
 public:
     BOOST_SERIALIZATION_SPLIT_MEMBER()
     BOOST_STATIC_ASSERT( N==0 );
+    typedef gaussian<Input,N> type;
     friend class boost::serialization::access;
     typedef typename input_value<Input>::type scalar_type;
     typedef typename mpl::int_<0>::type derivative_order;
@@ -81,10 +82,18 @@ public:
     	return width;
     }
     
+    void set_gamma( typename boost::call_traits<scalar_type>::param_type gamma ) {
+	set_scale_factor( gamma );
+    }
+
     void set_scale_factor( typename boost::call_traits<scalar_type>::param_type gamma ) {
         assert( gamma > 0.0 );
 	width = std::sqrt(0.5 / gamma);
 	exp_factor = -gamma;
+    }
+
+    scalar_type const get_gamma() const {
+    	return -exp_factor;
     }
     
     scalar_type const get_scale_factor() const {
@@ -107,10 +116,16 @@ public:
     	archive & width;
     }
     
+    friend std::ostream& operator<<(std::ostream &os, type const &k) {
+	os << "Gaussian kernel (width " << k.width << ")" << std::endl;
+	return os;
+    }
+
 private:
     scalar_type width;
     scalar_type exp_factor;
 };
+
 
 } // namespace kml
 
