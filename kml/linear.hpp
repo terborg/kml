@@ -116,20 +116,24 @@ public:
 
 
 
-template<typename Input, unsigned int N>
-class linear: public std::binary_function<Input,
-                                          Input,
-                                          typename power_value<Input,N>::type> { 
-    typedef typename input_value<Input>::type scalar_type;
-    typedef typename mpl::int_<N>::type derivative_order;
+template<typename T, unsigned int N=0>
+struct linear: public std::binary_function<T,T,typename input_value<T>::type> {
+    typedef linear<T,N> type;
+    typedef typename input_value<T>::type scalar_type;
 
     /*! Construct an uninitialised linear kernel */
     linear() {}
     
-    typename power_value<Input,N>::type operator()( Input const &u, Input const &v ) {
+    scalar_type operator()( T const &u, T const &v ) const {
     		    return mpl::if_<boost::is_scalar<T>,
              				detail::scalar_inner_prod,
            				detail::vector_inner_prod >::type::compute( u, v );
+    }
+
+
+    friend std::ostream& operator<<(std::ostream &os, type const &k) {
+	os << "Linear kernel" << std::endl;
+	return os;
     }
 
 };
