@@ -17,7 +17,7 @@ atlas_link_libs = []
 if env['PLATFORM'] == 'posix':
    boost_search_path = ['/usr/include/boost']
    atlas_search_path = ['/usr/include', '/usr/include/atlas' ]
-   atlas_link_libs = ['cblas', 'atlas']
+   atlas_link_libs = ['cblas','atlas']
 elif env['PLATFORM'] == 'win32':
    env.Replace( ENV = os.environ )
    boost_search_path = ['/boost']
@@ -36,14 +36,14 @@ else:
 	if not cpp_path.count( boost_path ):
 		cpp_path.append( boost_path )
 
-path = env.FindFile( 'cblas.h', atlas_search_path )
-if path == None:
-	print "Could not find ATLAS! Please check installation and/or search path in SConstruct file."
-	Exit(1)
-else:
-	atlas_path = os.path.dirname(path.abspath)
-	if not cpp_path.count( atlas_path ):
-		cpp_path.append( atlas_path )
+#path = env.FindFile( 'cblas.h', atlas_search_path )
+#if path == None:
+#	print "Could not find ATLAS! Please check installation and/or search path in SConstruct file."
+#	Exit(1)
+#else:
+#	atlas_path = os.path.dirname(path.abspath)
+#	if not cpp_path.count( atlas_path ):
+#		cpp_path.append( atlas_path )
    
 # Adjust the environment
 env.Replace( CPPPATH = cpp_path )
