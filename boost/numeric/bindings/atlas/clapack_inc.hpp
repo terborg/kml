@@ -31,7 +31,7 @@
 extern "C" {
 /* see footnote [2] in libs/numeric/bindings/lapack/doc/index.html */ 
 /* #include <atlas/atlas_enum.h> */
-   #include <atlas/boost/numeric/bindings/atlas/clapack.h> 
+   #include <boost/numeric/bindings/atlas/clapack.h> 
 }
 
 #endif 
