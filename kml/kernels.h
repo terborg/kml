@@ -51,7 +51,7 @@
 #include <iostream>
 #include <vector>
 
-#include <math.hpp>
+#include <kml/math.hpp>
 
 
 
@@ -93,7 +93,7 @@ inline void prune_indices( VecI &indices, VecV &values ) {
     typename VecI::iterator it_write = indices.begin();
     while( it_read != indices.end() ) {
         if ( kml::detail::is_zero( values[*it_read] ) )
-            values.erase( *it_read++ );
+            values[ *it_read++ ] = 0.0;
         else
             (*it_write++) = (*it_read++);
     }
@@ -203,25 +203,27 @@ template<typename MatT>
 void preserved_shrink( MatT &X, typename MatT::size_type index1, typename MatT::size_type index2 ) {
     MatT temp( X.size1()-1, X.size2()-1 );
 
+    typedef typename MatT::size_type size_type;
+
     // copy first part, and second part
     // NOTE extremely inefficient workaround
-    unsigned int row_t=0;
-    for( unsigned int row=0; row<index1; ++row ) {
-        unsigned int col_t=0;
-        for( int col=0; col<index2; ++col ) {
+    size_type row_t=0;
+    for( size_type row=0; row<index1; ++row ) {
+        size_type col_t=0;
+        for( size_type col=0; col<index2; ++col ) {
             temp(row_t,col_t++) = X(row,col);
         }
-        for( int col=index2+1; col<X.size2(); ++col ) {
+        for( size_type col=index2+1; col<X.size2(); ++col ) {
             temp(row_t,col_t++) = X(row,col);
         }
         row_t++;
     }
-    for( unsigned int row=index1+1; row<X.size1(); ++row ) {
-        unsigned int col_t=0;
-        for( int col=0; col<index2; ++col ) {
+    for( size_type row=index1+1; row<X.size1(); ++row ) {
+        size_type col_t=0;
+        for( size_type col=0; col<index2; ++col ) {
             temp(row_t,col_t++) = X(row,col);
         }
-        for( int col=index2+1; col<X.size2(); ++col ) {
+        for( size_type col=index2+1; col<X.size2(); ++col ) {
             temp(row_t,col_t++) = X(row,col);
         }
         row_t++;
@@ -233,8 +235,11 @@ void preserved_shrink( MatT &X, typename MatT::size_type index1, typename MatT::
 
 
 template<typename Matrix>
-void remove_column( Matrix &X, int index ) {
-	for( int i=index; i<(X.size2()-1); ++i ) {
+void remove_column( Matrix &X, typename Matrix::size_type index ) {
+
+	typedef typename Matrix::size_type size_type;
+
+	for( size_type i=index; i<(X.size2()-1); ++i ) {
 		ublas::column(X,i).assign( ublas::column(X,i+1));
 	}
 	X.resize( X.size1(), X.size2()-1);
@@ -247,13 +252,15 @@ template<typename VecT>
 void preserved_shrink( VecT &v, typename VecT::size_type index ) {
     VecT temp( v.size()-1 );
 
+    typedef typename VecT::size_type size_type;
+
     // copy first part, and second part
     // NOTE extremely inefficient workaround
-    unsigned int j=0;
-    for( int i=0; i<index; ++i ) {
+    size_type j=0;
+    for( size_type i=0; i<index; ++i ) {
         temp[j++] = v[i];
     }
-    for( int i=index+1; i<v.size(); ++i ) {
+    for( size_type i=index+1; i<v.size(); ++i ) {
         temp[j++] = v[i];
     }
     v.resize( v.size()-1 );
