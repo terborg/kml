@@ -110,19 +110,10 @@ if env['CXX'] == 'g++':
 			optimise_flags += ' -mmmx'
 
 elif env['CXX'] == '$CC' and env['CC'] == 'cl':
-	# /Wall show all warnings 
-	# /Wp64 show warning related to future 64 bit porting
-      # /GX enable exception handling - or would /EHsc be better?
-      # /Zx:
-	cc_flags += '/nologo /Wp64 /GX /Zc:forScope'
-	
-	# /02 favor speed
-	# /GL is whole program optimisation
+	# Set compiler and optimisation flags
+	cc_flags += '/nologo /Wp64 /EHsc /Zc:forScope'
 	optimise_flags = '/O2'
-	if cpu.is_PentiumPro() or cpu.is_PentiumII() or cpu.is_pentiumIII():
-		optimise_flags += ' /G6'
-	if cpu.is_PentiumIV() or cpu.is_Athlon():
-   		optimise_flags += ' /G7'
+
 	if cpu.has_sse2():
 		optimise_flags += ' /arch:SSE2'
 	elif cpu.has_sse():
@@ -138,3 +129,8 @@ Export( 'atlas_link_libs' )
 # Deligate to build scripts
 env.Replace( CXXFLAGS = cc_flags + ' ' + optimise_flags)
 SConscript( dirs=['example', 'lib','test'] )
+
+
+
+
+
