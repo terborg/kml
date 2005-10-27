@@ -26,6 +26,9 @@
 #include <kml/regression.hpp>
 #include <kml/classification.hpp>
 #include <kml/ranking.hpp>
+#include <vector>
+#include <kml/determinate.hpp>
+
 
 namespace lambda = boost::lambda;
 
