@@ -26,14 +26,14 @@
 
 namespace kml {
 
-template<typename Range, int N=0>
-class polynomial: public std::binary_function<Range,
-                                              Range,
-                                              typename kml::power_return_type<Range,N>::type> {
+template<typename T, int N=0>
+class polynomial: public std::binary_function<T,
+                                              T,
+                                              typename kml::power_return_type<T,N>::type> {
 public:
 
-    typedef polynomial<Range,N> type;
-    typedef typename boost::range_value<Range>::type scalar_type;
+    typedef polynomial<T,N> type;
+    typedef typename boost::range_value<T>::type scalar_type;
     typedef typename mpl::int_<N>::type derivative_order;
 
     /*! Construct an uninitialised polynomial kernel */
@@ -48,8 +48,8 @@ public:
                 typename boost::call_traits<scalar_type>::param_type lambda,
                 typename boost::call_traits<scalar_type>::param_type d): scale(gamma), bias(lambda), order(d) {}
 
-    scalar_type operator()( Range const &u, Range const &v ) const {
-	return std::pow( scale * linear<Range,N>()(u,v) + bias, order );
+    scalar_type operator()( T const &u, T const &v ) const {
+	return std::pow( scale * linear<T>()(u,v) + bias, order );
     }
 
     friend std::ostream& operator<<(std::ostream &os, type const &k) {
