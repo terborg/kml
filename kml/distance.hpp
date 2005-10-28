@@ -114,22 +114,18 @@ namespace kml {
     };
     
     struct scalar_distance_square {
-    private:
-      static scalar_square ss;
-    public:
       template <typename T>
       static T compute(const T& x, const T& y) {
+        static scalar_square ss;
 	return ss(x-y);
       }
     };
     
     struct vector_distance_square {
-    private:
-      static scalar_square ss;
-    public:
       template<typename T>
       inline
       static typename boost::range_value<T>::type compute( T const &u, T const &v ) {
+        static scalar_square ss;
 	typename boost::range_value<T>::type result(0);
 	for( typename boost::range_size<T>::type i = 0; i < boost::size(u); ++i ) {
 	  result += ss(u[i]-v[i]);
