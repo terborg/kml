@@ -48,6 +48,7 @@ This should work on any kernel function.
 #include <boost/lambda/bind.hpp>
 #include <boost/mpl/eval_if.hpp>
 #include <boost/mpl/if.hpp>
+#include <boost/mpl/identity.hpp>
 #include <boost/range/begin.hpp>
 #include <boost/range/end.hpp>
 #include <boost/range/size_type.hpp>
@@ -157,6 +158,16 @@ namespace kml {
   }
   
 
+  template<typename T,typename Kernel>
+  struct closer_by: std::binary_function< T, T, bool > {
+  	closer_by(T const &c, Kernel &k): location(c), kernel(k) {}
+  	bool operator()( T const &a, T const &b ) {
+		return (kernel(a,a)-2.0*kernel(location,a)) < (kernel(b,b)-2.0*kernel(location,b));
+	}
+  	T location;
+	Kernel kernel;
+  };
+ 
 
 } // namespace kml
 
