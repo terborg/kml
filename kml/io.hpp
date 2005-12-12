@@ -204,7 +204,33 @@ void write_svm_light( char* file_name, I &inputs, O &outputs ) {
 
 
 
+/*!
+Read a data file used in Joachims' SVM^(light) format for ranking SVM.
 
+For more details, see http://svmlight.joachims.org/
+ 
+ 
+\param I a range over input examples
+\param O a range over output examples
+ 
+The routine performs two passes over the data file (mainly to 
+preserve the maximum amount of memory needed): 
+ 
+-1 Acquire statistics of the file
+ 
+   - How many data samples are we dealing with?
+   - What is the maximum number of nonzero attributes found in a sample?
+   - What is the maximum index of attribute found in a sample?
+ 
+-2 Read and parse all values in the file
+ 
+Everything after a '#' symbol is discarded.
+*/
+
+template<typename I, typename O>
+void read_svm_light_ranking( char* file_name, I &inputs, O &outputs) {
+
+}
 
 
 /*!

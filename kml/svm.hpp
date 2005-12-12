@@ -32,6 +32,7 @@
 #define SVM_HPP
 
 #define EPS .001
+#define sgn(a)     (((a) < 0) ? -1 : ((a) > 0) ? 1 : 0)
 
 #include <boost/numeric/bindings/traits/std_vector.hpp>
 #include <boost/numeric/bindings/traits/ublas_vector.hpp>
@@ -45,6 +46,7 @@
 #include <algorithm>
 #include <vector>
 #include <iostream>
+#include <utility>
 
 #include <kml/determinate.hpp>
 #include <kml/classification.hpp>
@@ -67,11 +69,10 @@ public:
   typedef determinate<typename Problem::input_type, typename Problem::output_type, K> base_type;
   typedef typename base_type::kernel_type kernel_type;
   typedef typename base_type::result_type result_type;
-  typedef typename Problem::input_type input_type; // I wonder if I need that extra ::type
+  typedef typename Problem::input_type input_type; 
   typedef typename Problem::output_type output_type;  
   typedef double scalar_type;
 
-  // Bug fixed: use call_traits instead of const&, so can be called with both reference and non-reference
   svm( typename boost::call_traits<kernel_type>::param_type k,
        typename boost::call_traits<double>::param_type max_weight ): 
     base_type(k), C(max_weight), tol(.001), startpt(randomness) { }
@@ -298,7 +299,7 @@ public:
     boost::random_number_generator<boost::mt19937> startpt;
   };
 
-  // Ranking SVM. TODO: Test ASAP!
+  // Ranking SVM. 
   /*
 template<typename I, typename O, template<typename,int> class K>
 class svm<I,O,K, typename boost::enable_if<boost::is_same<O,int> >::type>:
@@ -321,27 +322,24 @@ class svm<I,O,K, typename boost::enable_if<boost::is_same<O,int> >::type>:
       base_type(k), C(max_weight), inner_machine(k, max_weight) {}
 
     result_type operator()(input_type const &x) {
-      result_type ret;
-      for (int i=0; i<base_type::weight.size(); ++i)
-	if (base_type::weight[i] > 0)
-	  ret += base_type::weight[i] * target[i] * base_type::kernel(points[i], x);
-      ret += base_type::bias;
-      return ret;
+      return inner_machine(x);
     }
+
 
     template<class IRange, class ORange>
     void learn(IRange const &input, ORange const &output) {
       std::vector<input_type> points;
-      std::vector<bool> target;
-      for (int i = input.begin(); i < input.size(); ++i)
-	for (int j = i+1; j < input.size(); ++j)
-	  if (output[i] != output[j]) {
-	    input_type diff_vec;
-	    std::transform(input[i].begin(), input[i].end(), input[j].begin, diff_vec.begin(),
-			   std::minus<typename boost::range_value<input_type>::type>());
-	    points.push_back(diff_vec);
-	    target.push_back(output[i] > output[j]);
-	  }
+      std::vector<int> target;
+      for (unsigned int i = 0; i < input.size()-1; ++i)  // no need to compare against the last point, we already did
+	for (unsigned int j = i+1; j < input.size(); ++j) 
+	  if (output[i].first == output[j].first) 
+	    if (output[i].second != output[j].second) {
+	      input_type diff_vec;
+	      std::transform(input[i].begin(), input[i].end(), input[j].begin(), std::back_inserter(diff_vec),
+			     std::minus<typename boost::range_value<input_type>::type>());
+	      points.push_back(diff_vec);
+	      target.push_back(sgn(output[i].second - output[j].second));
+	    }
       inner_machine.learn(points, target);
       base_type::weight = inner_machine.weight;
       base_type::support_vector = inner_machine.support_vector;
@@ -353,7 +351,7 @@ class svm<I,O,K, typename boost::enable_if<boost::is_same<O,int> >::type>:
     std::vector<input_type> points;
     std::vector<output_type> target;
 
-    typedef kml::classification<input_type, bool> problem_type;
+    typedef kml::classification<input_type, int> problem_type;
     svm<problem_type, K> inner_machine;
   };
 
