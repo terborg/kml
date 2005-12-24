@@ -1,11 +1,14 @@
+(this file incorporates Doxygen tags so that it can be included in the compiled documentation)
+
+/*! \page installation_page Installation
 
 These are generic installation instructions.
 
 Please be sure to have installed the following packages:
 
-Scons  http://www.scons.org
-Boost  http://www.boost.org
-ATLAS  http://math-atlas.sourceforge.net
+- Scons  http://www.scons.org
+- Boost  http://www.boost.org
+- ATLAS  http://math-atlas.sourceforge.net
 
 The Boost Numeric.Bindings are included in the Kernel-Machine library, but can also 
 be downloaded seperately through Boost's sandbox CVS.
@@ -16,15 +19,24 @@ purposes.
 libfann - The fast Artificial Neural Network Library, which can do basic feed-forward neural
 nets at decent speeds.
 
+\section building Building the Kernel-Machine library using Scons
+
+To build KML out of the box on windows you will need to have ATLAS installed in /atlas, and
+Boost in /boost.  You will also need either cygwin or mingw to build the CBLAS dll.  If they
+installed in a location other than /mingw or /cygwin, you may need to modify lib/SConscript
+for scons to execute correctly.  If you don't need to build the CBLAS dll, you can simply
+remove the file lib/SConscript.
 
 If all is installed, go to the top-level KML directory, and run scons
 
+\verbatim
 $ cd /foo/bar/kml
 $ scons
+\endverbatim
 
 to get the examples, test programs, some libraries, and under Windows, a CBLAS dll to be built.
 
-
+*/
 
 
 
