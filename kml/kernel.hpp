@@ -33,8 +33,23 @@
 \version 0.1
 \section section0 Introduction
 
+The Kernel-Machine Library is a freely available (released under the GPL) C++ library to promote the use and
+progress of kernel machines. It is both for academic use and for developing real world applications. The
+Kernel-Machine Library draws heavily from features of modern C++ such as template meta-programming to achieve
+high performance while at the same time offering a comfortable interface. It enables compile-time selection of
+specialised algorithms on the basis of data types: for example, the specific case of a SVM in combination with
+a linear kernel can be computed by a specialised efficient algorithm.
 
+The Kernel-Machine Library has implementations for the following kernel machines and their algorithms:
+- Support Vector Machine
+- Relevance Vector Machine
+- Kernel Recursive Least Squares
+- Adaptive Sparseness using Jeffreys Prior
+- Smooth Relevance Vector Machine
+Up till now, the focus has been on regression. The handling of classification and ranking problems is being added.
 
+For information about installing KML refer to the
+\ref installation_page "Installation" page.
 
 \section section2 Concepts
 

@@ -35,14 +35,18 @@ namespace lambda = boost::lambda;
 
 namespace kml {
 
-
 template< typename Problem, template<typename,int> class Kernel, class Enable = void >
 class kernel_machine {};
 
 
 
-// Regression kernel machine
+/*! \brief Regression kernel machine
 
+	This is used as a base for various regression kernel machines, for example kml::rvm.
+
+	\param Problem a regression problem type, for example kml::regression
+	\param Kernel kernel to be used by the machine
+*/
 template< typename Problem, template<typename,int> class Kernel >
 class kernel_machine< Problem, Kernel, typename boost::enable_if< is_regression<Problem> >::type >: 
 public std::unary_function< typename Problem::input_type, typename Problem::output_type > {
@@ -56,12 +60,19 @@ public:
     typedef double scalar_type;
        
     // Bug fixed: use call_traits instead of const&, so can be called with both reference and non-reference
+	/*! \brief Initializes the kernel
+		\param k parameter used to initialize the kernel
+	*/
     kernel_machine( typename boost::call_traits<kernel_type>::param_type k ): kernel(k) {}
 
     // important: needs to be bind(kernel,x,_2) -- as in Ter Borg and Rothkrantz, 2005, equation 1
     //            this is only important in case of asymmetric kernel functions, i.e., those at uneven derivative
     //            orders
     // FIXME optimal return type (by value, return value, i.e. see boost call_traits)
+	/*! \brief Evaluates the kernel machine at an input
+		\param x the point at which the machine is evaluated
+		\return \f$ bias + \sum_i weight[i] \times kernel(x, support\_vector[i]) \f$
+	*/
     output_type operator()( typename boost::call_traits<input_type>::param_type x ) {
         return std::inner_product( weight.begin(),
 	                           weight.end(),
@@ -71,23 +82,27 @@ public:
                                                              lambda::bind(kernel,x,lambda::_2)) );
     }
 
+	/// Clears the machine (operator() it will always returns 0).
     void clear() {
 	bias = 0.0;
 	weight.clear();
 	support_vector.clear();
     }
     
-    kernel_type kernel;
+    /// kernel used by the machine
+	kernel_type kernel;
+	/// bias of the machine
     double bias;
+	/// weights of the support vectors
     std::vector<double> weight;
+	/// support vectors
     std::vector<input_type> support_vector;
 };
 
 
 
 
-// Classification kernel machine
-
+/// Classification kernel machine
 template< typename Problem, template<typename,int> class Kernel>
 class kernel_machine<Problem, Kernel, typename boost::enable_if< is_classification<Problem> >::type >: 
 public std::unary_function< typename Problem::input_type, typename Problem::output_type > {

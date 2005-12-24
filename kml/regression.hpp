@@ -26,8 +26,20 @@ namespace mpl = boost::mpl;
 
 namespace kml {
 
-// define a regression problem
+/*! \brief Defines a regression problem.
+	\param I the input type
+	\param O the output type
 
+	\section example Examples
+	\code
+    typedef kml::regression< ublas::vector<double>, double > problem;
+	\endcode
+    The problem defined as above can then be used as a template parameter in
+	defining kernel machines:
+	\code
+    kml::rvm< problem, kml::gaussian > my_machine( 1.6 );
+	\endcode
+*/
 template<typename I, typename O>
 class regression {
 public:
