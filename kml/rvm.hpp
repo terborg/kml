@@ -25,7 +25,9 @@
 #include <boost/range/begin.hpp>
 #include <boost/range/end.hpp>
 #include <boost/range/size.hpp>
+#if defined(__GNUC__)
 #include <ext/numeric>
+#endif
 
 #include <kml/kernel_machine.hpp>
 #include <kml/design_matrix.hpp>
@@ -330,7 +332,11 @@ public:
         std::vector<unsigned int> active_set;
         std::vector<unsigned int> inactive_set( source.size()+1 );
         // fill indices with 0,1,2,3,...,N-1. This is not in standard C++, but an SGI extension.
+#if defined(__GNUC__)
         iota( inactive_set.begin(), inactive_set.end(), 0 );
+#else
+		for (std::vector<unsigned>::iterator it = inactive_set.begin(); it < inactive_set.end(); *it++ = it-inactive_set.begin());
+#endif
 
         vector_type weight_vector( source.size()+1 );
         vector_type theta( source.size()+1 );
