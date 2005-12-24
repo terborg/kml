@@ -37,8 +37,11 @@ namespace lapack = boost::numeric::bindings::lapack;
 
 
 
-// least squares
-// solve Ax=b, where A is a positive definite matrix
+/*! least squares
+	solve Ax=b, where A is a positive definite matrix
+
+	\ingroup helper
+*/
 
 template<typename MatT, typename VecT>
 void least_squares( MatT const &A, VecT &x, VecT const &b ) {
@@ -74,8 +77,11 @@ void least_squares( MatT const &A, VecT &x, VecT const &b ) {
 
 
 
-// perform ridge regression
-// solve (A+I*\lambda)x=b, where A is a positive definite matrix
+/*! perform ridge regression
+	solve (A+I*\lambda)x=b, where A is a positive definite matrix
+
+	\ingroup helper
+*/
 
 template<typename MatT, typename VecT>
 void ridge_regression( MatT const &A, VecT &x, VecT const &b, typename MatT::value_type const &lambda ) {
@@ -112,9 +118,11 @@ void ridge_regression( MatT const &A, VecT &x, VecT const &b, typename MatT::val
 }
 
 
+/*! perform roughness penalty regression
+	solve (A+lambda*L)x=b
 
-// perform roughness penalty regression
-// solve (A+lambda*L)x=b
+	\ingroup helper
+*/
 
 template<typename MatT, typename VecT>
 void roughness_penalty_regression( MatT const &A, MatT const &L, VecT &x, VecT const &b, typename MatT::value_type const &lambda ) {

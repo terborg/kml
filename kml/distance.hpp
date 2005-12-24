@@ -137,21 +137,19 @@ namespace kml {
   } // namespace detail
   
   
-  // distance_square function which works on both scalars and vectors
-  // complex numbers not taken into account :-)
-  
-  template<typename T>
-  typename mpl::eval_if<
-    boost::is_scalar<T>,
-    mpl::identity<T>,
-    boost::range_value<T> >::type
-  distance_square( T const &u, T const &v ) {
-    return mpl::if_<
-      boost::is_scalar<T>,
-      detail::scalar_distance_square,
-      detail::vector_distance_square
-      >::type::compute( u, v );
-  }
+	/*! distance_square function which works on both scalars and vectors.
+		Complex numbers not taken into account :-)
+		\ingroup helper
+	*/
+	template<typename T>
+	typename input_value<T>::type
+	distance_square( T const &u, T const &v ) {
+		return mpl::if_<
+		boost::is_scalar<T>,
+		detail::scalar_distance_square,
+		detail::vector_distance_square
+		>::type::compute( u, v );
+	}
   
 
   template<typename T,typename Kernel>

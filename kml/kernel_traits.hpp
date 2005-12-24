@@ -32,7 +32,9 @@ struct kernel_traits {
 
 
 // traits classes
-
+/*! \brief kernel_result<kernel>::type is kernel::result_type
+	\ingroup meta
+*/
 template<class Kernel>
 struct kernel_result {
 	typedef typename detail::kernel_traits<Kernel>::result_type type;

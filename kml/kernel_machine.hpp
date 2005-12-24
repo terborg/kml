@@ -46,6 +46,8 @@ class kernel_machine {};
 
 	\param Problem a regression problem type, for example kml::regression
 	\param Kernel kernel to be used by the machine
+
+	\ingroup kernel_machines
 */
 template< typename Problem, template<typename,int> class Kernel >
 class kernel_machine< Problem, Kernel, typename boost::enable_if< is_regression<Problem> >::type >: 
@@ -102,7 +104,15 @@ public:
 
 
 
-/// Classification kernel machine
+/*! \brief Classification kernel machine
+
+	This is used as a base for various classification kernel machines.
+
+	\param Problem a regression problem type, for example kml::classification
+	\param Kernel kernel to be used by the machine
+
+	\ingroup kernel_machines
+*/
 template< typename Problem, template<typename,int> class Kernel>
 class kernel_machine<Problem, Kernel, typename boost::enable_if< is_classification<Problem> >::type >: 
 public std::unary_function< typename Problem::input_type, typename Problem::output_type > {

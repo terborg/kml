@@ -39,6 +39,9 @@ namespace kml {
 	\code
     kml::rvm< problem, kml::gaussian > my_machine( 1.6 );
 	\endcode
+
+	\sa classification, ranking
+	\ingroup problem
 */
 template<typename I, typename O>
 class regression {

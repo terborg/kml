@@ -66,7 +66,7 @@ struct factorial<0> {
 };
 
 // a run-time counter-part as well...
-unsigned int factorial_rt( unsigned int n ) {
+inline unsigned int factorial_rt( unsigned int n ) {
     return ( n==0 ? 1 : n * factorial_rt(n-1) );
 }
 

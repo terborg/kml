@@ -76,6 +76,7 @@ struct multiplies: public std::binary_function<Weight,VecT,VecT> {
 \param O the output type
 \param K the kernel type
 
+\ingroup kernel_machines
 */
 
 template< typename I,
@@ -132,8 +133,6 @@ public:
     std::vector<double> weight;
     std::vector<I> support_vector;
 };
-
-
 
 
 

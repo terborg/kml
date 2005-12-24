@@ -29,73 +29,83 @@
 #include <kml/distance.hpp>
 #include <cassert>
 
+namespace kml {
+	
 /*!
-\brief Gaussian kernel
-\param Input defines the underlying input data type
+\brief Gaussian kernel of the form \f$ f(x)=e^{-\gamma\|x - \mu\|} \f$ where
+	\f$ \gamma = \frac{1}{\sigma^2} \f$
+\param I defines the underlying input data type
+	(distance_square<I, I> must be defined, which is done for
+	scalar and vector types in distance.hpp)
 
 This is a template class that creates a function for the Gaussian kernel. 
 
-
 \todo
-- call the input type I 
 - clean-up
 - finish documentation
 - complexity guarantees
 - loading and saving
 
+\ingroup kernels
 */
 
-namespace kml {
-
-template<typename Input, int N=0>
-class gaussian: public std::binary_function<Input, Input, typename input_value<Input>::type> {
+template<typename I, int N=0>
+class gaussian: public std::binary_function<I, I, typename input_value<I>::type> {
 public:
     BOOST_SERIALIZATION_SPLIT_MEMBER()
     BOOST_STATIC_ASSERT( N==0 );
-    typedef gaussian<Input,N> type;
+    typedef gaussian<I,N> type;
     friend class boost::serialization::access;
-    typedef typename input_value<Input>::type scalar_type;
+    typedef typename input_value<I>::type scalar_type;
     typedef typename mpl::int_<0>::type derivative_order;
 
     /*! Construct an uninitialised Gaussian kernel */
     gaussian() {}
 
-    gaussian( typename boost::call_traits<scalar_type>::param_type sigma ) {
+    /*! Construct a Gaussian kernel by providing a value for \f$ \sigma \f$ */
+	gaussian( typename boost::call_traits<scalar_type>::param_type sigma ) {
        set_width(sigma);
     }
 
-    /*! \param u input pattern u
+    /*! Returns the result of the evaluation of the Gaussian kernel for these points
+		\param u input pattern u
         \param v input pattern v
-	\return the result of the evaluation of the Gaussian kernel for these points
+	\return \f$ e^{-\gamma\|u - v\|} \f$
     */
-    scalar_type operator()( Input const &u, Input const &v ) const {
+    scalar_type operator()( I const &u, I const &v ) const {
         return std::exp( exp_factor * distance_square( u, v ) );
     }
 
+	/*! Sets \f$ \sigma \f$. */
     void set_width( typename boost::call_traits<scalar_type>::param_type sigma ) {
     	assert( sigma > 0.0 );
 	width = sigma;
 	exp_factor = -1.0 / (2.0*sigma*sigma);
     }
     
-    scalar_type const get_width() const {
+	/*! Returns \f$ \sigma \f$. */
+	scalar_type const get_width() const {
     	return width;
     }
     
-    void set_gamma( typename boost::call_traits<scalar_type>::param_type gamma ) {
+   	/*! Sets \f$ \gamma \f$. */
+	void set_gamma( typename boost::call_traits<scalar_type>::param_type gamma ) {
 	set_scale_factor( gamma );
     }
 
-    void set_scale_factor( typename boost::call_traits<scalar_type>::param_type gamma ) {
+    /*! Sets \f$ \gamma \f$. */
+	void set_scale_factor( typename boost::call_traits<scalar_type>::param_type gamma ) {
         assert( gamma > 0.0 );
 	width = std::sqrt(0.5 / gamma);
 	exp_factor = -gamma;
     }
 
+    /*! Returns \f$ \gamma \f$. */
     scalar_type const get_gamma() const {
     	return -exp_factor;
     }
     
+    /*! Returns \f$ \gamma \f$. */
     scalar_type const get_scale_factor() const {
     	return -exp_factor;
     }

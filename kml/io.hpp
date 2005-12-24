@@ -53,10 +53,9 @@ preserve the maximum amount of memory needed):
 -2 Read and parse all values in the file
  
 Everything after a '#' symbol is discarded.
- 
+
+\ingroup fileio
 */
-
-
 
 template<typename I, typename O>
 void read_svm_light( char* file_name, I &inputs, O &outputs ) {
@@ -176,6 +175,8 @@ void read_svm_light( char* file_name, I &inputs, O &outputs ) {
 /*!
 Write a data file also used in Joachims' SVM^{light} format
 For more details, see http://svmlight.joachims.org/
+
+\ingroup fileio
 */
 
 template<typename I, typename O>
@@ -225,6 +226,8 @@ preserve the maximum amount of memory needed):
 -2 Read and parse all values in the file
  
 Everything after a '#' symbol is discarded.
+
+\ingroup fileio
 */
 
 template<typename I, typename O>
@@ -242,6 +245,7 @@ For more details, see http://www.idiap.ch/machine_learning.php?content=Torch/en_
  
 Because you supply inputs AND outputs here, the SVM Torch Train data file format is assumed
  
+\ingroup fileio
 */
 
 template<typename I, typename O>
@@ -316,6 +320,8 @@ For more details, see http://www.idiap.ch/machine_learning.php?content=Torch/en_
 \param O a range over output examples
  
 At the moment, we use space as a white-space character.
+
+\ingroup fileio
 */
 
 
@@ -359,6 +365,7 @@ For more details, see http://www.idiap.ch/machine_learning.php?content=Torch/en_
  
 Because you supply inputs only, the SVM Torch Test data file format is assumed
  
+\ingroup fileio
 */
 
 template<typename I>

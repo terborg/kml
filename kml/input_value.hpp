@@ -28,9 +28,11 @@
 namespace mpl = boost::mpl;
 
 namespace kml {
-// determine the type of the input value
-// scalar type -> scalar type
-// vector type -> underlying scalar type
+/*! determine the type of the input value
+	scalar type -> scalar type
+	vector type -> underlying scalar type
+	\ingroup meta
+*/
 template<typename T>
 struct input_value: mpl::eval_if<boost::is_scalar<T>,mpl::identity<T>,boost::range_value<T> > {};
 

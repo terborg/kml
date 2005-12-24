@@ -29,7 +29,13 @@
 namespace kml {
 
 
+/*! Online determinate kernel machine
+	\param I the input type
+	\param O the output type
+	\param K the kernel type
 
+	\ingroup kernel_machines
+*/
 template< typename Input,typename Output,template<typename,int> class Kernel >
 class online_determinate: public determinate<Input,Output,Kernel> {
 public:

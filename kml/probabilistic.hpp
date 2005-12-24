@@ -57,6 +57,7 @@ namespace kml {
 
 The probabilistic kernel machine has most of the properties of a determinate kernel machine.
 
+\ingroup kernel_machines
 */
 
 

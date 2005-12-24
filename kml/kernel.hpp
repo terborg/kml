@@ -26,8 +26,20 @@
 #include <boost/array.hpp>
 
 
-/*!
+/// \defgroup kernels Kernels
+/// \defgroup kernel_machines Kernel-Machines
+/*! \defgroup regression_machines Regression Machines
+	\ingroup kernel_machines
+*/
+/*! \defgroup classification_machines Regression Machines
+	\ingroup kernel_machines
+*/
+/// \defgroup problem Problem Specification
+/// \defgroup meta Metaprogramming related
+/// \defgroup helper Helper Functions
+/// \defgroup fileio File I/O
 
+/*!
 \mainpage The Kernel Machine Library
 \author Rutger W. ter Borg
 \version 0.1

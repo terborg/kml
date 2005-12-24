@@ -23,9 +23,15 @@
 
 #include <boost/mpl/bool.hpp>
 
-
 namespace kml {
 
+/*! \brief Defines a classification problem.
+	\param I the input type
+	\param O the output type
+
+	\sa regression, ranking
+	\ingroup problem
+*/
 template<typename I, typename O>
 class classification {
 public:

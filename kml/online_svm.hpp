@@ -103,7 +103,8 @@ Classification: \f$ Q_{ij}= y_i y_j k(x_i,x_j) \f$
 -# Mario Martin, 2002. On-line Support Vector Machine for Function Approximation.
    Technical report LSI-02-11-R, Universitat Politecnica de Catalunya
    http://tinyurl.com/48y9n
-   
+  
+\ingroup kernel_machines
 */
 
 

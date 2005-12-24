@@ -24,6 +24,13 @@
 
 namespace kml {
 
+/*! \brief Defines a ranking problem.
+	\param I the input type
+	\param O the output type
+
+	\sa regression, classification
+	\ingroup problem
+*/
 template<typename I, typename O>
 class ranking {
 public:
@@ -32,7 +39,7 @@ public:
   typedef O output_type;
 };
 
-  // Define templates is_ranking so we can recognise the ranking type of problems
+// Define templates is_ranking so we can recognise the ranking type of problems
 
 template<typename T>
 struct is_ranking: boost::mpl::bool_<false> {};
