@@ -116,22 +116,35 @@ public:
 
 
 
-template<typename T, unsigned int N=0>
+
+
+/*!
+\brief Linear kernel
+\param T defines the underlying data type
+
+The linear kernel is the basic Eucledian inner product.
+
+\todo Remove the second template parameter
+
+*/
+
+
+template<typename T>
 struct linear: public std::binary_function<T,T,typename input_value<T>::type> {
-    typedef linear<T,N> type;
+    typedef linear<T> type;
     typedef typename input_value<T>::type scalar_type;
 
     /*! Construct an uninitialised linear kernel */
     linear() {}
     
+    inline
     scalar_type operator()( T const &u, T const &v ) const {
     		    return mpl::if_<boost::is_scalar<T>,
              				detail::scalar_inner_prod,
            				detail::vector_inner_prod >::type::compute( u, v );
     }
 
-
-    friend std::ostream& operator<<(std::ostream &os, type const &k) {
+    friend std::ostream& operator<<(std::ostream &os, type const &) {
 	os << "Linear kernel" << std::endl;
 	return os;
     }
