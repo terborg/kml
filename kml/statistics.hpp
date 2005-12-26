@@ -42,6 +42,7 @@
 #include <kml/detail/zero_element.hpp>
 #include <kml/detail/sqrt_element.hpp>
 #include <kml/detail/scale_or_dot.hpp>
+#include <kml/detail/abs_element.hpp>
 
 #include <iostream>
 
@@ -316,6 +317,23 @@ template<typename Range>
 typename boost::range_value<Range>::type correlation( Range const &x, Range const &y ) {
     return detail::div_element( covariance(x,y), detail::prod_element( standard_deviation(x), standard_deviation(y) ) );
 }
+
+
+
+
+
+
+
+template<typename Range>
+Range abs( Range const &x ) {
+	return detail::abs_element( x );
+}
+
+
+
+
+
+
 
 
 } // namespace kml
