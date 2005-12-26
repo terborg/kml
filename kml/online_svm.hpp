@@ -359,7 +359,13 @@ public:
             int migrate_index_2;
 
 
-
+	    if ( margin_sense[index] < 0.0 ) {
+	    	std::cout << "Something seems to be wrong, algorithm will get stuck now" << std::endl;
+		std::cout << "Current index: " << index << std::endl;
+		std::cout << "Matrix R: " << R.view() << std::endl;
+		int qqq;
+		std::cin >> qqq;
+	    }
 
             //
             // Check for cases 1 and 2: end case for the incremental algorithm
@@ -704,8 +710,38 @@ public:
 
             // BAIL OUT HERE IF NECESSARY
 
-            R.matrix(old_size,old_size) = -1.0 / (base_type::kernel( base_type::support_vector[idx], base_type::support_vector[idx] ) +
-                                                  atlas::dot( H.row(idx), R_row_part ));
+            double divisor = (base_type::kernel( base_type::support_vector[idx], base_type::support_vector[idx] ) +
+                                                 atlas::dot( H.row(idx), R_row_part ));
+
+	    if (std::fabs( divisor ) < 1e-12 ) {
+	    	
+		// from http://bach.ece.jhu.edu/pub/gert/slides/kernel.pdf
+		// When the incremental inverse jacobian is (near) ill conditioned, a direct L1-norm minimisation
+		// of the \alpha coefficients yields an optimally sparse solution
+		
+		std::cout << std::endl;
+		std::cout << "k_tt + dot( H.row(idx), R_row_part ) = " << divisor << std::endl;
+	    	std::cout << "Problem detected, algorithm will get stuck real soon now." << std::endl;
+		std::cout << "Point to be added to the margin set: " << idx << std::endl;
+		std::cout << H.row(idx) << std::endl;
+		std::cout << R_row_part << std::endl;
+		
+		for( unsigned int i=0; i<margin_set.size(); ++i ) {
+			std::cout << margin_set[i] << " ";
+		}
+		std::cout << std::endl << std::endl;
+		
+		int qqq;
+		std::cin >> qqq;
+		
+		//atlas::set( 0.0, R_row_part );
+		//R.matrix( old_size, old_size ) = 0.0;
+		
+		
+	    }
+
+            // the divisor is within acceptable bounds; increase the R matrix as usual
+            R.matrix(old_size,old_size) = -1.0 / divisor;
 
             // perform a rank-1 update of the R matrix
             atlas::syr( R.matrix(old_size,old_size), R_row_part, R_symm_view );
