@@ -24,6 +24,11 @@ elif env['PLATFORM'] == 'win32':
    atlas_search_path = ['/atlas','/atlas/include']
    atlas_link_libs = ['cblas']
    lib_path = ['#/lib']
+elif env['PLATFORM'] == 'darwin':
+   boost_search_path = ['/sw/include/boost']
+   atlas_search_path = ['/sw/include/atlas']
+   atlas_link_libs = ['cblas','atlas']
+   lib_path = ['/sw/lib']
 
 # Search path dictionaries for dependent libraries
 path = env.FindFile( 'version.hpp', boost_search_path )
@@ -95,7 +100,7 @@ if env['CXX'] == 'g++':
 		optimise_flags += ' -march=athlon'
 	elif cpu.is_Athlon64():
 		optimise_flags += ' -march=k8'
-	if cpu.is_32bit():
+	if cpu.is_32bit() and not cpu.is_ppc():
 		if cpu.has_sse() or cpu._has_sse2():
 			optimise_flags += ' -mfpmath=sse'
 		if cpu.has_sse():
