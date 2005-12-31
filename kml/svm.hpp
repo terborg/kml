@@ -340,6 +340,7 @@ class svm<I,O,K, typename boost::enable_if<boost::is_same<O,int> >::type>:
 	      points.push_back(diff_vec);
 	      target.push_back(sgn(output[i].second - output[j].second));
 	    }
+
       inner_machine.learn(points, target);
       base_type::weight = inner_machine.weight;
       base_type::support_vector = inner_machine.support_vector;

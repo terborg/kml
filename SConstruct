@@ -85,7 +85,7 @@ if env['CXX'] == 'g++':
 	# CXXFLAGS = ....
 	cc_flags += '-Wall -ansi -pedantic'
 	optimise_flags = '-O3 -ffast-math -fomit-frame-pointer -DNDEBUG -DNO_DEBUG'
-	debug_flags += ' -g -pg'
+	debug_flags += ' -g'
 	if cpu.is_PentiumIII():
    		optimise_flags += ' -march=pentium3'
 	elif cpu.is_PentiumIV(): 
@@ -132,7 +132,7 @@ Export( 'env' )
 Export( 'atlas_link_libs' )
 
 # Deligate to build scripts
-env.Replace( CXXFLAGS = cc_flags + ' ' + optimise_flags)
+env.Replace( CXXFLAGS = cc_flags + ' ' + optimise_flags + debug_flags)
 SConscript( dirs=['example', 'lib','test'] )
 
 
