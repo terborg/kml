@@ -68,9 +68,9 @@ public:
     }
 
     /*! Refinement of Assignable */
-    type operator=( type const &other ) {
+    type &operator=( type const &other ) {
 	if (this != &other) { destroy(); copy(other); }
-	return (*this);
+	return *this;
     }
 
     /*! Construct a Gaussian kernel by providing a value for \f$ \sigma \f$ */
