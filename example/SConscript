@@ -1,6 +1,7 @@
 
 Import('env')
 Import('atlas_link_libs')
+Import('c_link_libs')
 
 env.Program('gaussian.cpp')
 env.Program('svm_regression.cpp', LIBS=atlas_link_libs )
@@ -11,6 +12,7 @@ env.Program('svm_classification.cpp' )
 env.Program('svm_ranking.cpp' )
 
 env.Program('online_svm_classification.cpp', LIBS=atlas_link_libs )
+env.Program('svm_c_ranking.c', LIBS=c_link_libs)
 
 #env.Program('ann_regression.cpp', LIBS=atlas_link_libs + ['doublefann'] )
 

@@ -80,7 +80,7 @@ public:
   result_type operator() (input_type const &x) {
     result_type ret=0;
     for (size_t i=0; i<base_type::weight.size(); ++i)
-      if (base_type::weight[i] > 0) 
+      if (base_type::weight[i] > 0)
 	ret += base_type::weight[i] * target[i] * base_type::kernel(points[i], x);
     ret -= base_type::bias;
     return ret;

@@ -13,11 +13,13 @@ lib_path = []
 boost_search_path = []
 atlas_search_path = []
 atlas_link_libs = []
+c_link_libs = []
 
 if env['PLATFORM'] == 'posix':
    boost_search_path = ['/usr/include/boost']
    atlas_search_path = ['/usr/include', '/usr/include/atlas' ]
    atlas_link_libs = ['cblas','atlas']
+   c_link_libs = ['kml']
 elif env['PLATFORM'] == 'win32':
    env.Replace( ENV = os.environ )
    boost_search_path = ['/boost']
@@ -76,7 +78,7 @@ env.Replace( LIBS = global_link_libs )
 
 cpu = cpuinfo.cpuinfo()
 
-cc_flags = ''
+cc_flags = '-Wall '
 debug_flags = ''
 optimise_flags = ''
 
@@ -130,6 +132,7 @@ atlas_link_libs += env['LIBS']
 # Export the environment variables
 Export( 'env' )
 Export( 'atlas_link_libs' )
+Export( 'c_link_libs' )
 
 # Deligate to build scripts
 env.Replace( CXXFLAGS = cc_flags + ' ' + optimise_flags + debug_flags)

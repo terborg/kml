@@ -87,8 +87,23 @@ int main(int argc, char *argv[]) {
   target.push_back(std::make_pair(3,1));
 
   kml::svm<problem_type, kml::gaussian> my_machine(3.162277, 1.0);
-
   my_machine.learn(points, target);
+
+  std::cerr << "Weight vector (size " << my_machine.weight.size() << "): ";
+  for (unsigned int i=0; i<my_machine.weight.size(); ++i)
+    std::cerr << my_machine.weight[i] << ", ";
+  std::cerr << std::endl;
+
+  for (std::vector<std::vector<double> >::const_iterator it1 = 
+	 my_machine.support_vector.begin();
+       it1 != my_machine.support_vector.end(); ++it1) {
+    std::cerr << "Vector size: " << it1->size() << std::endl;
+    std::cerr << "[";
+    for (std::vector<double>::const_iterator it2 = it1->begin();
+	 it2 != it1->end(); ++it2)
+      std::cerr << *it2 << ", ";
+    std::cerr << "]" << std::endl;
+  }
 
   std::vector<std::vector<double> > testpoints;
   point.push_back(1);

@@ -35,6 +35,7 @@
 #include <boost/random/random_number_generator.hpp>
 #include <boost/range/value_type.hpp>
 #include <vector>
+#include <utility>
 
 #include "kml/svm_c.h"
 
@@ -63,7 +64,7 @@ extern "C" {
     delete (kml::svm<class_double, kml::gaussian>*) v;
   }
 
-  void kml_learn_classification_double_gaussian(void *v, double **p, int *t,
+  void kml_learn_classification_double_gaussian(void *v, double **p, int **t,
 						int sz_row, int sz_col) {
     kml::svm<class_double, kml::gaussian>* m = (kml::svm<class_double, kml::gaussian> *) v;
     std::vector<std::vector<double> > points;
@@ -71,9 +72,12 @@ extern "C" {
       points.push_back(std::vector<double>(*p, (*p) + sz_col));
       ++p;
     }
-    std::vector<int> target(t, t+sz_row);
+    std::vector<int> target;
+    for (int j = 0; j < sz_row; ++j) {
+      target.push_back((*t)[1]);
+      ++t;
+    }
     m->learn(points, target);
-    std::cerr << "Back in the wrapper, done learning" << std::endl;
   }
 
   double kml_classify_double_gaussian(void *v, double *i, int sz) {
@@ -88,19 +92,36 @@ extern "C" {
     return (void *) new kml::svm<rank_double, kml::gaussian>(k, s);
   }
 
+  void* kml_copy_ranking_double_gaussian(void *v) {
+    kml::svm<rank_double, kml::gaussian>* m = (kml::svm<rank_double, kml::gaussian> *) v;
+    return (void *) new kml::svm<rank_double, kml::gaussian>(*m);
+  }
+
   void kml_delete_ranking_double_gaussian(void *v) {
     delete (kml::svm<rank_double, kml::gaussian>*) v;
   }
 
-  void kml_learn_ranking_double_gaussian(void *v, double **p, int *t, int sz_row,
+  void kml_learn_ranking_double_gaussian(void *v, double **p, int **t, int sz_row,
 					 int sz_col) {
-
+    kml::svm<rank_double, kml::gaussian>* m = (kml::svm<rank_double, kml::gaussian> *) v;
+    std::vector<std::vector<double> > points;
+    for (int j = 0; j < sz_row; ++j) {
+      points.push_back(std::vector<double>(*p, (*p) + sz_col));
+      ++p;
+    }
+    std::vector<std::pair<int,int> > target;
+    for (int j=0; j < sz_row; ++j) {
+      target.push_back(std::make_pair(**t, *((*t)+1))); // .first is group, .second is rank
+      ++t;
+    }
+    m->learn(points, target);
   }
-  /*
+ 
   double kml_rank_double_gaussian(void* v, double *i, int sz) {
+    kml::svm<rank_double, kml::gaussian>* m = (kml::svm<rank_double, kml::gaussian> *) v;
 
-  }
-  */
+    return m->operator()(std::vector<double>(i, i+sz));
+  }  
 }
 
 #endif
