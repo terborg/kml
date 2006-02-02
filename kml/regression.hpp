@@ -27,6 +27,7 @@ namespace mpl = boost::mpl;
 namespace kml {
 
 /*! \brief Defines a regression problem.
+
 	\param I the input type
 	\param O the output type
 
@@ -43,12 +44,20 @@ namespace kml {
 	\sa classification, ranking
 	\ingroup problem
 */
-template<typename I, typename O>
+// template<typename I, typename O>
+// class regression {
+// public:
+// 	typedef regression type;
+// 	typedef I input_type;
+// 	typedef O output_type;
+// };
+
+template<typename T>
 class regression {
 public:
 	typedef regression type;
-	typedef I input_type;
-	typedef O output_type;
+	typedef typename T::first_type input_type;
+	typedef typename T::second_type output_type;
 };
 
 
@@ -60,8 +69,8 @@ public:
 template<typename T>
 struct is_regression: mpl::bool_<false> {};
 
-template<typename I, typename O>
-struct is_regression<regression<I,O> >: mpl::bool_<true> {};
+template<typename T>
+struct is_regression<regression<T> >: mpl::bool_<true> {};
 
 
 
