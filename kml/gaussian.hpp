@@ -23,7 +23,6 @@
 #include <boost/call_traits.hpp>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/split_member.hpp>
-#include <boost/static_assert.hpp>
 #include <boost/type_traits.hpp>
 #include <kml/input_value.hpp>
 #include <kml/distance.hpp>
@@ -49,18 +48,30 @@ This is a template class that creates a function for the Gaussian kernel.
 \ingroup kernels
 */
 
-template<typename I, int N=0>
-class gaussian: public std::binary_function<I, I, typename input_value<I>::type> {
+template<typename T>
+class gaussian: public std::binary_function<T, T, typename input_value<T>::type> {
 public:
     BOOST_SERIALIZATION_SPLIT_MEMBER()
-    BOOST_STATIC_ASSERT( N==0 );
-    typedef gaussian<I,N> type;
+    typedef gaussian<T> type;
     friend class boost::serialization::access;
-    typedef typename input_value<I>::type scalar_type;
+    typedef typename input_value<T>::type scalar_type;
     typedef typename mpl::int_<0>::type derivative_order;
+    typedef typename input_value<T>::type return_type;
+
 
     /*! Construct an uninitialised Gaussian kernel */
     gaussian() {}
+
+    /*! Refinement of CopyConstructable */
+    gaussian( type const &other ) {
+       copy( other );
+    }
+
+    /*! Refinement of Assignable */
+    type operator=( type const &other ) {
+	if (this != &other) { destroy(); copy(other); }
+	return (*this);
+    }
 
     /*! Construct a Gaussian kernel by providing a value for \f$ \sigma \f$ */
 	gaussian( typename boost::call_traits<scalar_type>::param_type sigma ) {
@@ -72,7 +83,7 @@ public:
         \param v input pattern v
 	\return \f$ e^{-\gamma\|u - v\|} \f$
     */
-    scalar_type operator()( I const &u, I const &v ) const {
+    scalar_type operator()( T const &u, T const &v ) const {
         return std::exp( exp_factor * distance_square( u, v ) );
     }
 
@@ -132,6 +143,12 @@ public:
     }
 
 private:
+    void copy( type const &other ) {
+	width = other.width;
+	exp_factor = other.exp_factor;
+    }
+    void destroy() {}
+
     scalar_type width;
     scalar_type exp_factor;
 };
