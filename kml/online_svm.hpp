@@ -83,8 +83,6 @@ Classification: \f$ Q_{ij}= y_i y_j k(x_i,x_j) \f$
 
 
 
-
-
 \bug
 - Fix stability of the regression algorithm against noiseless data. At the moment, this is a largest instability issue.
  
@@ -108,8 +106,10 @@ Classification: \f$ Q_{ij}= y_i y_j k(x_i,x_j) \f$
 */
 
 
-template<typename Problem,template<typename,int> class Kernel,class Enable = void>
-class online_svm: public kernel_machine<Problem,Kernel> {};
+template<typename PropertyMap, typename Problem, typename Kernel, class Enable = void>
+class online_svm: public kernel_machine<PropertyMap,Problem,Kernel> {};
+
+
 
 
 //
@@ -118,11 +118,11 @@ class online_svm: public kernel_machine<Problem,Kernel> {};
 //
 //
 
-template<typename Problem,template<typename,int> class Kernel>
-class online_svm<Problem,Kernel,typename boost::enable_if< is_regression<Problem> >::type>:
-         public kernel_machine<Problem,Kernel> {
+template<typename PropertyMap, typename Problem,typename Kernel>
+class online_svm<PropertyMap, Problem, Kernel, typename boost::enable_if< is_regression<Problem> >::type>:
+         public kernel_machine<PropertyMap,Problem,Kernel> {
 public:
-    typedef kernel_machine<Problem,Kernel> base_type;
+    typedef kernel_machine<PropertyMap,Problem,Kernel> base_type;
     typedef typename base_type::kernel_type kernel_type;
     typedef typename base_type::result_type result_type;
     typedef typename Problem::input_type input_type;
@@ -133,55 +133,65 @@ public:
     typedef ublas::vector<double> vector_type;
 
 
+	typedef typename boost::property_traits<PropertyMap>::key_type key_type;
+	typedef typename boost::property_traits<PropertyMap>::value_type object_type;
+
+
+
     // Bug fixed: use call_traits instead of const&, so can be called with both reference and non-reference
     /*! \param k the kernel construction parameter
         \param tube_width the error-insensitive tube width, parameter \f$ \epsilon \f$ of Vapnik's e-insensitive loss function
 	\param max_weight the maximum weight assigned to any support vector, support vector machine's parameter C
     */
-    online_svm( typename boost::call_traits<kernel_type>::param_type k,
-                typename boost::call_traits<scalar_type>::param_type tube_width,
-                typename boost::call_traits<scalar_type>::param_type max_weight ):
-    base_type(k), epsilon(tube_width), C(max_weight) {}
+    online_svm( typename boost::call_traits<scalar_type>::param_type tube_width,
+                typename boost::call_traits<scalar_type>::param_type max_weight,
+		typename boost::call_traits<kernel_type>::param_type k ):
+    		base_type(k), epsilon(tube_width), C(max_weight) {}
+
+
 
     result_type operator()( input_type const &x ) {
         result_type result = base_type::bias;
         // temp_K[i], not temp_K[i+1]
-        if (margin_set.size()>0) {
+        if (!margin_set.empty()) {
             vector_type temp_K( margin_set.size() );
-            for( unsigned int i=0; i < margin_set.size(); ++i )
-                temp_K[i] = base_type::kernel( base_type::support_vector[margin_set[i]], x );
+    	    base_type::fill_kernel( x, margin_key.begin(), margin_key.end(), temp_K.begin() );
             result += atlas::dot( temp_K, base_type::weight );
         }
-        if (error_set.size()>0) {
+        if (!error_set.empty()) {
             result_type temp_K(0);
             //vector_type temp_K( error_set.size() );
             for( unsigned int i=0; i < error_set.size(); ++i )
-                temp_K += kernel( base_type::support_vector[error_set[i]], x );
+                temp_K += base_type::kernel( x, base_type::key_lookup[error_set[i]] );
             result += C * temp_K;
         }
-        if (error_star_set.size()>0) {
+        if (!error_star_set.empty()) {
             result_type temp_K(0);
             for( unsigned int i=0; i < error_star_set.size(); ++i )
-                temp_K += kernel( base_type::support_vector[error_star_set[i]], x );
+                temp_K += base_type::kernel( x, base_type::key_lookup[error_star_set[i]] );
             result -= C * temp_K;
         }
         return result;
     }
 
-    /*! \param input an input pattern of input type I
-        \param output an output pattern of output type O */
-    void push_back( input_type const &input, output_type const &output ) {
+    /*! add key_type key to the set of learnt data entries */
+    void push_back( key_type const key ) {
 
+        // index: * the corresponding row in the design matrix
+        //        * the corresponding location in the margin sense vector
+        // key:   * the corresponding location in the data container
 
-        int index = base_type::support_vector.size();
+	std::size_t index = base_type::key_lookup.size();
+	base_type::key_lookup.push_back( key );
 
         // record prediction error
-        if (debug)
-            std::cout << "Starting AOSVR incremental algorithm with " << index << " prior points" << std::endl;
+        if (debug) {
+            std::cout << "Starting AOSVR incremental algorithm for key " << key << std::endl;
+	    std::cout << "              the associated index is        " << index << std::endl;
+	}
 
         // important: the sign of the residual is used below
-        residual.push_back( output - operator()( input ) );
-        base_type::support_vector.push_back( input );
+	residual.push_back( (*base_type::data)[key].second - operator()( (*base_type::data)[key].first ) );
 
         // add to support vector buffer
         //     preserved_resize( all_vectors, index+1, x_t.size() );
@@ -195,10 +205,10 @@ public:
             if (debug)
                 std::cout << "Initialising the Accurate Online Support Vector Regression machine" << std::endl;
             residual.back() = 0.0;
-            base_type::bias = output;
+            base_type::bias = (*base_type::data)[key].second;
             
 	    // put this first point (with index 0) in the remaining set
-	    remaining_set.push_back( 0 );
+	    remaining_set.push_back( index );
 
             // initialise the inverse matrix with a zero only
 	    R.grow_row_column();
@@ -221,16 +231,19 @@ public:
             if (debug)
                 std::cout << "H is now " << H.size1() << " by " << H.size2() << std::endl;
 
+	
+
+
             // fill last row of design matrix with this input sample
 	    // TODO this should be an otimised function call 
-            H.matrix( index, 0 ) = 1.0;
-            for( unsigned int i=0; i < margin_set.size(); ++i )
-                H.matrix(index,i+1) = base_type::kernel( base_type::support_vector[margin_set[i]], input );
 
+	    ublas::matrix_row<ublas::matrix<double> >::iterator j = ublas::row( H.matrix, index ).begin(); 
+	    *j++ = 1.0;
+	    base_type::fill_kernel( key, margin_key.begin(), margin_key.end(), j );
 
             if ( std::fabs(residual.back()) <= epsilon ) {
                 if (debug)
-                    std::cout << "adding to remaining set..." << std::endl;
+                    std::cout << "Adding index " << index << " to remaining set." << std::endl;
                 remaining_set.push_back( index );
 
             } else {
@@ -238,9 +251,9 @@ public:
                     std::cout << "re-establishing KKT conditions..." << std::endl;
 
                 if ( residual[ index ] < 0.0 )
-                    satisfy_KKT_conditions< incremental_type, mpl::int_<-1> >( index, 0.0 );
+                    satisfy_KKT_conditions< incremental_type, mpl::int_<-1> >( index, key, 0.0 );
                 else
-                    satisfy_KKT_conditions< incremental_type, mpl::int_<1> >( index, 0.0 );
+                    satisfy_KKT_conditions< incremental_type, mpl::int_<1> >( index, key, 0.0 );
             }
 
 
@@ -303,7 +316,7 @@ public:
     // The direction is the direction of the change of weight.
     template<typename action_type, typename direction>
     inline
-    void satisfy_KKT_conditions( int index, double init_weight ) {
+    void satisfy_KKT_conditions( std::size_t index, key_type key, double init_weight ) {
 
 
 //      with an enum, or with a source= and destination= type of handling?
@@ -313,7 +326,7 @@ public:
 //             remaining_to_margin, error_to_margin, error_star_to_margin } action_enum;
 
 
-        vector_type margin_sense( base_type::support_vector.size() );
+        vector_type margin_sense( base_type::key_lookup.size() );
 
         //vector_type maximum_values( margin_sense.size() );
 
@@ -322,9 +335,10 @@ public:
 
         // create a candidate column of the design matrix; this column also includes the
         // point under consideration
-        vector_type candidate_column( base_type::support_vector.size() );
-        for( unsigned int i=0; i<base_type::support_vector.size(); ++i )
-            candidate_column[i] = base_type::kernel( base_type::support_vector[index], base_type::support_vector[i] );
+        vector_type candidate_column( base_type::key_lookup.size() );
+
+	base_type::fill_kernel( key, base_type::key_lookup.begin(), base_type::key_lookup.end(),
+                                candidate_column.begin() );
 
         if (debug)
             std::cout << "index: " << index << std::endl;
@@ -678,17 +692,18 @@ public:
     // if a point is added to the margin set, additional actions have to be taken
     // the inverse matrix has to be updated
     // the system/design matrix has to be updated
-    void add_to_margin( int idx ) {
+    void add_to_margin( int index ) {
 
-        unsigned int old_size = R.size1();
-        unsigned int new_size = old_size + 1;
+        std::size_t old_size = R.size1();
+        std::size_t new_size = old_size + 1;
+        key_type key = base_type::key_lookup[ index ];
 
         // adjust inverse matrix
         if (new_size==2) {
 
             // initialise the R matrix
             R.grow_row_column();
-            R.matrix(0,0) = base_type::kernel( base_type::support_vector[idx], base_type::support_vector[idx] );
+            R.matrix(0,0) = base_type::kernel( key, key );
             R.matrix(1,0) = -1.0;
             R.matrix(1,1) = 0.0;
 
@@ -704,14 +719,13 @@ public:
 	    ublas::matrix_vector_slice< ublas::matrix<double> > R_row_part( R.shrinked_row(old_size) );
 
             // compute the unscaled last row of R (similar to the coefficient sensitivities)
-            atlas::symv( R_symm_view, H.row(idx), R_row_part );
+            atlas::symv( R_symm_view, H.row(index), R_row_part );
 
             // compute the scaling factor
 
             // BAIL OUT HERE IF NECESSARY
 
-            double divisor = (base_type::kernel( base_type::support_vector[idx], base_type::support_vector[idx] ) +
-                                                 atlas::dot( H.row(idx), R_row_part ));
+            double divisor = base_type::kernel( key, key ) + atlas::dot( H.row(index), R_row_part );
 
 	    if (std::fabs( divisor ) < 1e-12 ) {
 	    	
@@ -720,10 +734,10 @@ public:
 		// of the \alpha coefficients yields an optimally sparse solution
 		
 		std::cout << std::endl;
-		std::cout << "k_tt + dot( H.row(idx), R_row_part ) = " << divisor << std::endl;
+		std::cout << "k_tt + dot( H.row(index), R_row_part ) = " << divisor << std::endl;
 	    	std::cout << "Problem detected, algorithm will get stuck real soon now." << std::endl;
-		std::cout << "Point to be added to the margin set: " << idx << std::endl;
-		std::cout << H.row(idx) << std::endl;
+		std::cout << "Point to be added to the margin set: " << index << std::endl;
+		std::cout << H.row(index) << std::endl;
 		std::cout << R_row_part << std::endl;
 		
 		for( unsigned int i=0; i<margin_set.size(); ++i ) {
@@ -754,15 +768,20 @@ public:
         // NOTE has to be done AFTER the update of the R matrix!!  (to check ... )
         // because a row of the "old" design matrix is used in the determination of "delta", see above.
         H.grow_column();
-        for( unsigned int i=0; i<base_type::support_vector.size(); ++i )
-            H.matrix(i,old_size) = base_type::kernel( base_type::support_vector[i],base_type::support_vector[idx] );
+	//ublas::matrix_column<ublas::matrix<double> >::iterator 
+	base_type::fill_kernel( key, base_type::key_lookup.begin(), base_type::key_lookup.end(), 
+                                ublas::column( H.matrix, old_size ).begin() );
+
+//         for( unsigned int i=0; i<base_type::support_vector.size(); ++i )
+//             H.matrix(i,old_size) = base_type::kernel( base_type::support_vector[i],base_type::support_vector[idx] );
 
         // perform the actual set transition
-	margin_set.push_back( idx );
+	margin_set.push_back( index );
+	margin_key.push_back( key );
     }
 
 
-
+    // input: the index in the margin key vector
     void remove_from_margin( unsigned int idx ) {
 
         // remove from design matrix
@@ -788,6 +807,10 @@ public:
         margin_set[ idx ] = margin_set.back();
         margin_set.pop_back();
 
+	// constant time removal from margin set key vector
+	margin_key[ idx ] = margin_key.back();
+	margin_key.pop_back();
+
         // constant time removal from weight vector
 	base_type::weight[ idx ] = base_type::weight.back();
 	base_type::weight.pop_back();
@@ -796,7 +819,7 @@ public:
 
     // local memory
 
-    static const bool debug = false;
+    static const bool debug = true;
 
     matrix_view< ublas::matrix<double> > H;					// (part of) design matrix H
     symmetric_view< ublas::matrix<double> > R;					// matrix inverse
@@ -805,17 +828,18 @@ public:
     scalar_type epsilon;
     scalar_type C;
 
-    /*! A vector containing the indices of the margin vectors (-C < weight < C)*/
-    std::vector<unsigned int> margin_set;
+    /*! A vector containing the indices into key_lookup of the margin vectors (-C < weight < C)*/
+    std::vector<std::size_t> margin_set;
+    std::vector<key_type> margin_key;
     
-    /*! A vector containing the indices of the error vectors (weight > C)*/
-    std::vector<unsigned int> error_set;
+    /*! A vector containing the indices into key_lookup of the error vectors (weight > C)*/
+    std::vector<int> error_set;
     
-    /*! A vector containing the indices of the error-star vectors (weight < -C)*/
-    std::vector<unsigned int> error_star_set;
+    /*! A vector containing the indices into key_lookup of the error-star vectors (weight < -C)*/
+    std::vector<int> error_star_set;
     
-    /*! A vector containing the indices of the remaining vectors (weight == 0)*/
-    std::vector<unsigned int> remaining_set;
+    /*! A vector containing the indices into key_lookup of the remaining vectors (weight == 0)*/
+    std::vector<int> remaining_set;
 };
 
 
@@ -855,12 +879,12 @@ weights (and that linear dependent point can be left out).
 */
 
 
-template<typename Problem,template<typename,int> class Kernel>
-class online_svm<Problem,Kernel,typename boost::enable_if< is_classification<Problem> >::type >:
-public kernel_machine< Problem, Kernel > {
+template<typename PropertyMap, typename Problem, typename Kernel>
+class online_svm<PropertyMap,Problem,Kernel,typename boost::enable_if< is_classification<Problem> >::type >:
+public kernel_machine< PropertyMap, Problem, Kernel > {
 public:
 
-    typedef kernel_machine<Problem,Kernel> base_type;
+    typedef kernel_machine<PropertyMap,Problem,Kernel> base_type;
     typedef typename base_type::kernel_type kernel_type;
     typedef typename base_type::result_type result_type;
     typedef typename Problem::input_type input_type;
@@ -1584,11 +1608,11 @@ public:
 
 // ON-LINE SVM RANKING ALGORITHM
 
-template<typename Problem,template<typename,int> class Kernel>
-class online_svm<Problem,Kernel,typename boost::enable_if< is_ranking<Problem> >::type >: 
-         public kernel_machine<Problem,Kernel> {
+template<typename PropertyMap, typename Problem, typename Kernel>
+class online_svm<PropertyMap,Problem,Kernel,typename boost::enable_if< is_ranking<Problem> >::type >: 
+         public kernel_machine<PropertyMap,Problem,Kernel> {
 
-    typedef kernel_machine<Problem,Kernel> base_type;
+    typedef kernel_machine<PropertyMap,Problem,Kernel> base_type;
     typedef typename base_type::kernel_type kernel_type;
     typedef typename base_type::result_type result_type;
     typedef typename Problem::input_type input_type;
@@ -1639,7 +1663,7 @@ class online_svm<Problem,Kernel,typename boost::enable_if< is_ranking<Problem> >
   scalar_type C;
 
   typedef classification<input_type,bool> inner_problem;
-  online_svm<inner_problem,Kernel> inner_machine;
+  online_svm<PropertyMap,inner_problem,Kernel> inner_machine;
 };
 
 
