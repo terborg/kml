@@ -55,6 +55,9 @@ This should work on any kernel function.
 #include <boost/range/size.hpp>
 #include <boost/range/value_type.hpp>
 #include <boost/type_traits/is_scalar.hpp>
+
+#include <kml/input_value.hpp>
+
 #include <cmath>
 #include <functional>
 #include <numeric>
