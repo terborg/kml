@@ -56,7 +56,7 @@ template<typename T>
 class regression {
 public:
 	typedef regression type;
-	typedef typename T example_type;
+	typedef T example_type;
 	typedef typename T::first_type input_type;
 	typedef typename T::second_type output_type;
 };

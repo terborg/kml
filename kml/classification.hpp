@@ -32,12 +32,13 @@ namespace kml {
 	\sa regression, ranking
 	\ingroup problem
 */
-template<typename I, typename O>
+template<typename T>
 class classification {
 public:
-  typedef classification<I,O> type;
-  typedef I input_type;
-  typedef O output_type;
+  typedef classification<T> type;
+  typedef T example_type;
+  typedef typename T::first_type input_type;
+  typedef typename T::second_type output_type;
 };
 
 
@@ -47,8 +48,8 @@ public:
 template<typename T>
 struct is_classification: boost::mpl::bool_<false> {};
 
-template<typename I, typename O>
-struct is_classification<classification<I,O> >: boost::mpl::bool_<true> {};
+template<typename T>
+struct is_classification<classification<T> >: boost::mpl::bool_<true> {};
 
 
 }
