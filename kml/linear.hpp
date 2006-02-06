@@ -136,6 +136,18 @@ struct linear: public std::binary_function<T,T,typename input_value<T>::type> {
 
     /*! Construct an uninitialised linear kernel */
     linear() {}
+
+    /*! Refinement of CopyConstructable */
+    linear( type const &other ) {}
+
+    /*! Refinement of Assignable */
+    type &operator=( type const &other ) {
+	return *this;
+    }
+
+    /*! Kernel constructor by providing TokenIterators */
+   template<typename TokenIterator>
+   linear( TokenIterator const begin, TokenIterator const end ) {}
     
     inline
     scalar_type operator()( T const &u, T const &v ) const {
@@ -145,7 +157,7 @@ struct linear: public std::binary_function<T,T,typename input_value<T>::type> {
     }
 
     friend std::ostream& operator<<(std::ostream &os, type const &) {
-	os << "Linear kernel" << std::endl;
+	os << "Linear kernel (u^T * v)" << std::endl;
 	return os;
     }
 
