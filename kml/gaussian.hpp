@@ -33,8 +33,8 @@ namespace kml {
 /*!
 \brief Gaussian kernel of the form \f$ f(x)=e^{-\gamma\|x - \mu\|} \f$ where
 	\f$ \gamma = \frac{1}{\sigma^2} \f$
-\param I defines the underlying input data type
-	(distance_square<I, I> must be defined, which is done for
+\param T defines the underlying input data type
+	(distance_square<T, T> must be defined, which is done for
 	scalar and vector types in distance.hpp)
 
 This is a template class that creates a function for the Gaussian kernel. 
@@ -58,7 +58,6 @@ public:
     typedef typename mpl::int_<0>::type derivative_order;
     typedef typename input_value<T>::type return_type;
 
-
     /*! Construct an uninitialised Gaussian kernel */
     gaussian() {}
 
@@ -77,6 +76,18 @@ public:
 	gaussian( typename boost::call_traits<scalar_type>::param_type sigma ) {
        set_width(sigma);
     }
+
+    /*! Kernel constructor by providing TokenIterators */
+	template<typename TokenIterator>
+       gaussian( TokenIterator const begin, TokenIterator const end ) {
+		if (begin == end ) {
+			// default value
+			set_width( 1.0 );
+		} else {
+			set_width( boost::lexical_cast<double>( *begin ) );
+		}
+	}
+
 
     /*! Returns the result of the evaluation of the Gaussian kernel for these points
 		\param u input pattern u
@@ -138,7 +149,7 @@ public:
     }
     
     friend std::ostream& operator<<(std::ostream &os, type const &k) {
-	os << "Gaussian kernel (width " << k.width << ")" << std::endl;
+	os << "Gaussian kernel (exp(-||u-v||^2/(2*" << k.width << "^2))" << std::endl;
 	return os;
     }
 
