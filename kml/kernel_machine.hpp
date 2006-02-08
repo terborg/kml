@@ -178,11 +178,65 @@ public:
     typedef Kernel kernel_type;
     typedef typename Problem::input_type input_type;
     typedef typename Problem::output_type output_type;
+    typedef typename boost::property_traits<PropertyMap>::key_type key_type;
+    typedef typename boost::property_traits<PropertyMap>::value_type object_type;
 
     // FIXME make this something else...
     typedef double scalar_type;
        
     kernel_machine( typename boost::call_traits<kernel_type>::param_type k ): kernel_function(k) {}
+
+
+	typename kernel_type::return_type kernel( key_type const i, key_type const j ) {
+		return kernel_function( (*data)[i].first, (*data)[j].first );
+      }
+
+	typename kernel_type::return_type kernel( input_type const &x, key_type const j ) {
+		return kernel_function( x, (*data)[j].first );
+      }
+
+
+	template<typename KeyIterator, typename OutputIterator>
+	void fill_kernel( input_type const &x, 
+                          KeyIterator const begin, KeyIterator const end, OutputIterator out ) {
+		KeyIterator i(begin);
+		OutputIterator j(out);
+		while (i!=end) {
+			if ( (*data)[*i].second )
+				*j = kernel_function( x, (*data)[*i].first );
+			else
+				*j = -kernel_function( x, (*data)[*i].first );
+			++i;
+			++j;
+		}
+	}
+
+	template<typename KeyIterator, typename OutputIterator>
+	void fill_kernel( key_type const key,
+                          KeyIterator const begin, KeyIterator const end, OutputIterator out ) {
+		KeyIterator i(begin);
+		OutputIterator j(out);
+		if ( (*data)[key].second ) {
+			while (i!=end) {
+				if ( (*data)[*i].second )
+					*j = kernel_function( (*data)[key].first, (*data)[*i].first );
+				else
+					*j = -kernel_function( (*data)[key].first, (*data)[*i].first );
+				++i;
+				++j;
+			}
+		} else {
+			while (i!=end) {
+				if ( (*data)[*i].second )
+					*j = -kernel_function( (*data)[key].first, (*data)[*i].first );
+				else
+					*j = kernel_function( (*data)[key].first, (*data)[*i].first );
+				++i;
+				++j;
+			}
+		}
+	}
+
 
 
     // FIXME optimal return type (by value, return value, i.e. see boost call_traits)
@@ -197,6 +251,11 @@ public:
 //                                                              boost::lambda::bind(kernel,x,boost::lambda::_2)) ) >= 0.0;
 //     }
 
+	void set_data( PropertyMap const &map ) {
+		data = &map;
+	}
+
+
     void clear() {
 	bias = 0.0;
 	weight.clear();
@@ -208,6 +267,11 @@ public:
 
     /// kernel_function used by the machine
     kernel_type kernel_function;
+
+    /// to translate to a sequential view
+//     std::map< key_type, std::size_t > key_mapping;
+    std::vector< key_type > key_lookup;
+
 
     double bias;
 
