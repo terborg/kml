@@ -21,6 +21,7 @@
 #define GAUSSIAN_HPP
 
 #include <boost/call_traits.hpp>
+#include <boost/lexical_cast.hpp>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/split_member.hpp>
 #include <boost/type_traits.hpp>
