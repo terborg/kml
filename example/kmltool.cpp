@@ -28,6 +28,11 @@
 #include <boost/vector_property_map.hpp>
 
 
+
+
+
+
+
 namespace po = boost::program_options;
 namespace ublas = boost::numeric::ublas;
 
@@ -37,7 +42,7 @@ int main(int argc, char *argv[]) {
 	descriptions.add_options()
 		( "help", "produce help message" )
 		( "machine", po::value<std::string>(), "Selects the kernel machine." )
-		( "kernel", po::value<std::string>(), "select the kernel function." )
+		( "kernel", po::value< std::string >(), "select the kernel function." )
 		( "input-file", po::value< std::string >(), "input file" )
 		( "output-file", po::value< std::string >(), "output file" );
 
@@ -54,11 +59,31 @@ int main(int argc, char *argv[]) {
 		return EXIT_SUCCESS;
 	}
 
+	if ( settings.count("input-file") == 0 ) {
+		std::cout << "Error: no input file given." << std::endl;
+		std::cout << descriptions << std::endl;
+		return EXIT_SUCCESS;
+	}
+
+	if ( settings.count("machine") == 0 ) {
+		std::cout << "Error: no --machine option found." << std::endl;
+		std::cout << descriptions << std::endl;
+		return EXIT_SUCCESS;
+	}
+
+	if ( settings.count("kernel") == 0 ) {
+		std::cout << "Error: no --kernel option found." << std::endl;
+		std::cout << descriptions << std::endl;
+		return EXIT_SUCCESS;
+	}
+
+
+
 	// a whole slew of possible settings...
-	double tube_width = 20.0;
-	double max_weight = 100.0;
 	enum machine_type { support_vector, relevance_vector };
+        enum kernel_type { gaussian, linear };
 	machine_type selected_machine( support_vector );
+	kernel_type selected_kernel( gaussian );
 
 	//
 	// The exact semantics of the command line is a TODO
@@ -71,40 +96,90 @@ int main(int argc, char *argv[]) {
 		if ( *m_o == std::string("svm") ) {
 			selected_machine = support_vector;
 			std::cout << "support vector machine selected" << std::endl;
+			// parse the remaining options later on!!
+
 		}
 		if ( *m_o == std::string("rvm") ) {
 			selected_machine = relevance_vector;
 			std::cout << "relevance vector machine selected" << std::endl;
+			// parse any remaining options later on!!
 		}
+		++m_o;
 	}
 
 
+	std::string kernel_string = settings["kernel"].as<std::string>();
+	boost::tokenizer<boost::char_separator<char> > kernel_options( kernel_string, csv_separator );
+	boost::tokenizer<boost::char_separator<char> >::iterator k_o = kernel_options.begin();
 
- 	std::cout << settings["kernel"].as<std::string>() << std::endl;
+	if (k_o != kernel_options.end() ) {
+		if ( *k_o == std::string("gaussian") ) {
+			selected_kernel = gaussian;
+			std::cout << "gaussian kernel selected" << std::endl;
+		}
+		if ( *k_o == std::string("linear") ) {
+			selected_kernel = linear;
+			std::cout << "gaussian kernel selected" << std::endl;
+		}
+		++k_o;
+	}
+
 
 	std::string input_file = settings["input-file"].as<std::string>();
-
-
-
-
 
 
 	kml::file my_file( input_file );
 
 
+
+
+
 	switch( my_file.problem_type() ) {
 		case kml::io::classification: {
 			std::cout << "entering classification part..." << std::endl;
-
-			// set the data container
+			typedef std::pair< ublas::vector<double>, bool > example_type;
 			typedef boost::vector_property_map< std::pair< ublas::vector<double>, bool > > data_type;
+			typedef kml::classification< example_type > problem_type;
 			data_type data;
 			my_file.read( data );
 
-			for( unsigned int i=0; i<10 ; ++i ) {
-				std::cout << data[i].first << " -> " << data[i].second << std::endl;
+			std::vector<int> learn_keys;
+			for( int i=0; i<10; ++i ) {
+				learn_keys.push_back( i );
 			}
+			std::random_shuffle( learn_keys.begin(), learn_keys.end() );
 
+			switch( selected_machine ) {
+				case support_vector: {
+					switch( selected_kernel ) {
+						case gaussian: {
+							typedef kml::gaussian< problem_type::input_type > kernel_type;
+							typedef kml::online_svm< data_type, problem_type, kernel_type > machine_type;
+							kernel_type my_kernel( k_o, kernel_options.end() );
+							machine_type my_machine( m_o, machine_options.end(), my_kernel );
+							my_machine.set_data( data );
+							my_machine.learn( learn_keys.begin(), learn_keys.end() );
+							break;
+						}
+					}
+					break;
+				}
+				case relevance_vector: {
+					switch( selected_kernel ) {
+						case gaussian: {
+							typedef kml::gaussian< problem_type::input_type > kernel_type;
+							kernel_type my_kernel( k_o, kernel_options.end() );
+
+							//typedef kml::rvm< data_type, problem_type, kernel_type > machine_type;
+
+							break;
+						}
+
+
+					} // switch kernel
+					break;
+				}
+			}
 
 			break;
 		}
@@ -118,17 +193,41 @@ int main(int argc, char *argv[]) {
 			data_type data;
 			my_file.read( data );
 
-			typedef kml::gaussian< example_type::first_type > kernel_type;
+			std::vector<int> learn_keys;
+			for( int i=0; i<5000; ++i ) {
+				learn_keys.push_back( i );
+			}
+			std::random_shuffle( learn_keys.begin(), learn_keys.end() );
 
 			switch( selected_machine ) {
 				case support_vector: {
-					kml::online_svm< data_type, problem_type, kernel_type > my_machine( tube_width, max_weight, kernel_type(636.0) );
-					my_machine.set_data( data );
+					switch( selected_kernel ) {
+						case gaussian: {
+							typedef kml::gaussian< problem_type::input_type > kernel_type;
+							typedef kml::online_svm< data_type, problem_type, kernel_type > machine_type;
+							kernel_type my_kernel( k_o, kernel_options.end() );
+							machine_type my_machine( m_o, machine_options.end(), my_kernel );
+							my_machine.set_data( data );
+							my_machine.learn( learn_keys.begin(), learn_keys.end() );
+							break;
+						}
+
+					}
 					break;
 				}
 				case relevance_vector: {
-					// interpret the options passed
-					//kml::rvm< data_type, problem_type, kernel_type > my_machine( kernel_type(636.0) );
+					switch( selected_kernel ) {
+						case gaussian: {
+							typedef kml::gaussian< problem_type::input_type > kernel_type;
+							kernel_type my_kernel( k_o, kernel_options.end() );
+
+							//typedef kml::rvm< data_type, problem_type, kernel_type > machine_type;
+
+							break;
+						}
+
+
+					} // switch kernel
 					break;
 				}
 			}
