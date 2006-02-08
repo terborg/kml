@@ -3,7 +3,7 @@
 #
 
 Import( 'env' )
-
+import os
 
 env.SharedLibrary('kml', ['svm_c.cpp'])
 
@@ -13,31 +13,42 @@ env.SharedLibrary('kml', ['svm_c.cpp'])
 if env['PLATFORM'] == 'win32':
 	import os.path
 	gcc_bin = env.FindFile( 'gcc.exe', ['/mingw/bin','/cygwin/bin'] )
+	if gcc_bin == None:
+		print "Could not find gcc.exe of a MinGW or Cygwin install, needed to"
+		print "construct a DLL of ATLAS routines."
+	else:	
 
-	env.AppendENVPath('PATH', os.path.dirname(gcc_bin.abspath) )
+		env.AppendENVPath('PATH', os.path.dirname(gcc_bin.abspath) )
 
-	dll_builder = Builder( action='gcc -mno-cygwin -shared -o $TARGET ' \
-	'${TARGET.base}.def $SOURCES -Wl,--enable-auto-import -Wl,--no-whole-archive',
-			suffix = '.dll',src_suffix = '.a' )
-	lib_builder = Builder( action='link /lib /machine:ix86 /def:$SOURCES /out:$TARGET',
-			suffix = '.lib', src_suffix = '.def' )
+		dll_builder = Builder( action='gcc -mno-cygwin -shared -o $TARGET ' \
+		'${TARGET.base}.def $SOURCES -Wl,--enable-auto-import -Wl,--no-whole-archive',
+				suffix = '.dll', src_suffix = '.a' )
+		lib_builder = Builder( action='link /lib /machine:ix86 /def:$SOURCES /out:$TARGET',
+				suffix = '.lib', src_suffix = '.def' )
 
-	env.Append( BUILDERS = {'DLL': dll_builder } )
-	env.Append( BUILDERS = {'LIB': lib_builder } )
+		env.Append( BUILDERS = {'DLL': dll_builder } )
+		env.Append( BUILDERS = {'LIB': lib_builder } )
 
-	env.DLL( 'cblas', [
-		'/atlas/lib/winnt_p4sse2/liblapack.a',
-		'/atlas/lib/winnt_p4sse2/libcblas.a',
-		'/atlas/lib/winnt_p4sse2/libf77blas.a',
-		'/atlas/lib/winnt_p4sse2/libatlas.a'
-	] )
-
-	env.LIB( 'cblas.lib', 'cblas.def' )
+		atlas_root = '/atlas/ATLAS'
+		
+		listing = os.listdir( os.path.join( atlas_root, 'lib' ) )
+		if listing == None:
+			print "Could not read contents of ATLAS_ROOT/lib. Please check your ATLAS installation."
+		else:
+			subdir = ''
+			for entry in listing:
+				if 'Win' in entry:
+					subdir = entry
+					break
+			if subdir == '':
+				print "Could not find an installed ATLAS library (e.g., WinNT_P4SSE2)."
+			else:
 	
-
-
-
-
-
-
+				final_path = atlas_root + "/lib/" + subdir + "/"
+				atlas_files = [ final_path + 'liblapack.a',
+								final_path + 'libcblas.a',
+								final_path + 'libf77blas.a',
+								final_path + 'libatlas.a' ]
+				env.DLL( 'cblas.dll', atlas_files )
+				env.LIB( 'cblas.lib', 'cblas.def' )
 

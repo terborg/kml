@@ -22,10 +22,12 @@ if env['PLATFORM'] == 'posix':
    c_link_libs = ['kml']
 elif env['PLATFORM'] == 'win32':
    env.Replace( ENV = os.environ )
-   boost_search_path = ['/boost']
+   boost_search_path = ['/boost','/boost/include/boost']
    atlas_search_path = ['/atlas','/atlas/include']
    atlas_link_libs = ['cblas']
    lib_path = ['#/lib']
+   if 'VSINSTALLDIR' in os.environ:
+		lib_path.append( os.environ["VSINSTALLDIR"].replace('\\','/') + '/VC/lib' )
 elif env['PLATFORM'] == 'darwin':
    boost_search_path = ['/sw/include/boost']
    atlas_search_path = ['/sw/include/atlas']
@@ -42,7 +44,14 @@ else:
 	boost_path = os.path.split(os.path.dirname(path.abspath))[0]
 	if not cpp_path.count( boost_path ):
 		cpp_path.append( boost_path )
-
+		
+# try to find the boost library	path, and add that to the global libpath
+for trydir in boost_search_path:
+	if os.path.exists( trydir + '/lib' ):
+		boost_lib_path = trydir + '/lib'
+		if not boost_lib_path in lib_path:
+			lib_path += [ boost_lib_path ]
+			
 #path = env.FindFile( 'cblas.h', atlas_search_path )
 #if path == None:
 #	print "Could not find ATLAS! Please check installation and/or search path in SConstruct file."
@@ -118,7 +127,8 @@ if env['CXX'] == 'g++':
 
 elif env['CXX'] == '$CC' and env['CC'] == 'cl':
 	# Set compiler and optimisation flags
-	cc_flags += '/nologo /Wp64 /EHsc /Zc:forScope'
+    # for now, warnings are disabled; multithreading is enabled for correct linking
+	cc_flags += '/nologo /EHsc /Zc:forScope /w /MT'
 	optimise_flags = '/O2'
 
 	if cpu.has_sse2():
