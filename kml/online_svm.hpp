@@ -143,11 +143,24 @@ public:
         \param tube_width the error-insensitive tube width, parameter \f$ \epsilon \f$ of Vapnik's e-insensitive loss function
 	\param max_weight the maximum weight assigned to any support vector, support vector machine's parameter C
     */
-    online_svm( typename boost::call_traits<scalar_type>::param_type tube_width,
-                typename boost::call_traits<scalar_type>::param_type max_weight,
+    online_svm( typename boost::call_traits<scalar_type>::param_type max_weight,
+                typename boost::call_traits<scalar_type>::param_type tube_width,
 		typename boost::call_traits<kernel_type>::param_type k ):
     		base_type(k), epsilon(tube_width), C(max_weight) {}
 
+
+    template< typename TokenIterator >
+    online_svm( TokenIterator const begin, TokenIterator const end, 
+                typename boost::call_traits<kernel_type>::param_type k ):
+		base_type(k) {
+		C = 10.0;
+		epsilon = 0.1;
+		TokenIterator token( begin );
+		if ( token != end ) {
+			C = boost::lexical_cast<double>( *token++ );
+			if ( token != end ) epsilon = boost::lexical_cast<double>( *token );
+		}
+	}
 
 
     result_type operator()( input_type const &x ) {
@@ -174,8 +187,22 @@ public:
         return result;
     }
 
-    /*! add key_type key to the set of learnt data entries */
-    void push_back( key_type const key ) {
+
+   /*! learn the entire range of keys indicated by this range */
+    template<typename KeyIterator>
+    void learn( KeyIterator begin, KeyIterator end ) {
+	
+	// batch learning algorithm(s) right here...
+	KeyIterator key(begin);
+	while( key != end ) {
+		increment( *key );
+		++key;
+	}
+    }
+
+
+    /*! call the incremental algorithm */
+    void increment( key_type const key ) {
 
         // index: * the corresponding row in the design matrix
         //        * the corresponding location in the margin sense vector
@@ -830,6 +857,8 @@ public:
 
     /*! A vector containing the indices into key_lookup of the margin vectors (-C < weight < C)*/
     std::vector<std::size_t> margin_set;
+
+    /*! A vector containing the keys of the margin vectors (-C < weight < C)*/
     std::vector<key_type> margin_key;
     
     /*! A vector containing the indices into key_lookup of the error vectors (weight > C)*/
@@ -889,10 +918,16 @@ public:
     typedef typename base_type::result_type result_type;
     typedef typename Problem::input_type input_type;
     typedef typename Problem::output_type output_type;
+    typedef typename Problem::example_type example_type;
     typedef double scalar_type;
     typedef ublas::symmetric_matrix<double> symmetric_type;
     typedef ublas::matrix<double> matrix_type;
     typedef ublas::vector<double> vector_type;
+
+	typedef typename boost::property_traits<PropertyMap>::key_type key_type;
+	typedef typename boost::property_traits<PropertyMap>::value_type object_type;
+
+
 
     online_svm( typename boost::call_traits<kernel_type>::param_type k,
                 typename boost::call_traits<scalar_type>::param_type max_weight ):
@@ -936,33 +971,59 @@ public:
     
 
         
+
+/*! learn the entire range of keys indicated by this range */
+    template<typename KeyIterator>
+    void learn( KeyIterator begin, KeyIterator end ) {
+		KeyIterator key_iterator(begin);
+		while( key_iterator != end ) {
+			increment(*key_iterator);
+			++key;
+		}
+
+
+	}
+
+
+	float bool_to_float( bool const value ) {
+		return ( value ? 1.0 : -1.0 );
+	}
+
+
+
     /*! \param input an input pattern of input type I
         \param output an output pattern of output type O */
-    void push_back( input_type const &input, output_type const &output ) {
+    void increment( key_type const key ) {
 
-        int index = base_type::support_vector.size();
+	std::size_t index = base_type::key_lookup.size();
+	base_type::key_lookup.push_back( key );
+
+        // record prediction error
+        if (debug) {
+            std::cout << "Starting AOSVR incremental algorithm for key " << key << std::endl;
+	    std::cout << "              the associated index is        " << index << std::endl;
+	}
         
-	debug = false;
+	debug = true;
 	//if (index > 581) debug=true;
 	
 	
 	if (debug)
-	std::cout << "Starting incremental SVM algorithm with " << index << " prior points" << std::endl;
-
+	std::cout << "Starting incremental SVM classification algorithm with " << index << " prior points" << std::endl;
 	
 		//if (index > 615 ) debug = true; else debug = false;
 	
         //if (debug)
 
 	// record condition figure
-	if ( output )
-        	condition.push_back( evaluate_f(input) - 1.0 );
+	if ( (*base_type::data)[key].second )
+        	condition.push_back( evaluate_f((*base_type::data)[key].first) - 1.0 );
         else
-        	condition.push_back( -evaluate_f(input) - 1.0 );
+        	condition.push_back( -evaluate_f((*base_type::data)[key].first) - 1.0 );
         
 	// store the input and output 
-	base_type::support_vector.push_back( input );
-	outputs.push_back( output );
+	//base_type::support_vector.push_back( input );
+	//outputs.push_back( output );
 	
 	
 /*	std::cout << "Predicting history..." << std::endl;
@@ -970,8 +1031,8 @@ public:
 		std::cout << i << ": " << evaluate_f( base_type::support_vector[i] ) << std::endl;*/
 	
 	
-	if (debug)
-	   std::cout << "The output is " << output << std::endl;
+// 	if (debug)
+// 	   std::cout << "The output is " << output << std::endl;
 
         // add to support vector buffer
         //     preserved_resize( all_vectors, index+1, x_t.size() );
@@ -986,7 +1047,7 @@ public:
                 std::cout << "Initialising the Accurate Online Support Vector Machine" << std::endl;
 
 	    // set f(x_i) to y_i
-            base_type::bias = (output ? 1.0 : -1.0);
+            base_type::bias = ((*base_type::data)[key].second ? 1.0 : -1.0);
             condition.back() = 0.0;
             
 	    // put this first point (with index 0) in the remaining set
@@ -998,7 +1059,7 @@ public:
 
             // initialise "design" matrix with the value associated with the output
             H.grow_row_column();
-    	    H.matrix(0,0) = ( output ? 1.0 : -1.0 );
+    	    H.matrix(0,0) = bool_to_float( (*base_type::data)[key].second );
 
 	    if (debug) 
 	    	std::cout << std::endl;
@@ -1012,31 +1073,20 @@ public:
             if (debug) {
                 std::cout << "H is now " << H.size1() << " by " << H.size2();
 		std::cout << " #conditions " << condition.size();
-		std::cout << " #svs " << base_type::support_vector.size();
 		std::cout << " #weights " << base_type::weight.size();
-		std::cout << " #outputs " << outputs.size() << std::endl;
+		std::cout << " #keys    " << base_type::key_lookup.size() << std::endl;
 	    }
 
             // fill last ROW of matrix H with this input sample
 	    // TODO this should be an optimised function call
             H.matrix( index, 0 ) = ( output ? 1.0 : -1.0 );
+
+	    ublas::matrix_row<ublas::matrix<double> >::iterator j = ublas::row( H.matrix, index ).begin(); 
+	    *j++ = bool_to_float( (*base_type::data)[key].second );
+	    base_type::fill_kernel( key, margin_key.begin(), margin_key.end(), j );
 	    
-	    if ( output ) {
-	            for( unsigned int i=0; i < margin_set.size(); ++i )
-		        if ( outputs[margin_set[i]] )
-        	          H.matrix(index,i+1) = base_type::kernel( base_type::support_vector[margin_set[i]], input );
-			else 
-        	          H.matrix(index,i+1) = -base_type::kernel( base_type::support_vector[margin_set[i]], input );
-	    } else {
-	            for( unsigned int i=0; i < margin_set.size(); ++i )
-		        if ( outputs[margin_set[i]] )
-        	          H.matrix(index,i+1) = -base_type::kernel( base_type::support_vector[margin_set[i]], input );
-			else 
-        	          H.matrix(index,i+1) = base_type::kernel( base_type::support_vector[margin_set[i]], input );
-	    }
-	    
-/*	    std::cout << "Filled H to ";
-    	    std::cout << H.view() << std::endl;*/
+	    std::cout << "Filled H to ";
+    	    std::cout << H.view() << std::endl;
 
 	    	    
 	    if (debug)
@@ -1050,7 +1100,7 @@ public:
 	    } else {
 		if (debug)
 			std::cout << "Satisfying KKT conditions... " << std::endl;
-	    	satisfy_KKT_conditions( index, 0.0 );
+	    	satisfy_KKT_conditions( index, key, 0.0 );
 	    }
 	}
 
@@ -1074,7 +1124,7 @@ public:
     
     
     inline
-    void satisfy_KKT_conditions( int index, double init_weight ) {
+    void satisfy_KKT_conditions( int index, key_type key, double init_weight ) {
 
         scalar_type weight_t = init_weight;
         	
@@ -1085,8 +1135,12 @@ public:
 	// TODO Duplicate detection can be done right here (distance function using kernels etc.)
 	// TODO
 	//
-	vector_type candidate_column( base_type::support_vector.size() );
-	if ( outputs[index] ) {
+
+        vector_type candidate_column( base_type::key_lookup.size() );
+	base_type::fill_kernel( key, base_type::key_lookup.begin(), base_type::key_lookup.end(),
+                                candidate_column.begin() );
+
+/*	if ( outputs[index] ) {
 		for( unsigned int i=0; i<base_type::support_vector.size(); ++i )
 		  if ( outputs[i] )
             	     candidate_column[i] = base_type::kernel( base_type::support_vector[index], base_type::support_vector[i] );
@@ -1098,12 +1152,12 @@ public:
             	     candidate_column[i] = -base_type::kernel( base_type::support_vector[index], base_type::support_vector[i] );
 		  else 
             	     candidate_column[i] = base_type::kernel( base_type::support_vector[index], base_type::support_vector[i] );
-	}
+	}*/
 	if (debug)
 		std::cout << "Computed candidate column" << std::endl;
 	
 	// initialise the margin and coefficient sensitivity vectors
-	vector_type margin_sense( base_type::support_vector.size() );
+	vector_type margin_sense( base_type::key_lookup.size() );
         vector_type coef_sense;
         
         int migrate_action = 99;
@@ -1397,8 +1451,8 @@ public:
             R.grow_row_column();
 	    
 	    // this is correct: Q_ii == K(x_i,x_i)
-            R.matrix(0,0) = base_type::kernel( base_type::support_vector[idx], base_type::support_vector[idx] );
-      	    R.matrix(1,0) = ( outputs[idx] ? -1.0 : 1.0 );
+            R.matrix(0,0) = base_type::kernel( base_type::key_lookup[idx], base_type::key_lookup[idx] );
+      	    R.matrix(1,0) = bool_to_float( (*base_type::data)[key_lookup[idx]].second );
             R.matrix(1,1) = 0.0;
 
         } else {
@@ -1420,8 +1474,8 @@ public:
 
             // BAIL OUT HERE IF NECESSARY
 	    
-	    double divisor = (base_type::kernel( base_type::support_vector[idx], base_type::support_vector[idx] ) +
-                                                  atlas::dot( H.row(idx), R_row_part ));
+	    double divisor = base_type::kernel( base_type::key_lookup[idx], base_type::key_lookup[idx] ) +
+                                                  atlas::dot( H.row(idx), R_row_part );
 	    
 	    // Pseudoinverse of a SVD:
 	    // in this case: fill that part of R with zeros! 
@@ -1479,7 +1533,11 @@ public:
         // NOTE has to be done AFTER the update of the R matrix!!  (to check ... )
         // because a row of the "old" design matrix is used in the determination of "delta", see above.
         H.grow_column();
-	if ( outputs[idx] ) {
+
+	base_type::fill_kernel( base_type::key_lookup[idx], base_type::key_lookup.begin(), base_type::key_lookup.end(),
+                                ublas::column( H.matrix, old_size ).begin() );
+
+/*	if ( outputs[idx] ) {
 		for( unsigned int i=0; i<base_type::support_vector.size(); ++i )
 		  if ( outputs[i] )
             	     H.matrix(i,old_size) = base_type::kernel( base_type::support_vector[idx], base_type::support_vector[i] );
@@ -1491,7 +1549,7 @@ public:
             	     H.matrix(i,old_size) = -base_type::kernel( base_type::support_vector[idx], base_type::support_vector[i] );
 		  else 
             	     H.matrix(i,old_size) = base_type::kernel( base_type::support_vector[idx], base_type::support_vector[i] );
-	}
+	}*/
 	
 // 	for( unsigned int i=0; i<base_type::support_vector.size(); ++i )
 //             H.matrix(i,old_size) = base_type::kernel( base_type::support_vector[i],base_type::support_vector[idx] );
@@ -1586,20 +1644,23 @@ public:
     matrix_view< ublas::matrix<double> > H;					// "design matrix" Q (not as in the paper!)
     symmetric_view< ublas::matrix<double> > R;					// matrix inverse
 
-    // keep a copy of all outputs (this is needed)
-    std::vector<bool> outputs;
-    std::vector<scalar_type> condition;						// vector "g" containing conditions
+    /*! vector "g" containing condition numbers for associated (indexed) vectors */
+    std::vector<scalar_type> condition;						
 
+    /*! maximum weight */
     scalar_type C;
 
-    /*! A vector containing the indices of the margin vectors (y_i f(x_i) == 1 */
-    std::vector<unsigned int> margin_set;
+    /*! A vector containing the indices of the margin vectors (y_i f(x_i) == 1) */
+    std::vector<std::size_t> margin_set;
+
+    /*! A vector containing the keys of the margin vectors ((y_i f(x_i) == 1) */
+    std::vector<key_type> margin_key;
     
     /*! A vector containing the indices of the error vectors (exceeding the margin) */
-    std::vector<unsigned int> error_set;
+    std::vector<std::size_t> error_set;
     
     /*! A vector containing the indices of the remaining vectors (within the margin) */
-    std::vector<unsigned int> remaining_set;
+    std::vector<std::size_t> remaining_set;
     
 };
 
@@ -1608,63 +1669,63 @@ public:
 
 // ON-LINE SVM RANKING ALGORITHM
 
-template<typename PropertyMap, typename Problem, typename Kernel>
-class online_svm<PropertyMap,Problem,Kernel,typename boost::enable_if< is_ranking<Problem> >::type >: 
-         public kernel_machine<PropertyMap,Problem,Kernel> {
-
-    typedef kernel_machine<PropertyMap,Problem,Kernel> base_type;
-    typedef typename base_type::kernel_type kernel_type;
-    typedef typename base_type::result_type result_type;
-    typedef typename Problem::input_type input_type;
-    typedef typename Problem::output_type output_type;
-    typedef double scalar_type;
-    typedef ublas::symmetric_matrix<double> symmetric_type;
-    typedef ublas::matrix<double> matrix_type;
-    typedef ublas::vector<double> vector_type;
-
-  typedef typename boost::range_value<input_type>::type point_type;
-  typedef typename output_type::const_iterator const_output_iterator;
-  typedef typename std::vector<input_type>::const_iterator const_svec_iterator;
-
-  online_svm(typename boost::call_traits<kernel_type>::param_type k,
-	     typename boost::call_traits<scalar_type>::param_type max_weight):
-  base_type(k), C(max_weight), inner_machine(k, max_weight) { }
-
-  /*! \param input an input pattern of input type I
-      \param output an output pattern of output type O */
-
-  
-
-  void push_back(input_type const &input, output_type const &output) {
-    /* Here's how it works as you push a new vector in:
-
-       1. Compare the vector, i, and its output to each <vector, output> pair we've already 
-          stored. This set could, of course, be empty.
-       2. For each vector j in our stored set which has an output not identical to ours, 
-          create a difference vector and add that difference vector to a new input set.
-       3. Call push_back on our internal classification SVM for each difference vector. */
-    
-    const_output_iterator y = ys.begin();
-
-    for (const_svec_iterator i = base_type::support_vector.begin(); 
-	 *y != ys.end() && i != base_type::support_vector.end(); 
-	  ++y, ++i) {
-      if (*y != output) {
-	input_type diff_vec;
-	std::transform(input.begin(), input.end(), i->begin(), 
-		       diff_vec.begin(), std::minus<point_type>()); 
-	inner_machine.push_back(diff_vec, (output > *y));
-      }
-    }
-    base_type::support_vector.push_back(input);
-    ys.push_back(output);
-  }
-  std::vector<output_type> ys;
-  scalar_type C;
-
-  typedef classification<input_type,bool> inner_problem;
-  online_svm<PropertyMap,inner_problem,Kernel> inner_machine;
-};
+// template<typename PropertyMap, typename Problem, typename Kernel>
+// class online_svm<PropertyMap,Problem,Kernel,typename boost::enable_if< is_ranking<Problem> >::type >: 
+//          public kernel_machine<PropertyMap,Problem,Kernel> {
+// 
+//     typedef kernel_machine<PropertyMap,Problem,Kernel> base_type;
+//     typedef typename base_type::kernel_type kernel_type;
+//     typedef typename base_type::result_type result_type;
+//     typedef typename Problem::input_type input_type;
+//     typedef typename Problem::output_type output_type;
+//     typedef double scalar_type;
+//     typedef ublas::symmetric_matrix<double> symmetric_type;
+//     typedef ublas::matrix<double> matrix_type;
+//     typedef ublas::vector<double> vector_type;
+// 
+//   typedef typename boost::range_value<input_type>::type point_type;
+//   typedef typename output_type::const_iterator const_output_iterator;
+//   typedef typename std::vector<input_type>::const_iterator const_svec_iterator;
+// 
+//   online_svm(typename boost::call_traits<kernel_type>::param_type k,
+// 	     typename boost::call_traits<scalar_type>::param_type max_weight):
+//   base_type(k), C(max_weight), inner_machine(k, max_weight) { }
+// 
+//   /*! \param input an input pattern of input type I
+//       \param output an output pattern of output type O */
+// 
+//   
+// 
+//   void push_back(input_type const &input, output_type const &output) {
+//     /* Here's how it works as you push a new vector in:
+// 
+//        1. Compare the vector, i, and its output to each <vector, output> pair we've already 
+//           stored. This set could, of course, be empty.
+//        2. For each vector j in our stored set which has an output not identical to ours, 
+//           create a difference vector and add that difference vector to a new input set.
+//        3. Call push_back on our internal classification SVM for each difference vector. */
+//     
+//     const_output_iterator y = ys.begin();
+// 
+//     for (const_svec_iterator i = base_type::support_vector.begin(); 
+// 	 *y != ys.end() && i != base_type::support_vector.end(); 
+// 	  ++y, ++i) {
+//       if (*y != output) {
+// 	input_type diff_vec;
+// 	std::transform(input.begin(), input.end(), i->begin(), 
+// 		       diff_vec.begin(), std::minus<point_type>()); 
+// 	inner_machine.push_back(diff_vec, (output > *y));
+//       }
+//     }
+//     base_type::support_vector.push_back(input);
+//     ys.push_back(output);
+//   }
+//   std::vector<output_type> ys;
+//   scalar_type C;
+// 
+//   typedef classification<input_type,bool> inner_problem;
+//   online_svm<PropertyMap,inner_problem,Kernel> inner_machine;
+// };
 
 
 
