@@ -27,7 +27,7 @@
 #include <kml/classification.hpp>
 #include <kml/ranking.hpp>
 #include <vector>
-#include <kml/determinate.hpp>
+//#include <kml/determinate.hpp>
 
 // for the property traits
 #include <boost/property_map.hpp>
@@ -148,6 +148,8 @@ public:
 
     /// to translate to a sequential view
 //     std::map< key_type, std::size_t > key_mapping;
+
+    typedef typename std::vector< key_type >::size_type index_type;
     std::vector< key_type > key_lookup;
 
       /// bias of the machine
@@ -292,5 +294,4 @@ public:
 
 
 #endif
-
 

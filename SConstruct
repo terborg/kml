@@ -22,9 +22,10 @@ if env['PLATFORM'] == 'posix':
    c_link_libs = ['kml']
 elif env['PLATFORM'] == 'win32':
    env.Replace( ENV = os.environ )
-   boost_search_path = ['/boost','/boost/include/boost']
+   boost_search_path = ['/boost',
+                        '/boost/include/boost-1_33_0/boost',
+                        '/boost/include/boost-1_33_1/boost']
    atlas_search_path = ['/atlas','/atlas/include']
-   atlas_link_libs = ['cblas']
    lib_path = ['#/lib']
    if 'VSINSTALLDIR' in os.environ:
 		lib_path.append( os.environ["VSINSTALLDIR"].replace('\\','/') + '/VC/lib' )
@@ -90,6 +91,7 @@ cpu = cpuinfo.cpuinfo()
 cc_flags = '-Wall '
 debug_flags = ''
 optimise_flags = ''
+arch_ext = ''
 
 if env['CXX'] == 'g++':
         # change default CXXflags to something which is 
@@ -128,13 +130,24 @@ if env['CXX'] == 'g++':
 elif env['CXX'] == '$CC' and env['CC'] == 'cl':
 	# Set compiler and optimisation flags
     # for now, warnings are disabled; multithreading is enabled for correct linking
-	cc_flags += '/nologo /EHsc /Zc:forScope /w /MT'
+	cc_flags += '/nologo /w /EHsc /Zc:forScope /MT'
 	optimise_flags = '/O2'
+	arch_ext = ''
+	
+	if cpu.is_PentiumIV(): 
+   		arch_ext += 'P4'
 
 	if cpu.has_sse2():
 		optimise_flags += ' /arch:SSE2'
+		arch_ext += 'SSE2'
 	elif cpu.has_sse():
 		optimise_flags += ' /arch:SSE'
+		arch_ext += 'SSE'
+		
+	atlas_link_libs = ['cblas_' + arch_ext + '.lib']
+
+		
+	print "(future use) architecture extension: ", arch_ext
 
 # For convenience, attach the environment's LIBS to the atlas_link_libs
 atlas_link_libs += env['LIBS']
@@ -143,10 +156,11 @@ atlas_link_libs += env['LIBS']
 Export( 'env' )
 Export( 'atlas_link_libs' )
 Export( 'c_link_libs' )
+Export( 'arch_ext' )
 
 # Deligate to build scripts
 env.Replace( CXXFLAGS = cc_flags + ' ' + optimise_flags + debug_flags)
-SConscript( dirs=['example', 'lib','test'] )
+SConscript( dirs=['lib', 'example','test'] )
 
 
 

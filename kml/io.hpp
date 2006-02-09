@@ -20,17 +20,11 @@
 #ifndef IO_HPP
 #define IO_HPP
 
-//##include <boost/iostreams/device/file_descriptor.hpp>
-#include <boost/iostreams/filtering_stream.hpp>
-//#include <boost/iostreams/device/file.hpp>
-#include <boost/iostreams/filter/bzip2.hpp>
-
 #include <boost/lexical_cast.hpp>
 #include <boost/property_map.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/range/size.hpp>
 #include <boost/range/value_type.hpp>
-#include <boost/regex.hpp>
 #include <boost/type_traits/is_same.hpp>
 #include <kml/input_value.hpp>
 
@@ -45,8 +39,6 @@
 // temp
 #include <boost/numeric/ublas/io.hpp>
 
-
-namespace iostreams = boost::iostreams;
 
 
 namespace kml {
@@ -488,7 +480,7 @@ public:
 			std::getline( input_file, line_buffer );
 			if ((line_buffer.size()>0) && (line_buffer[0]!='#')) buffer.push_back( line_buffer );
 		}
-		std::cout << "done." << std::endl;
+		std::cout << "read " << buffer.size() << " lines." << std::endl;
 		input_file.close();
 
 		if ( buffer.size() == 0 ) {
@@ -539,7 +531,7 @@ public:
 
 // toy example of using bzip2 compression
 
-
+/*
 template<typename PatternMap>
 void write( char* file_name, PatternMap &dataset ) {
 
@@ -559,7 +551,7 @@ void write( char* file_name, PatternMap &dataset ) {
     output_file.close();
     
 }
-
+*/
 
 
 
@@ -569,5 +561,4 @@ void write( char* file_name, PatternMap &dataset ) {
 
 
 #endif
-
 

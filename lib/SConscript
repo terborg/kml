@@ -3,6 +3,7 @@
 #
 
 Import( 'env' )
+Import( 'arch_ext' )
 import os
 
 env.SharedLibrary('kml', ['svm_c.cpp'])
@@ -20,8 +21,10 @@ if env['PLATFORM'] == 'win32':
 
 		env.AppendENVPath('PATH', os.path.dirname(gcc_bin.abspath) )
 
-		dll_builder = Builder( action='gcc -mno-cygwin -shared -o $TARGET ' \
-		'${TARGET.base}.def $SOURCES -Wl,--enable-auto-import -Wl,--no-whole-archive',
+		definition_file = env.Command( '#\lib\cblas_' + arch_ext + '.def', '#\lib\cblas.def', Copy( '$TARGET', '$SOURCE' ) )
+		
+		dll_builder = Builder( action='gcc -mno-cygwin -shared -o $TARGET ' + \
+		        definition_file[0].path + ' $SOURCES -Wl,--enable-auto-import -Wl,--no-whole-archive',
 				suffix = '.dll', src_suffix = '.a' )
 		lib_builder = Builder( action='link /lib /machine:ix86 /def:$SOURCES /out:$TARGET',
 				suffix = '.lib', src_suffix = '.def' )
@@ -37,11 +40,11 @@ if env['PLATFORM'] == 'win32':
 		else:
 			subdir = ''
 			for entry in listing:
-				if 'Win' in entry:
+				if arch_ext in entry:
 					subdir = entry
 					break
 			if subdir == '':
-				print "Could not find an installed ATLAS library (e.g., WinNT_P4SSE2)."
+				print "Could not find an installed ATLAS library for this architecture (e.g., WinNT_P4SSE2)."
 			else:
 	
 				final_path = atlas_root + "/lib/" + subdir + "/"
@@ -49,6 +52,7 @@ if env['PLATFORM'] == 'win32':
 								final_path + 'libcblas.a',
 								final_path + 'libf77blas.a',
 								final_path + 'libatlas.a' ]
-				env.DLL( 'cblas.dll', atlas_files )
-				env.LIB( 'cblas.lib', 'cblas.def' )
+				env.Depends( 'cblas_' + arch_ext + '.dll', definition_file )
+				env.DLL( 'cblas_' + arch_ext + '.dll', atlas_files )
+				env.LIB( 'cblas_' + arch_ext + '.lib', definition_file )
 

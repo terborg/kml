@@ -193,10 +193,10 @@ public:
     void learn( KeyIterator begin, KeyIterator end ) {
 	
 	// batch learning algorithm(s) right here...
-	KeyIterator key(begin);
-	while( key != end ) {
-		increment( *key );
-		++key;
+	KeyIterator key_iterator(begin);
+	while( key_iterator != end ) {
+		increment( *key_iterator );
+		++key_iterator;
 	}
     }
 
@@ -404,8 +404,8 @@ public:
 	    	std::cout << "Something seems to be wrong, algorithm will get stuck now" << std::endl;
 		std::cout << "Current index: " << index << std::endl;
 		std::cout << "Matrix R: " << R.view() << std::endl;
-		int qqq;
-		std::cin >> qqq;
+// 		int qqq;
+// 		std::cin >> qqq;
 	    }
 
             //
@@ -854,21 +854,24 @@ public:
 
     scalar_type epsilon;
     scalar_type C;
+    
 
+    typedef typename base_type::index_type index_type;
+    
     /*! A vector containing the indices into key_lookup of the margin vectors (-C < weight < C)*/
-    std::vector<std::size_t> margin_set;
+    std::vector< index_type > margin_set;
 
     /*! A vector containing the keys of the margin vectors (-C < weight < C)*/
-    std::vector<key_type> margin_key;
+    std::vector< key_type > margin_key;
     
     /*! A vector containing the indices into key_lookup of the error vectors (weight > C)*/
-    std::vector<int> error_set;
+    std::vector< index_type > error_set;
     
     /*! A vector containing the indices into key_lookup of the error-star vectors (weight < -C)*/
-    std::vector<int> error_star_set;
+    std::vector< index_type > error_star_set;
     
     /*! A vector containing the indices into key_lookup of the remaining vectors (weight == 0)*/
-    std::vector<int> remaining_set;
+    std::vector< index_type > remaining_set;
 };
 
 
@@ -934,6 +937,21 @@ public:
     base_type(k), C(max_weight) {}
     
     
+    
+    template< typename TokenIterator >
+    online_svm( TokenIterator const begin, TokenIterator const end, 
+                typename boost::call_traits<kernel_type>::param_type k ):
+		base_type(k) {
+		C = 10.0;
+		TokenIterator token( begin );
+		if ( token != end ) {
+			C = boost::lexical_cast<double>( *token++ );
+		}
+	}
+    
+    
+    
+    
     output_type operator()( typename boost::call_traits<input_type>::param_type x ) {
     	return (evaluate_f(x) >= 0.0);
     }
@@ -945,31 +963,23 @@ public:
         // temp_K[i], not temp_K[i+1]
         if (margin_set.size()>0) {
             vector_type temp_K( margin_set.size() );
-            for( unsigned int i=0; i < margin_set.size(); ++i ) {
-	        int idx = margin_set[i];
-		if ( outputs[idx] )
-		   temp_K[i] = base_type::kernel( base_type::support_vector[idx], x );
-		else
-		   temp_K[i] = -base_type::kernel( base_type::support_vector[idx], x );
-	    }
+            base_type::fill_kernel( x, margin_key.begin(), margin_key.end(), temp_K.begin() );
             result += atlas::dot( temp_K, base_type::weight );
         }
         if (error_set.size()>0) {
             scalar_type temp_K(0);
             for( unsigned int i=0; i < error_set.size(); ++i ) {
-		int idx = error_set[i];
-		if ( outputs[idx] )
-                    temp_K += kernel( base_type::support_vector[idx], x );
+		       key_type key = base_type::key_lookup[error_set[i]];
+		        if ( (*base_type::data)[key].second )
+                    temp_K += base_type::kernel( x, key );
                 else
-                    temp_K -= kernel( base_type::support_vector[idx], x );
-
+                    temp_K -= base_type::kernel( x, key );
            }
             result += C * temp_K;	   
 	}
 	return result;
     }
     
-
         
 
 /*! learn the entire range of keys indicated by this range */
@@ -978,7 +988,7 @@ public:
 		KeyIterator key_iterator(begin);
 		while( key_iterator != end ) {
 			increment(*key_iterator);
-			++key;
+			++key_iterator;
 		}
 
 
@@ -994,7 +1004,8 @@ public:
     /*! \param input an input pattern of input type I
         \param output an output pattern of output type O */
     void increment( key_type const key ) {
-
+	debug = true;
+	
 	std::size_t index = base_type::key_lookup.size();
 	base_type::key_lookup.push_back( key );
 
@@ -1004,7 +1015,7 @@ public:
 	    std::cout << "              the associated index is        " << index << std::endl;
 	}
         
-	debug = true;
+
 	//if (index > 581) debug=true;
 	
 	
@@ -1047,7 +1058,7 @@ public:
                 std::cout << "Initialising the Accurate Online Support Vector Machine" << std::endl;
 
 	    // set f(x_i) to y_i
-            base_type::bias = ((*base_type::data)[key].second ? 1.0 : -1.0);
+            base_type::bias = bool_to_float( (*base_type::data)[key].second );
             condition.back() = 0.0;
             
 	    // put this first point (with index 0) in the remaining set
@@ -1079,7 +1090,7 @@ public:
 
             // fill last ROW of matrix H with this input sample
 	    // TODO this should be an optimised function call
-            H.matrix( index, 0 ) = ( output ? 1.0 : -1.0 );
+            //H.matrix( index, 0 ) = ( output ? 1.0 : -1.0 );
 
 	    ublas::matrix_row<ublas::matrix<double> >::iterator j = ublas::row( H.matrix, index ).begin(); 
 	    *j++ = bool_to_float( (*base_type::data)[key].second );
@@ -1110,9 +1121,9 @@ public:
 		std::cout << i << ": " << evaluate_f( base_type::support_vector[i] ) << std::endl;*/
     
     	if (debug) {
-	std::cout << "---------------------------------------------------------------------------------------------" << std::endl;
- 	int qqq;
- 	std::cin >> qqq;
+	std::cout << "-------------------------------------------------------------------------------" << std::endl;
+//  	int qqq;
+//  	std::cin >> qqq;
 	}
     
     }
@@ -1140,21 +1151,23 @@ public:
 	base_type::fill_kernel( key, base_type::key_lookup.begin(), base_type::key_lookup.end(),
                                 candidate_column.begin() );
 
-/*	if ( outputs[index] ) {
-		for( unsigned int i=0; i<base_type::support_vector.size(); ++i )
-		  if ( outputs[i] )
-            	     candidate_column[i] = base_type::kernel( base_type::support_vector[index], base_type::support_vector[i] );
-		  else 
-            	     candidate_column[i] = -base_type::kernel( base_type::support_vector[index], base_type::support_vector[i] );
-	} else {
-		for( unsigned int i=0; i<base_type::support_vector.size(); ++i )
-		  if ( outputs[i] )
-            	     candidate_column[i] = -base_type::kernel( base_type::support_vector[index], base_type::support_vector[i] );
-		  else 
-            	     candidate_column[i] = base_type::kernel( base_type::support_vector[index], base_type::support_vector[i] );
-	}*/
+// 	if ( (*base_type::data)[key].second ) {
+// 		for( unsigned int i=0; i<base_type::key_lookup.size(); ++i )
+// 		  if ( (*base_type::data)[base_type::key_lookup[i]].second )
+// 		  			 std::cout << base_type::kernel( key, base_type::key_lookup[i] ) << std::endl;
+// 		  else 
+// 		  			 std::cout << -base_type::kernel( key, base_type::key_lookup[i] ) << std::endl;
+// 	} else {
+// 		for( unsigned int i=0; i<base_type::key_lookup.size(); ++i )
+// 		  if ( (*base_type::data)[base_type::key_lookup[i]].second )
+// 		  			 std::cout << -base_type::kernel( key, base_type::key_lookup[i] ) << std::endl;
+// 		  else 
+// 		  			 std::cout << base_type::kernel( key, base_type::key_lookup[i] ) << std::endl;
+// 	}
 	if (debug)
 		std::cout << "Computed candidate column" << std::endl;
+// 	if (debug)
+// 		std::cout << "Candidate column is " << candidate_column << std::endl;		
 	
 	// initialise the margin and coefficient sensitivity vectors
 	vector_type margin_sense( base_type::key_lookup.size() );
@@ -1169,20 +1182,20 @@ public:
             ublas::matrix_range< ublas::matrix<double> > R_range( R.view() );
             ublas::symmetric_adaptor< ublas::matrix_range< ublas::matrix<double> > > R_view( R_range );
             atlas::symv( R_view, H.row(index), coef_sense );
-	    if (debug)
-      	        std::cout << "Coefficient sensitivities: " << coef_sense << std::endl;
-	
+// 	    if (debug)
+//       	        std::cout << "Coefficient sensitivities: " << coef_sense << std::endl;
+// 	
             // Equation 12: compute all margin sensitivities
             atlas::gemv( H.view(), coef_sense, margin_sense );
             atlas::xpy( candidate_column, margin_sense );
-	    if (debug)
-	    	std::cout << "Margin sensitivities: " << margin_sense << std::endl;
+// 	    if (debug)
+// 	    	std::cout << "Margin sensitivities: " << margin_sense << std::endl;
 		
-	    if (debug) {
-	        std::cout << "Condition numbers: ";
-	 	for( unsigned int i=0;i<condition.size();++i) std::cout << condition[i] << ",";
-	    	std::cout << std::endl;
-	    }
+// 	    if (debug) {
+// 	        std::cout << "Condition numbers: ";
+// 	 	for( unsigned int i=0;i<condition.size();++i) std::cout << condition[i] << ",";
+// 	    	std::cout << std::endl;
+// 	    }
 		            
 	    // seek for the largest possible increment in weight[index]
 	    scalar_type delta_weight_t(0);
@@ -1416,11 +1429,11 @@ public:
 
 	    }
 
-            if (debug) {
-	    	int qqq;
-		std::cin >> qqq;
-	    	
-	    }
+//             if (debug) {
+// 	    	int qqq;
+// 		std::cin >> qqq;
+// 	    	
+// 	    }
 
 
   	    //migrate_action = 0;
@@ -1440,6 +1453,7 @@ public:
 
         unsigned int old_size = R.size1();
         unsigned int new_size = old_size + 1;
+        std::cout << "associated key is " << base_type::key_lookup[idx] << std::endl;
 
 	// if a point moves to the margin set, by definition, its condition equals 0.
 	condition[ idx ] = 0.0;
@@ -1452,7 +1466,8 @@ public:
 	    
 	    // this is correct: Q_ii == K(x_i,x_i)
             R.matrix(0,0) = base_type::kernel( base_type::key_lookup[idx], base_type::key_lookup[idx] );
-      	    R.matrix(1,0) = bool_to_float( (*base_type::data)[key_lookup[idx]].second );
+			// NEGATED bool_to_float (!!)
+            R.matrix(1,0) = -bool_to_float( (*base_type::data)[base_type::key_lookup[idx]].second );
             R.matrix(1,1) = 0.0;
 
         } else {
@@ -1529,6 +1544,10 @@ public:
         
 	}
 
+	
+// 	std::cout << "R is now: "<< R.view() << std::endl;
+	
+	
         // adjust "design" matrix
         // NOTE has to be done AFTER the update of the R matrix!!  (to check ... )
         // because a row of the "old" design matrix is used in the determination of "delta", see above.
@@ -1536,7 +1555,26 @@ public:
 
 	base_type::fill_kernel( base_type::key_lookup[idx], base_type::key_lookup.begin(), base_type::key_lookup.end(),
                                 ublas::column( H.matrix, old_size ).begin() );
+                                
+//     std::cout << H.view() << std::endl;
 
+// 	if ( (*base_type::data)[base_type::key_lookup[idx]].second ) {
+// 		for( unsigned int i=0; i<base_type::key_lookup.size(); ++i )
+// 		  if ( (*base_type::data)[base_type::key_lookup[i]].second )
+// 		  			 std::cout << base_type::kernel( base_type::key_lookup[idx], base_type::key_lookup[i] ) << std::endl;
+// 		  else 
+// 		  			 std::cout << -base_type::kernel( base_type::key_lookup[idx], base_type::key_lookup[i] ) << std::endl;
+// 	} else {
+// 		for( unsigned int i=0; i<base_type::key_lookup.size(); ++i )
+// 		  if ( (*base_type::data)[base_type::key_lookup[i]].second )
+// 		  			 std::cout << -base_type::kernel( base_type::key_lookup[idx], base_type::key_lookup[i] ) << std::endl;
+// 		  else 
+// 		  			 std::cout << base_type::kernel( base_type::key_lookup[idx], base_type::key_lookup[i] ) << std::endl;
+// 	}
+    
+    
+    
+    
 /*	if ( outputs[idx] ) {
 		for( unsigned int i=0; i<base_type::support_vector.size(); ++i )
 		  if ( outputs[i] )
@@ -1555,7 +1593,11 @@ public:
 //             H.matrix(i,old_size) = base_type::kernel( base_type::support_vector[i],base_type::support_vector[idx] );
 
         // perform the actual set transition
-	margin_set.push_back( idx );
+	    margin_set.push_back( idx );
+	    
+	    margin_key.push_back( base_type::key_lookup[idx] );
+	    
+	    
     }
 
 
@@ -1595,7 +1637,11 @@ public:
 	// constant time removal from margin set index vector
         margin_set[ idx ] = margin_set.back();
         margin_set.pop_back();
-
+        
+	// constant time removal from margin set key vector
+	margin_key[ idx ] = margin_key.back();
+	margin_key.pop_back();
+        
         // constant time removal from weight vector
 	base_type::weight[ idx ] = base_type::weight.back();
 	base_type::weight.pop_back();
@@ -1732,4 +1778,3 @@ public:
 } //namespace kml
 
 #endif
-

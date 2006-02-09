@@ -16,7 +16,18 @@ env.Program('svm_c_ranking.c', LIBS=c_link_libs)
 
 #env.Program('ann_regression.cpp', LIBS=atlas_link_libs + ['doublefann'] )
 
-env.Program('kmltool.cpp', LIBS= atlas_link_libs + ['boost_program_options'] )
+
+
+# win32
+if env['PLATFORM'] == 'posix':
+	program_options_lib = 'boost_program_options'
+elif env['PLATFORM'] == 'win32':
+	program_options_lib = str(env.FindFile( ['libboost_program_options-vc71-mt-s.lib'], env['LIBPATH'] ))
+else:
+	print "Please configure examples/SConscript."
+
+
+env.Program('kmltool.cpp', LIBS= atlas_link_libs + [program_options_lib] )
 
 
 

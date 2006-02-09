@@ -238,16 +238,17 @@ Implementation of the Fast RVM [1].
 */
 
 
+template<typename PropertyMap, typename Problem, typename Kernel, class Enable = void>
+class rvm: public kernel_machine<PropertyMap,Problem,Kernel> {};
 
-template<typename Problem,template<typename,int> class Kernel,class Enable = void>
-class rvm: public kernel_machine<Problem,Kernel> {};
 
 
-template<typename Problem,template<typename,int> class Kernel>
-class rvm<Problem,Kernel,typename boost::enable_if< is_regression<Problem> >::type>:
-         public kernel_machine<Problem,Kernel> {
+
+template<typename PropertyMap, typename Problem,typename Kernel>
+class rvm<PropertyMap,Problem,Kernel,typename boost::enable_if< is_regression<Problem> >::type>:
+         public kernel_machine<PropertyMap,Problem,Kernel> {
 public:
-    typedef kernel_machine<Problem,Kernel> base_type;
+    typedef kernel_machine<PropertyMap,Problem,Kernel> base_type;
     typedef typename base_type::kernel_type kernel_type;
     typedef typename base_type::result_type result_type;
     typedef typename Problem::input_type input_type;
@@ -261,6 +262,22 @@ public:
     /*!	\param k a construction parameter for the kernel type */
     rvm( typename boost::call_traits<kernel_type>::param_type k ): base_type(k) {}
 
+
+    template< typename TokenIterator >
+    rvm( TokenIterator const begin, TokenIterator const end, 
+         typename boost::call_traits<kernel_type>::param_type k ):
+	base_type(k) {
+		// no parameters at the moment
+	}
+
+
+   /*! learn the entire range of keys indicated by this range */
+    template<typename KeyIterator>
+    void learn( KeyIterator begin, KeyIterator end ) {
+
+
+
+    }
 
 
     /*! Learn a range of input-output pairs, call the training algorithm for the relevance vector machine.
@@ -444,7 +461,13 @@ public:
             // update mu vector
             atlas::symv( sigma_symm, Hty_cache, mu );
             atlas::scal( beta, mu );
+            
+            
+            /*
 
+                COMPUTATIONS DONE TO ESTIMATE NEXT BASIS VECTOR
+
+            */
             // work matrix will be HtH.size1() by active_set.size (equals HtH_part size)
             matrix_type work_mat( HtH_cache.size1(), active_set.size() );
             atlas::symm( HtH_cache, sigma_symm, work_mat );
@@ -554,7 +577,14 @@ public:
             if (debug)
                 std::cout << "index was " << action_index << " and theta was " << theta_l_max << std::endl;
 
-
+                
+                
+            /*    
+                
+              BASIS VECTOR HAS BEEN SELECTED; UPDATE REMAINING VALUES
+                
+                
+            */
             // alright, efficiently estimate the new sigma AND mu through update equations
             // on the basis of then newly acquired variance estimate, determine whether we
             // have to recompute sigma and mu
@@ -813,7 +843,6 @@ public:
 
 
 #endif
-
 
 
 

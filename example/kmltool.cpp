@@ -21,13 +21,14 @@
 #include <iostream>
 
 #include <kml/io.hpp>
-#include <kml/online_svm.hpp>
 #include <kml/gaussian.hpp>
 
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/vector_property_map.hpp>
 
-
+// include kernel machine types
+#include <kml/online_svm.hpp>
+#include <kml/rvm.hpp>
 
 
 
@@ -219,10 +220,11 @@ int main(int argc, char *argv[]) {
 					switch( selected_kernel ) {
 						case gaussian: {
 							typedef kml::gaussian< problem_type::input_type > kernel_type;
+							typedef kml::rvm< data_type, problem_type, kernel_type > machine_type;
 							kernel_type my_kernel( k_o, kernel_options.end() );
-
-							//typedef kml::rvm< data_type, problem_type, kernel_type > machine_type;
-
+							machine_type my_machine( m_o, machine_options.end(), my_kernel );
+							my_machine.set_data( data );
+							my_machine.learn( learn_keys.begin(), learn_keys.end() );
 							break;
 						}
 
@@ -252,7 +254,6 @@ int main(int argc, char *argv[]) {
 
 	return EXIT_SUCCESS;
 }
-
 
 
 
