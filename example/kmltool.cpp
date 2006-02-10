@@ -155,10 +155,9 @@ int main(int argc, char *argv[]) {
 					switch( selected_kernel ) {
 						case gaussian: {
 							typedef kml::gaussian< problem_type::input_type > kernel_type;
-							typedef kml::online_svm< data_type, problem_type, kernel_type > machine_type;
+							typedef kml::online_svm< problem_type, kernel_type, data_type > machine_type;
 							kernel_type my_kernel( k_o, kernel_options.end() );
-							machine_type my_machine( m_o, machine_options.end(), my_kernel );
-							my_machine.set_data( data );
+							machine_type my_machine( m_o, machine_options.end(), my_kernel, data );
 							my_machine.learn( learn_keys.begin(), learn_keys.end() );
 							break;
 						}
@@ -205,10 +204,9 @@ int main(int argc, char *argv[]) {
 					switch( selected_kernel ) {
 						case gaussian: {
 							typedef kml::gaussian< problem_type::input_type > kernel_type;
-							typedef kml::online_svm< data_type, problem_type, kernel_type > machine_type;
+							typedef kml::online_svm< problem_type, kernel_type, data_type > machine_type;
 							kernel_type my_kernel( k_o, kernel_options.end() );
-							machine_type my_machine( m_o, machine_options.end(), my_kernel );
-							my_machine.set_data( data );
+							machine_type my_machine( m_o, machine_options.end(), my_kernel, data );
 							my_machine.learn( learn_keys.begin(), learn_keys.end() );
 							break;
 						}
@@ -220,10 +218,9 @@ int main(int argc, char *argv[]) {
 					switch( selected_kernel ) {
 						case gaussian: {
 							typedef kml::gaussian< problem_type::input_type > kernel_type;
-							typedef kml::rvm< data_type, problem_type, kernel_type > machine_type;
+							typedef kml::rvm< problem_type, kernel_type, data_type > machine_type;
 							kernel_type my_kernel( k_o, kernel_options.end() );
-							machine_type my_machine( m_o, machine_options.end(), my_kernel );
-							my_machine.set_data( data );
+							machine_type my_machine( m_o, machine_options.end(), my_kernel, data );
 							my_machine.learn( learn_keys.begin(), learn_keys.end() );
 							break;
 						}

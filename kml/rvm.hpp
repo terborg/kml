@@ -238,17 +238,17 @@ Implementation of the Fast RVM [1].
 */
 
 
-template<typename PropertyMap, typename Problem, typename Kernel, class Enable = void>
-class rvm: public kernel_machine<PropertyMap,Problem,Kernel> {};
+template< typename Problem, typename Kernel, typename PropertyMap, class Enable = void>
+class rvm: public kernel_machine< Problem, Kernel, PropertyMap > {};
 
 
 
 
-template<typename PropertyMap, typename Problem,typename Kernel>
-class rvm<PropertyMap,Problem,Kernel,typename boost::enable_if< is_regression<Problem> >::type>:
-         public kernel_machine<PropertyMap,Problem,Kernel> {
+template< typename Problem, typename Kernel, typename PropertyMap >
+class rvm< Problem, Kernel, PropertyMap, typename boost::enable_if< is_regression<Problem> >::type>:
+         public kernel_machine< Problem, Kernel, PropertyMap > {
 public:
-    typedef kernel_machine<PropertyMap,Problem,Kernel> base_type;
+    typedef kernel_machine< Problem, Kernel, PropertyMap > base_type;
     typedef typename base_type::kernel_type kernel_type;
     typedef typename base_type::result_type result_type;
     typedef typename Problem::input_type input_type;
@@ -265,8 +265,9 @@ public:
 
     template< typename TokenIterator >
     rvm( TokenIterator const begin, TokenIterator const end, 
-         typename boost::call_traits<kernel_type>::param_type k ):
-	base_type(k) {
+         typename boost::call_traits<kernel_type>::param_type k,
+         typename boost::call_traits<PropertyMap>::param_type map ):
+	base_type(k,map) {
 		// no parameters at the moment
 	}
 

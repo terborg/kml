@@ -106,7 +106,7 @@ Classification: \f$ Q_{ij}= y_i y_j k(x_i,x_j) \f$
 */
 
 
-template<typename PropertyMap, typename Problem, typename Kernel, class Enable = void>
+template< typename Problem, typename Kernel, typename PropertyMap, class Enable = void>
 class online_svm: public kernel_machine<PropertyMap,Problem,Kernel> {};
 
 
@@ -118,11 +118,11 @@ class online_svm: public kernel_machine<PropertyMap,Problem,Kernel> {};
 //
 //
 
-template<typename PropertyMap, typename Problem,typename Kernel>
-class online_svm<PropertyMap, Problem, Kernel, typename boost::enable_if< is_regression<Problem> >::type>:
-         public kernel_machine<PropertyMap,Problem,Kernel> {
+template< typename Problem, typename Kernel, typename PropertyMap >
+class online_svm< Problem, Kernel, PropertyMap, typename boost::enable_if< is_regression<Problem> >::type>:
+         public kernel_machine< Problem, Kernel, PropertyMap > {
 public:
-    typedef kernel_machine<PropertyMap,Problem,Kernel> base_type;
+    typedef kernel_machine< Problem, Kernel, PropertyMap > base_type;
     typedef typename base_type::kernel_type kernel_type;
     typedef typename base_type::result_type result_type;
     typedef typename Problem::input_type input_type;
@@ -145,14 +145,16 @@ public:
     */
     online_svm( typename boost::call_traits<scalar_type>::param_type max_weight,
                 typename boost::call_traits<scalar_type>::param_type tube_width,
-		typename boost::call_traits<kernel_type>::param_type k ):
-    		base_type(k), epsilon(tube_width), C(max_weight) {}
+		typename boost::call_traits<kernel_type>::param_type k,
+                typename boost::call_traits<PropertyMap>::param_type map ):
+    		base_type(k,map), epsilon(tube_width), C(max_weight) {}
 
 
     template< typename TokenIterator >
     online_svm( TokenIterator const begin, TokenIterator const end, 
-                typename boost::call_traits<kernel_type>::param_type k ):
-		base_type(k) {
+                typename boost::call_traits<kernel_type>::param_type k,
+		typename boost::call_traits<PropertyMap>::param_type map ):
+		base_type(k,map) {
 		C = 10.0;
 		epsilon = 0.1;
 		TokenIterator token( begin );
@@ -911,12 +913,12 @@ weights (and that linear dependent point can be left out).
 */
 
 
-template<typename PropertyMap, typename Problem, typename Kernel>
-class online_svm<PropertyMap,Problem,Kernel,typename boost::enable_if< is_classification<Problem> >::type >:
-public kernel_machine< PropertyMap, Problem, Kernel > {
+template< typename Problem, typename Kernel, typename PropertyMap >
+class online_svm< Problem, Kernel, PropertyMap, typename boost::enable_if< is_classification<Problem> >::type >:
+public kernel_machine< Problem, Kernel, PropertyMap > {
 public:
 
-    typedef kernel_machine<PropertyMap,Problem,Kernel> base_type;
+    typedef kernel_machine< Problem, Kernel, PropertyMap > base_type;
     typedef typename base_type::kernel_type kernel_type;
     typedef typename base_type::result_type result_type;
     typedef typename Problem::input_type input_type;
@@ -931,17 +933,17 @@ public:
 	typedef typename boost::property_traits<PropertyMap>::value_type object_type;
 
 
-
-    online_svm( typename boost::call_traits<kernel_type>::param_type k,
-                typename boost::call_traits<scalar_type>::param_type max_weight ):
-    base_type(k), C(max_weight) {}
-    
-    
+    online_svm( typename boost::call_traits<scalar_type>::param_type max_weight,
+                typename boost::call_traits<kernel_type>::param_type k,
+                typename boost::call_traits<PropertyMap>::param_type map ):
+    base_type(k,map), C(max_weight) {}
+        
     
     template< typename TokenIterator >
     online_svm( TokenIterator const begin, TokenIterator const end, 
-                typename boost::call_traits<kernel_type>::param_type k ):
-		base_type(k) {
+                typename boost::call_traits<kernel_type>::param_type k,
+                typename boost::call_traits<PropertyMap>::param_type map ):
+		base_type(k,map) {
 		C = 10.0;
 		TokenIterator token( begin );
 		if ( token != end ) {

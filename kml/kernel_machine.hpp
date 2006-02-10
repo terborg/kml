@@ -38,7 +38,7 @@ namespace lambda = boost::lambda;
 
 namespace kml {
 
-template< typename PropertyMap, typename Problem, typename Kernel, class Enable=void >
+template< typename Problem, typename Kernel, typename PropertyMap, class Enable=void >
 class kernel_machine {};
 
 
@@ -52,8 +52,8 @@ class kernel_machine {};
 
 	\ingroup kernel_machines
 */
-template< typename PropertyMap, typename Problem, typename Kernel >
-class kernel_machine< PropertyMap, Problem, Kernel,typename boost::enable_if< is_regression<Problem> >::type>:
+template< typename Problem, typename Kernel, typename PropertyMap >
+class kernel_machine< Problem, Kernel, PropertyMap, typename boost::enable_if< is_regression<Problem> >::type>:
 public std::unary_function< typename Problem::input_type, typename Problem::output_type > {
 
 public:
@@ -71,7 +71,9 @@ public:
 	/*! \brief Initializes the kernel
 		\param k parameter used to initialize the kernel
 	*/
-    kernel_machine( typename boost::call_traits<kernel_type>::param_type k ): kernel_function(k) {}
+    kernel_machine( typename boost::call_traits<kernel_type>::param_type k,
+                    typename boost::call_traits<PropertyMap>::param_type map ): 
+                    kernel_function(k), data(&map) {}
 
 
 	void set_data( PropertyMap const &map ) {
@@ -140,11 +142,12 @@ public:
 	weight.clear();
     }
 
+    /// kernel_function used by the machine
+    kernel_type kernel_function;
+
     /// pointer to data container used by the machine
     PropertyMap const *data;
 
-    /// kernel_function used by the machine
-    kernel_type kernel_function;
 
     /// to translate to a sequential view
 //     std::map< key_type, std::size_t > key_mapping;
@@ -172,8 +175,8 @@ public:
 
 	\ingroup kernel_machines
 */
-template< typename PropertyMap, typename Problem, typename Kernel>
-class kernel_machine<PropertyMap, Problem, Kernel, typename boost::enable_if< is_classification<Problem> >::type >: 
+template< typename Problem, typename Kernel, typename PropertyMap >
+class kernel_machine<Problem, Kernel, PropertyMap, typename boost::enable_if< is_classification<Problem> >::type >: 
 public std::unary_function< typename Problem::input_type, typename Problem::output_type > {
 
 public:
@@ -186,7 +189,10 @@ public:
     // FIXME make this something else...
     typedef double scalar_type;
        
-    kernel_machine( typename boost::call_traits<kernel_type>::param_type k ): kernel_function(k) {}
+
+    kernel_machine( typename boost::call_traits<kernel_type>::param_type k,
+                    typename boost::call_traits<PropertyMap>::param_type map ): 
+                    kernel_function(k), data(&map) {}
 
 
 	typename kernel_type::return_type kernel( key_type const i, key_type const j ) {
@@ -263,12 +269,12 @@ public:
 	weight.clear();
     }
     
+    /// kernel_function used by the machine
+    kernel_type kernel_function;
 
     /// pointer to data container used by the machine
     PropertyMap const *data;
 
-    /// kernel_function used by the machine
-    kernel_type kernel_function;
 
     /// to translate to a sequential view
 //     std::map< key_type, std::size_t > key_mapping;
