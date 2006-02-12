@@ -260,8 +260,8 @@ public:
 
     
     /*!	\param k a construction parameter for the kernel type */
-    rvm( typename boost::call_traits<kernel_type>::param_type k ): base_type(k) {}
-
+    rvm( typename boost::call_traits<kernel_type>::param_type k,
+         typename boost::call_traits<PropertyMap>::param_type map ): base_type(k,map) {}
 
     template< typename TokenIterator >
     rvm( TokenIterator const begin, TokenIterator const end, 
@@ -403,8 +403,7 @@ public:
 
         vector_type residuals( target.size() );
 
-        int best_action = add
-                              ;              // set to add action (?? ... )
+        int best_action = add;  // set to add action (?? ... )
 
         //
         // MAIN LOOP
