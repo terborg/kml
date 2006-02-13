@@ -27,6 +27,8 @@
 #include <kml/classification.hpp>
 #include <kml/ranking.hpp>
 #include <vector>
+
+
 //#include <kml/determinate.hpp>
 
 // for the property traits
@@ -116,6 +118,34 @@ public:
 			++j;
 		}
 	}
+	
+	
+
+	// to fill e.g. a column of H, use fill_kernel
+	// from boost documentation:
+	// An algorithm that iterates through the range [m.begin1 (), m.end1 ()) will 
+	// pass through every row of m , an algorithm that iterates through the range [m.begin2 (), m.end2 ()) 
+	// will pass through every column of m .
+	template<typename KeyIterator, typename Matrix>
+	void design_matrix( KeyIterator const begin, KeyIterator const end, Matrix &out ) {
+							
+		// row by row filling
+		KeyIterator i(begin);
+		std::size_t row = 0;
+		while( i != end ) {
+			out( row, 0 ) = 1.0;
+			std::size_t col = 0;
+			KeyIterator j(begin);
+			while( j != end ) {
+ 				out( row, ++col ) = kernel_function( (*data)[*i].first, (*data)[*j].first );				
+ 				++j;
+			}
+			++row;
+			++i;
+		}
+	}
+			
+	
 
 
 
@@ -300,4 +330,3 @@ public:
 
 
 #endif
-

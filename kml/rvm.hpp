@@ -32,190 +32,15 @@
 #include "kernels.h"
 
 
+
 // include AFTER enough traits have been included, of course... (?)
 #include <boost/numeric/bindings/atlas/cblas.hpp>
 #include <boost/numeric/bindings/atlas/clapack.hpp>
 
 
+
+
 namespace kml {
-
-namespace detail {
-
-// specialised HtH_part producer for the Gaussian kernel
-// should produce an entire row (or column!) of HtH
-// \sum_i k(x_r,x_i) * k(x_
-// should be in gaussian.hpp!!
-
-
-
-
-// note that this is going to be a VERY specific specialisation of the gaussian<bla,0> kernel!
-template<class Kernel, class Input, class Point>
-class HtH_computer {
-public:
-
-    HtH_computer( Input const &s, Input const &t, Kernel const &kernel ):
-    source(boost::cref(s)), target(boost::cref(t)) {
-
-        exp_factor = -1.0/(2.0*kernel.get_parameter()*kernel.get_parameter());
-        double_exp_factor = 2.0 * exp_factor;
-        /*		std::cout << "exp factor:    " << exp_factor << std::endl;
-        		std::cout << "2x exp factor: " << double_exp_factor << std::endl;*/
-
-        source_inner_products.resize( boost::size(s) );
-        std::cout << "Precomputing x_i^T x_i for all sources..." << std::flush;
-        for( int i=0; i<boost::size(s); ++i ) {
-            source_inner_products[i] = inner_product( s[i], s[i] );
-        }
-        std::cout << "done." << std::endl;
-
-        target_inner_products.resize( boost::size(t) );
-        std::cout << "Precomputing x_i^T x_i for all targets..." << std::flush;
-        for( int i=0; i<boost::size(t); ++i ) {
-            target_inner_products[i] = inner_product( t[i], t[i] );
-        }
-        std::cout << "done." << std::endl;
-
-
-
-        /*		std::transform( boost::begin(t), boost::end(t),
-        		                target_inner_products.begin(),
-        		                bind( inner_product, *_1, *_1 ) );*/
-        bias_term = 1.0;
-    }
-
-    /*	double operator()( int const row, int const col ) {
-     		if ((row==0) && (col==0))
-    			return operator()();
-    		if (row==0)
-    		        return operator()( source.get()[col] );
-    		if (col==0)
-    			return operator()( source.get()[row] );
-    		return operator()( source.get()[row], source.get()[col] );
-    	}*/
-
-    double operator()( int s_1, int s_2 ) {
-
-        //	std::cout << "s_1=" << s_1 << "  s_2=" << s_2 << std::endl;
-
-        if ((s_1>0) && (s_2>0)) {
-
-            int source_1 = s_1-1;
-            int source_2 = s_2-1;
-
-            // TODO atlas:: xpy
-            Point sum_point( source.get()[source_1] + source.get()[source_2] );
-            double total_factor = std::exp( exp_factor * (source_inner_products[source_1] +
-                                            source_inner_products[source_2]) );
-
-            double sum = 0.0;
-            // TODO use a functor and std::accumulate...
-            // we have to time different options!
-            // either with a atlas::dot, or just an std::accumulate
-            int j=0;
-            for( int i=0; i < boost::size(target.get()); ++i ) {
-                sum += std::exp( double_exp_factor * ( target_inner_products[i] -
-                                                       inner_product( sum_point, target.get()[i]) ) );
-            }
-            sum *= total_factor;
-            return sum;
-        } else {
-            if (s_1==0) {
-                // s_1==0
-                if (s_2==0)
-                    return operator()();
-                else
-                    return operator()(s_2);
-
-            } else {
-                // s_2==0
-                if (s_1==0)
-                    return operator()();
-                else
-                    return operator()(s_1);
-            }
-        }
-    }
-
-    // special bias column operator ...
-    // this means either source_1 or source_2 is the bias column of the
-    // design matrix
-    double operator()( int const s_i ) {
-        double sum = 0.0;
-        int source_i = s_i-1;
-        for( int i=0; i < boost::size(target.get()); ++i ) {
-            sum += std::exp( exp_factor * ( target_inner_products[i] -
-                                            2.0 * inner_product( source.get()[source_i], target.get()[i]) ) );
-        }
-        return bias_term * std::exp( exp_factor * source_inner_products[source_i] ) * sum;
-    }
-
-    // top left corner of HtH
-    double operator()() {
-        return bias_term * boost::size(target.get());
-    }
-
-    template<class Range>
-    void fill_column( int const col, Range result ) {
-        for( int s=0; s<result.size(); ++s ) {
-            result[s] = operator()(s,col);
-        }
-    }
-
-    double exp_factor;
-    double double_exp_factor;
-    double bias_term;
-
-    typename boost::reference_wrapper<Input const> source;
-    typename boost::reference_wrapper<Input const> target;
-
-    // precomputed stuff
-    std::vector<double> target_inner_products;
-    std::vector<double> source_inner_products;
-};
-
-
-
-
-
-template<class Kernel, class Input, class Point>
-class HtH_full_cache {
-public:
-
-    HtH_full_cache( Input const &s, Input const &t, Kernel const &kernel ):
-    source(boost::cref(s)), target(boost::cref(t)) {
-
-        /*        std::cout << "Precomputing HtH..." << std::flush;*/
-        ublas::matrix<double> design_mat;
-        design_matrix( s, t, kernel, 1.0, design_mat );
-
-        HtH.resize( s.size()+1, s.size()+1 );
-        inner_prod( design_mat, HtH );
-        //         std::cout << "done." << std::endl;
-
-    }
-
-    double operator()( int row, int col ) {
-        return HtH(row,col);
-    }
-
-    template<class Range>
-    void fill_column( unsigned int const col, Range result ) {
-        for( unsigned int s=0; s<result.size(); ++s ) {
-            result[s] = HtH(s,col);
-        }
-    }
-
-    typename boost::reference_wrapper<Input const> source;
-    typename boost::reference_wrapper<Input const> target;
-
-    // precomputed stuff
-    ublas::symmetric_matrix<double> HtH;
-
-};
-
-} // namespace detail
-
 
 
 /*!
@@ -276,78 +101,49 @@ public:
     template<typename KeyIterator>
     void learn( KeyIterator begin, KeyIterator end ) {
 
+	    bool debug = true;
+	    	    
+	    if (debug)
+	    	std::cout << "Computing H..." << std::flush;
+	    std::size_t problem_size( end-begin );
+	    matrix_type H( problem_size, problem_size + 1 );
+	    base_type::design_matrix( begin, end, H );
+	    if (debug)
+	    	std::cout << "done." << std::endl;
 
-
-    }
-
-
-    /*! Learn a range of input-output pairs, call the training algorithm for the relevance vector machine.
-      \param input a range of input patterns
-      \param output a range of output patterns
-    */
-    template<class IRange, class ORange>
-    void learn( IRange const &input, ORange const &output ) {
-        learn( input, input, output );
-    }
-
-    template<class IRange, class ORange>
-    void learn( IRange const &source, IRange const &target, ORange const &output ) {
-
-        // TODO cleanly use input and output using the Boost.Range stuff
-
-
-
-        int debug = 0;
-
-
-
-        // TODO make an efficient Hty computer! FIXME
         if (debug)
             std::cout << "computing Hty..." << std::flush;
-        vector_type Hty( source.size() + 1 );
-        Hty[0] = sum(output);
-        for( unsigned int s=0; s<source.size(); ++s ) {
-            double sum = 0.0;
-            for( unsigned int t=0; t<target.size(); ++t ) {
-                sum += output[t] * base_type::kernel( source[s], target[t] );
-            }
-            Hty[s+1] = sum;
+        vector_type output( problem_size );
+        KeyIterator key_iter( begin );
+        for( std::size_t i = 0; i<problem_size; ++i ) {
+	        output[i] = (*base_type::data)[*key_iter++].second;
         }
+        vector_type Hty( problem_size + 1 );
+        atlas::gemv( static_cast<matrix_type>(ublas::trans(H)), output, Hty );
         if (debug)
             std::cout << "done." << std::endl;
+            
+        std::cout << "computing HtH..." << std::flush;
+        matrix_type HtH( problem_size + 1, problem_size + 1 );
+        atlas::gemm( static_cast<matrix_type>(ublas::trans(H)), H, HtH );
+        std::cout << "done." << std::endl;
+        
+        vector_type diag_HtH( HtH.size1() );
+        for( unsigned int i=0; i<HtH.size1(); ++i ) diag_HtH[i] = HtH(i,i);
 
+        
+                
 
-        //typename detail::HtH_computer< typename KernelMachine::kernel_type, Input, vector_type > HtH_comp( source, target, base_type::kernel );
-
-        typename detail::HtH_full_cache< kernel_type, IRange, vector_type > HtH_comp( source, target, base_type::kernel );
-
-
-        if (debug)
-            std::cout << "computing diag HtH..." << std::flush;
-        vector_type diag_HtH( source.size()+1 );
-        for( unsigned int i=0; i < diag_HtH.size(); ++i ) {
-            diag_HtH[i] = HtH_comp( i, i );
-        }
-        if (debug)
-            std::cout << "done." << std::endl;
-
-
-
-
-        // TODO fully pre-compute the diagonal of matrix HtH
-        // this will basically cost the computation of a full kernel matrix.
-        // we need it during the algorithm
-
-
+        
         // explanation of variables, following Tipping (1999)
         // theta = 1 / alpha
 
         // create an empty index vector
         std::vector<unsigned int> active_set;
-        std::vector<unsigned int> inactive_set( source.size()+1 );
+        std::vector<unsigned int> inactive_set( problem_size + 1 );
 	for( std::size_t i=0; i<inactive_set.size(); ++i ) inactive_set[i]=i;
-        vector_type weight_vector( source.size()+1 );
-        vector_type theta( source.size()+1 );
+        vector_type weight_vector( problem_size + 1 );
+        vector_type theta( problem_size + 1 );
         theta.clear();
 
         // theta is 1/alpha, as in Ralf Herbrich's R implementation
@@ -357,14 +153,14 @@ public:
         variance_estimate = 0.1;
 
         // look for the best basis vector we could add
-        // If NOT done, e.g. if we would always start with the intercept term
+        // If NOT done, e.g., if we would always start with the intercept term
         // or something, this can lead to severe instability in case of an intercept term
         // for which q_i^2 > s_i does not hold. This fixes a bug that occured.
         unsigned int max_idx;
         double max_dl = 0.0;
         for( unsigned int i=0; i<Hty.size(); ++i ) {
             double q_i_2 = std::pow( Hty(i) /variance_estimate,2);
-            double s_i   = diag_HtH[i]/variance_estimate;
+            double s_i   = HtH(i,i)/variance_estimate;
             double delta_l = (q_i_2-s_i)/s_i + std::log( s_i / q_i_2 );
             if (delta_l > max_dl) {
                 max_idx = i;
@@ -375,33 +171,17 @@ public:
             std::cout << "starting with point number " << max_idx << "." << std::endl;
         active_set.push_back( max_idx );
         inactive_set.erase( inactive_set.begin() + max_idx );
-        theta( max_idx ) = ((Hty(max_idx)*Hty(max_idx)) / diag_HtH[max_idx] - variance_estimate) / diag_HtH[max_idx];
-
-        // resize the H cache
-        matrix_type H_cache( target.size(), 1 );
-        if( max_idx==0 )
-            for( unsigned int r=0; r<target.size(); ++r )
-                H_cache(r,0)=1.0;
-        else
-            for( unsigned int r=0; r<target.size(); ++r )
-                H_cache(r,0)=base_type::kernel(source[max_idx-1],target[r]);
-
-        // resize HtH cache
-        matrix_type HtH_cache( source.size()+1, 1 );
-        HtH_comp.fill_column( max_idx, ublas::column( HtH_cache, 0 ) );
-
-        // create the Hty cache
-        vector_type Hty_cache( 1 );
-        Hty_cache[0] = Hty[max_idx];
+        theta( max_idx ) = ((Hty(max_idx)*Hty(max_idx)) / HtH(max_idx,max_idx) - variance_estimate) / HtH(max_idx,max_idx);
 
 
-
-
-        vector_type S( source.size()+1 );
-        vector_type Q( source.size()+1 );
+        
+        
+        
+        vector_type S( problem_size + 1 );
+        vector_type Q( problem_size + 1 );
         vector_type mu;
 
-        vector_type residuals( target.size() );
+        vector_type residuals( problem_size );
 
         int best_action = add;  // set to add action (?? ... )
 
@@ -434,12 +214,30 @@ public:
             ublas::symmetric_adaptor< matrix_type > sigma_inv_symm( sigma_inv );
 
             mu.resize( active_set.size() );
+            
+            vector_type Hty_cache( active_set.size() );
+            matrix_type HtH_cache( HtH.size1(), active_set.size() );
+            matrix_type H_cache( H.size1(), active_set.size() );
+            
+            
             for( unsigned int i=0; i<active_set.size(); ++i ) {
-                unsigned int index_sv = active_set[i];
-                for( unsigned int col=0; col <= i; ++col ) {
-                    sigma_inv_symm(i,col) = beta * HtH_cache(index_sv,col);
+                unsigned int index_1 = active_set[i];
+                for( unsigned int j=0; j <= i; ++j ) {
+	                unsigned int index_2 = active_set[ j ];
+                    sigma_inv_symm(i,j) = beta * HtH(index_1, index_2);
                 }
-                sigma_inv_symm(i,i) += static_cast<scalar_type>(1) / theta(index_sv);
+                sigma_inv_symm(i,i) += static_cast<scalar_type>(1) / theta(index_1);
+                
+                // temporary solution: copy Hty elements to Hty_cache
+                // while this should be done with e.g. swap operations
+                Hty_cache[i] = Hty[index_1];
+                
+				// temporary solution: copy column from HtH to HtH_cache
+                ublas::column(HtH_cache,i) = ublas::column(HtH,index_1);
+                
+  				// temporary solution: copy column from HtH to HtH_cache
+                ublas::column(H_cache,i) = ublas::column(H,index_1);
+                
             }
 
             // Invert matrix to form matrix sigma and compute vector mu
@@ -448,28 +246,34 @@ public:
             // TODO symmetric adaptor can go if upper or lower is known (other call to symv)
             // NOTE recip. variance is probably not most efficient like this.
 
+            // create a unit matrix of size active_set.size()
             matrix_type sigma( active_set.size(), active_set.size() );
             sigma.clear();
             for( unsigned int i=0; i<active_set.size(); ++i ) {
                 sigma(i,i)=1.0;
             }
 
-            // do the actual matrix inversion
+            // perform the actual matrix inversion
             ublas::symmetric_adaptor< matrix_type > sigma_symm( sigma );
             atlas::posv( sigma_inv_symm, sigma );
 
             // update mu vector
+            
+            // sigma_symm is active_set.size() by active_set.size()
+            // Hty_cache is problem_size by active_set.size()
+            // mu is active_set size
+            
+            
             atlas::symv( sigma_symm, Hty_cache, mu );
             atlas::scal( beta, mu );
             
-            
             /*
 
-                COMPUTATIONS DONE TO ESTIMATE NEXT BASIS VECTOR
+                COMPUTATIONS DONE TO ESTIMATE THE NEXT BASIS VECTOR
 
             */
             // work matrix will be HtH.size1() by active_set.size (equals HtH_part size)
-            matrix_type work_mat( HtH_cache.size1(), active_set.size() );
+            matrix_type work_mat( HtH.size1(), active_set.size() );
             atlas::symm( HtH_cache, sigma_symm, work_mat );
 
             // compute ALL S(i)'s and Q(i)'s (quite efficient)
@@ -673,22 +477,22 @@ public:
 
 
                     // increase the design matrix
-                    H_cache.resize( H_cache.size1(), H_cache.size2() + 1 );
-                    if( i==0 )
-                        for( unsigned int r=0; r<target.size(); ++r )
-                            H_cache(r,old_size)=1.0;
-                    else
-                        for( unsigned int r=0; r<target.size(); ++r )
-                            H_cache(r,old_size)=base_type::kernel(source[i-1],target[r]);
+//                     H_cache.resize( H_cache.size1(), H_cache.size2() + 1 );
+//                     if( i==0 )
+//                         for( unsigned int r=0; r<target.size(); ++r )
+//                             H_cache(r,old_size)=1.0;
+//                     else
+//                         for( unsigned int r=0; r<target.size(); ++r )
+//                             H_cache(r,old_size)=base_type::kernel(source[i-1],target[r]);
 
                     // also increase HtH matrix. Do a preserved resize first
                     // i is the source being added
-                    HtH_cache.resize( HtH_cache.size1(), HtH_cache.size2()+1 );
-                    HtH_comp.fill_column( i, ublas::column( HtH_cache, old_size ) );
+//                     HtH_cache.resize( HtH_cache.size1(), HtH_cache.size2()+1 );
+//                     HtH_comp.fill_column( i, ublas::column( HtH_cache, old_size ) );
 
                     // increase the Hty cache
-                    Hty_cache.resize( new_size );
-                    Hty_cache[old_size] = Hty[i];
+//                     Hty_cache.resize( new_size );
+//                     Hty_cache[old_size] = Hty[i];
 
                     if (debug)
                         std::cout << "Added " << i << " to the active set with theta " << theta(i) << std::endl;
@@ -788,16 +592,16 @@ public:
         }
 
         // copy support vectors to base type
-        base_type::support_vector.resize( active_set.size() );
-        base_type::weight.resize( active_set.size() );
-        for( unsigned int i=0; i<active_set.size(); ++i ) {
+        //base_type::support_vector.resize( active_set.size() );
+        //base_type::weight.resize( active_set.size() );
+        //for( unsigned int i=0; i<active_set.size(); ++i ) {
             //         ublas::matrix_row<MatT const> X_row( X, active_set[i]-1 );  // -1 for bias
             //         ublas::matrix_row<matrix_type> support_vectors_row( support_vectors, i );
             //         support_vectors_row.assign( X_row );
             //         weights( i ) = mu( i );
-            base_type::weight[i] = mu( i );
-            base_type::support_vector[i] = source[ active_set[i]-1 ];
-        }
+            //base_type::weight[i] = mu( i );
+            //base_type::support_vector[i] = source[ active_set[i]-1 ];
+        //}
 
 
 
@@ -822,6 +626,10 @@ public:
 
 
 
+
+           
+           
+           
 };
 
 
@@ -843,6 +651,5 @@ public:
 
 
 #endif
-
 
 
