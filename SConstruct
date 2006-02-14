@@ -131,7 +131,7 @@ elif env['CXX'] == '$CC' and env['CC'] == 'cl':
 	# Set compiler and optimisation flags
     # for now, warnings are disabled; multithreading is enabled for correct linking
 	cc_flags += '/nologo /w /EHsc /Zc:forScope /MT'
-	optimise_flags = '/O2'
+	optimise_flags = '/O2 /DNDEBUG /DNO_DEBUG'
 	arch_ext = ''
 	
 	if cpu.is_PentiumIV(): 
