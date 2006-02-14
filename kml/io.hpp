@@ -233,21 +233,50 @@ information to the kernel (e.g. non feature vector data).
 
 namespace svm_light {
 
-
 	bool compatible( std::vector<std::string> const &container ) {
 		std::vector<std::string>::const_iterator i = container.begin();
-		return ( std::find( boost::begin(*i), boost::end(*i), ':' ) != boost::end(*i) );
+	
+		// check for <line> .=. <target> <feature>:<value> <feature>:<value> ... <feature>:<value>
+		boost::char_separator<char> separator(" ");
+		boost::tokenizer<boost::char_separator<char> > first_line( *i, separator );
+		boost::tokenizer<boost::char_separator<char> >::iterator j = first_line.begin();
+
+		// non-empty line is no good
+		if ( j == first_line.end() ) return false;
+		// skip the target
+		++j;
+		// no feature data?
+		if ( j == first_line.end() ) return false;
+	
+		// perform the following test: each token should contain a ':'	
+		bool format_ok = true;
+		while( (j != first_line.end()) && format_ok ) {
+			format_ok = std::find( boost::begin(*j), boost::end(*j), ':' ) != boost::end(*j);
+			++j;
+		}
+		
+		return format_ok;
 	}
 
 
 	problem_type problem_type( std::vector<std::string> const &container ) {
 
-		// try to reject binary classification
+		// try to reject binary classification; each line should start with +1 or with -1
 		std::vector<std::string>::const_iterator i = container.begin();
 		while( (i!=container.end()) && ((*i).size()>3) && ((*i)[1]=='1') && ( ((*i)[0]=='+') || ((*i)[0]=='-') ) ) ++i;
 		if (i==container.end()) return io::classification;
+		
+		// try to reject ranking; each line should contain 'qid'
+		i = container.begin();
+		bool found_qid = true;
+		while ( i!=container.end() && found_qid ) {
+			std::string::const_iterator q_loc = std::find( (*i).begin(), (*i).end(), 'q' );
+			found_qid = (((*i).end()-q_loc)>2) && (q_loc[1]=='i') && (q_loc[2]=='d');
+			++i;
+		}
+		if (found_qid) return io::ranking;
 
-		// no other tests yet, return regression
+		// no other tests available, default to regression
 		return regression;
 	}
 
@@ -310,7 +339,7 @@ namespace svm_light {
 			while( (attribute_iter != tokens.end()) && ((*iter)[0] != static_cast<char>('#')) ) {
 	
 				// FIXME
-				// ERROR: this is not in all cases a number ... 
+				// ERROR: this is not in all cases a number, such as in case of a ranking problem
 				// Figure out the attribute number. This is 1-based, so subtract 1
 				unsigned int attribute_nr = boost::lexical_cast< unsigned int >( *attribute_iter++ ) - 1;
 				// read the input into the input container
@@ -345,7 +374,20 @@ namespace svm_torch {
 
 
 
-	static bool compatible( std::vector<std::string> const &container ) {
+	bool compatible( std::vector<std::string> const &container ) {
+		boost::char_separator<char> separator(" ");
+		std::vector<std::string>::const_iterator i = container.begin();
+		try {
+			boost::tokenizer<boost::char_separator<char> > first_line( *i, separator );
+			boost::tokenizer<boost::char_separator<char> >::iterator j = first_line.begin();
+			if ( j == first_line.end() ) return false;
+			unsigned int samples = boost::lexical_cast<unsigned int>( *j++ );
+			unsigned int attributes = boost::lexical_cast<unsigned int>( *j++ );
+		}
+		catch( boost::bad_lexical_cast & ) {
+			return false;
+		}
+		
 		return true;
 	}
 
@@ -454,6 +496,61 @@ namespace svm_torch {
 } // namespace svm_torch
 
 
+
+
+// basic filetype: a data matrix, i.e., one example per line
+
+namespace data_matrix {
+
+
+	// 
+	bool compatible( std::vector<std::string> const &container ) {
+		return true;	
+	}
+
+
+
+	io::problem_type problem_type( std::vector<std::string> const &container ) {
+		return io::regression;		
+	}
+
+
+	
+	
+	template<typename PropertyMap>
+	void read( std::vector<std::string> const &container, io::problem_type p_type,
+			     PropertyMap &map ) {
+	
+				     
+		std::cout << "starting to read the data matrix filetype..." << std::endl;
+
+		std::vector<std::string>::const_iterator i = container.begin();
+		
+		while( i != container.end() ) {
+			std::cout << *i << std::endl;
+
+			
+			++i;
+		}
+		
+		
+		int qq;
+		std::cin >> qq;
+		
+
+	}
+
+
+
+
+
+
+} // namespace data_matrix
+
+
+
+
+
 } // namespace kml::io
 
 
@@ -478,7 +575,12 @@ public:
 		std::string line_buffer;
 		while( !input_file.eof() ) {
 			std::getline( input_file, line_buffer );
-			if ((line_buffer.size()>0) && (line_buffer[0]!='#')) buffer.push_back( line_buffer );
+			// skip empty lines and lines that begin with a comment mark
+			if ((line_buffer.size()>0) && (line_buffer[0]!='#')) {
+				// strip comments (i.e., anything after '#') from these lines
+				std::string::iterator my_end = std::find( line_buffer.begin(), line_buffer.end(), '#' );
+				buffer.push_back( std::string(line_buffer.begin(), my_end) );
+			}
 		}
 		std::cout << "read " << buffer.size() << " lines." << std::endl;
 		input_file.close();
@@ -489,13 +591,22 @@ public:
 
 		if ( io::dst::compatible( buffer) ) {
 			handler = dst_handler;
+			std::cout << "dst handler ok" << std::endl;
 		} else
 		if ( io::svm_light::compatible( buffer ) ) {
 			handler = svm_light_handler;
+			std::cout << "svm light handler ok" << std::endl;
 		} else
 		if ( io::svm_torch::compatible( buffer ) ) {
 			handler = svm_torch_handler;
-		}
+			std::cout << "svm torch handler ok" << std::endl;
+		} else
+		if ( io::data_matrix::compatible( buffer ) ) {
+			handler = data_matrix_handler;
+			std::cout << "data matrix handler ok" << std::endl;
+		} else
+		std::cout << "unknown file format!" << std::endl;
+
 	}
 
 	io::problem_type problem_type() {
@@ -503,7 +614,7 @@ public:
 			case dst_handler: { return io::dst::problem_type( buffer ); break; }
 			case svm_light_handler: { return io::svm_light::problem_type( buffer ); break; }
 			case svm_torch_handler: { return io::svm_torch::problem_type( buffer ); break; }
-
+			case data_matrix_handler: { return io::data_matrix::problem_type( buffer ); break; }
 		}
 		return io::unknown;
 	}
@@ -514,10 +625,11 @@ public:
 			case dst_handler: { io::dst::read( buffer, io::classification, map ); break; }
 			case svm_light_handler: { return io::svm_light::read( buffer, io::classification, map ); break; }
 			case svm_torch_handler: { return io::svm_torch::read( buffer, io::classification, map ); break; }
+			case data_matrix_handler: { return io::data_matrix::read( buffer, io::classification, map ); break; }
 		}
 	}
 
-	enum file_handler { dst_handler, svm_light_handler, svm_torch_handler };
+	enum file_handler { dst_handler, svm_light_handler, svm_torch_handler, data_matrix_handler };
 
 	file_handler handler;
 
@@ -561,4 +673,3 @@ void write( char* file_name, PatternMap &dataset ) {
 
 
 #endif
-
