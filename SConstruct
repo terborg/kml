@@ -18,14 +18,20 @@ c_link_libs = []
 if env['PLATFORM'] == 'posix':
    boost_search_path = ['/usr/include/boost']
    atlas_search_path = ['/usr/include', '/usr/include/atlas' ]
-   atlas_link_libs = ['cblas','atlas']
    c_link_libs = ['kml']
+   lib_path = ['/usr/lib' ]
+   atlas_link_libs = []
+   if env.FindFile( 'libatlas.so.3', lib_path ): atlas_link_libs.append( 'atlas' )
+   if env.FindFile( 'libcblas.so.3', lib_path ): atlas_link_libs.append( 'cblas' )
+   if env.FindFile( 'liblapack_atlas.so.3', lib_path ): atlas_link_libs.append( 'lapack_atlas' )
+
 elif env['PLATFORM'] == 'win32':
    env.Replace( ENV = os.environ )
    boost_search_path = ['/boost',
                         '/boost/include/boost-1_33_0/boost',
                         '/boost/include/boost-1_33_1/boost']
    atlas_search_path = ['/atlas','/atlas/include']
+   # atlas_link_libs declaration is moved down to the CPU detection code part
    lib_path = ['#/lib']
    if 'VSINSTALLDIR' in os.environ:
 		lib_path.append( os.environ["VSINSTALLDIR"].replace('\\','/') + '/VC/lib' )

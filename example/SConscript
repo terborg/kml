@@ -5,29 +5,22 @@ Import('c_link_libs')
 
 env.Program('gaussian.cpp')
 env.Program('svm_regression.cpp', LIBS=atlas_link_libs )
-
-#env.Program('rvm_regression.cpp', LIBS=atlas_link_libs + ['lapack-3','lapack_atlas'] )
-
 env.Program('svm_classification.cpp' )
 env.Program('svm_ranking.cpp' )
 
 env.Program('online_svm_classification.cpp', LIBS=atlas_link_libs )
 env.Program('svm_c_ranking.c', LIBS=c_link_libs)
 
-#env.Program('ann_regression.cpp', LIBS=atlas_link_libs + ['doublefann'] )
 
-
-
-# win32
+# KML tool configuration
 if env['PLATFORM'] == 'posix':
-	program_options_lib = 'boost_program_options'
+	program_options_lib = ['boost_program_options']
 elif env['PLATFORM'] == 'win32':
-	program_options_lib = str(env.FindFile( ['libboost_program_options-vc71-mt-s.lib'], env['LIBPATH'] ))
+	program_options_lib = [str(env.FindFile( ['libboost_program_options-vc71-mt-s.lib'], env['LIBPATH'] ))]
 else:
 	print "Please configure examples/SConscript."
 
-
-env.Program('kmltool.cpp', LIBS= atlas_link_libs + [program_options_lib] )
+env.Program('kmltool.cpp', LIBS= atlas_link_libs + program_options_lib )
 
 
 
