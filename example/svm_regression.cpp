@@ -30,6 +30,8 @@
 #include <boost/vector_property_map.hpp>
 
 
+#include <kml/rvm.hpp>
+
 int main(int argc, char *argv[]) {
     
     boost::mt19937 randomness;
@@ -54,8 +56,10 @@ int main(int argc, char *argv[]) {
 
     typedef kml::regression< example_type > problem_type;
     typedef kml::gaussian< example_type::first_type > kernel_type;
-    kml::online_svm< data_type, problem_type, kernel_type > my_machine( 0.1, 10.0, kernel_type(1.6) );
-    my_machine.set_data( data );
+
+    
+    kml::online_svm< problem_type, kernel_type, data_type > my_machine( 10.0, 0.1, kernel_type(1.6), data );
+//     kml::rvm< problem_type, kernel_type, data_type > my_machine( kernel_type(1.6), data );
 
 
     std::vector< int > random_order;
@@ -63,14 +67,13 @@ int main(int argc, char *argv[]) {
 
     std::random_shuffle( random_order.begin(), random_order.end() );
 
-    for( int i=0; i<N; ++i )
-       my_machine.push_back( random_order[i] );
+
+    my_machine.learn( random_order.begin(), random_order.end() );
+    
     std::cout << "Making predictions..." << std::endl;
     ublas::vector<double> y_test(N);
     
-
-    std::transform( x_vec.begin(), x_vec.end(), y_test.begin(), my_machine );
-
+    //std::transform( x_vec.begin(), x_vec.end(), y_test.begin(), my_machine );
 //      std::cout << "RMSE " << kml::root_mean_square( y - y_test ) << std::endl;
 //      std::cout << "Cor  " << kml::correlation( y, y_test ) << std::endl;
 
@@ -79,5 +82,4 @@ int main(int argc, char *argv[]) {
 
     return EXIT_SUCCESS;
 }
-
 
