@@ -173,9 +173,8 @@ public:
 	            
                 // add x_t to support vector set, adjust all needed variables
                 unsigned int old_size = base_type::key_lookup.size();
-                unsigned int new_size = old_size + 1;
                 
-				// update K (equation 14)
+		// update K (equation 14)
                 // fetch a view into the last row of the matrix of the _old_ size
 				K.grow_row_column();
  			    ublas::matrix_vector_slice< ublas::matrix<double> > K_row_part( K.shrinked_row(old_size) );
