@@ -23,14 +23,17 @@
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/normal_distribution.hpp>
 #include <kml/gaussian.hpp>
-#include <kml/online_svm.hpp>
 #include <kml/statistics.hpp>
 #include <boost/numeric/ublas/io.hpp>
 
 #include <boost/vector_property_map.hpp>
 
 
-#include <kml/rvm.hpp>
+//#include <kml/online_svm.hpp>
+//#include <kml/rvm.hpp>
+#include <kml/krls.hpp>
+
+
 
 int main(int argc, char *argv[]) {
     
@@ -52,14 +55,14 @@ int main(int argc, char *argv[]) {
     }
 
 
-    std::cout << "Training AO-SVR..." << std::endl;
+    std::cout << "Training kernel machine..." << std::endl;
 
     typedef kml::regression< example_type > problem_type;
     typedef kml::gaussian< example_type::first_type > kernel_type;
 
     
-    kml::online_svm< problem_type, kernel_type, data_type > my_machine( 10.0, 0.1, kernel_type(1.6), data );
-//     kml::rvm< problem_type, kernel_type, data_type > my_machine( kernel_type(1.6), data );
+//    kml::online_svm< problem_type, kernel_type, data_type > my_machine( 10.0, 0.1, kernel_type(1.6), data );
+    kml::krls< problem_type, kernel_type, data_type > my_machine( 1e-1, 1e-3, kernel_type(1.6), data );
 
 
     std::vector< int > random_order;
@@ -73,7 +76,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Making predictions..." << std::endl;
     ublas::vector<double> y_test(N);
     
-    //std::transform( x_vec.begin(), x_vec.end(), y_test.begin(), my_machine );
+    std::transform( x_vec.begin(), x_vec.end(), y_test.begin(), my_machine );
 //      std::cout << "RMSE " << kml::root_mean_square( y - y_test ) << std::endl;
 //      std::cout << "Cor  " << kml::correlation( y, y_test ) << std::endl;
 
@@ -82,4 +85,3 @@ int main(int argc, char *argv[]) {
 
     return EXIT_SUCCESS;
 }
-

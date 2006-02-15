@@ -29,8 +29,7 @@
 // include kernel machine types
 #include <kml/online_svm.hpp>
 #include <kml/rvm.hpp>
-
-
+#include <kml/krls.hpp>
 
 
 
@@ -81,7 +80,7 @@ int main(int argc, char *argv[]) {
 
 
 	// a whole slew of possible settings...
-	enum machine_type { support_vector, relevance_vector };
+	enum machine_type { support_vector, relevance_vector, krls };
         enum kernel_type { gaussian, linear };
 	machine_type selected_machine( support_vector );
 	kernel_type selected_kernel( gaussian );
@@ -103,6 +102,11 @@ int main(int argc, char *argv[]) {
 		if ( *m_o == std::string("rvm") ) {
 			selected_machine = relevance_vector;
 			std::cout << "relevance vector machine selected" << std::endl;
+			// parse any remaining options later on!!
+		}
+		if ( *m_o == std::string("krls") ) {
+			selected_machine = krls;
+			std::cout << "kernel recursive least squares selected" << std::endl;
 			// parse any remaining options later on!!
 		}
 		++m_o;
@@ -142,13 +146,10 @@ int main(int argc, char *argv[]) {
 			typedef boost::vector_property_map< std::pair< ublas::vector<double>, bool > > data_type;
 			typedef kml::classification< example_type > problem_type;
 			data_type data;
-			my_file.read( data );
-
-			std::vector<int> learn_keys;
-			for( int i=0; i<10; ++i ) {
-				learn_keys.push_back( i );
-			}
-			std::random_shuffle( learn_keys.begin(), learn_keys.end() );
+			std::vector<data_type::key_type> learn_keys;
+			my_file.read( data, learn_keys );
+			
+			//std::random_shuffle( learn_keys.begin(), learn_keys.end() );
 
 			switch( selected_machine ) {
 				case support_vector: {
@@ -179,6 +180,10 @@ int main(int argc, char *argv[]) {
 					} // switch kernel
 					break;
 				}
+				default: {
+					std::cout << "Sorry, no implementation available (yet) for the requested operation." << std::endl;
+					break;
+				}
 			}
 
 			break;
@@ -190,14 +195,9 @@ int main(int argc, char *argv[]) {
 			typedef kml::regression< example_type > problem_type;
 
 			// translate the file to the data container
+			std::vector<data_type::key_type> learn_keys;
 			data_type data;
-			my_file.read( data );
-
-			std::vector<int> learn_keys;
-			for( int i=0; i<5000; ++i ) {
-				learn_keys.push_back( i );
-			}
-			std::random_shuffle( learn_keys.begin(), learn_keys.end() );
+			my_file.read( data, learn_keys );
 
 			switch( selected_machine ) {
 				case support_vector: {
@@ -229,6 +229,20 @@ int main(int argc, char *argv[]) {
 					} // switch kernel
 					break;
 				}
+				case krls: {
+					switch( selected_kernel ) {
+						case gaussian: {
+							typedef kml::gaussian< problem_type::input_type > kernel_type;
+							typedef kml::krls< problem_type, kernel_type, data_type > machine_type;
+							kernel_type my_kernel( k_o, kernel_options.end() );
+							machine_type my_machine( m_o, machine_options.end(), my_kernel, data );
+							my_machine.learn( learn_keys.begin(), learn_keys.end() );
+							break;
+						}
+					}
+					
+					break;	
+				} // krls switch
 			}
 
 
@@ -237,21 +251,41 @@ int main(int argc, char *argv[]) {
 		}
 		case kml::io::ranking: {
 			std::cout << "entering ranking part..." << std::endl;
+			typedef std::pair< ublas::vector<double>, double > example_type;
+			typedef boost::vector_property_map< example_type > data_type;
+			typedef kml::ranking< example_type > problem_type;
+			
+			switch( selected_machine ) {
+				case support_vector: {
+					switch( selected_kernel ) {
+						case gaussian: {
+							typedef kml::gaussian< problem_type::input_type > kernel_type;
+							//typedef kml::svm< problem_type, kernel_type, data_type > machine_type;
+							kernel_type my_kernel( k_o, kernel_options.end() );
+							//machine_type my_machine( m_o, machine_options.end(), my_kernel, data );
+							//my_machine.learn( learn_keys.begin(), learn_keys.end() );
+							break;
+						}
+					} // switch kernel
+					break;
+				}
+				default: {
+					std::cout << "Sorry, no implementation available (yet) for the requested operation." << std::endl;
+					break;
+				}
+			}
 
-
+			std::cout << "leaving ranking part..." << std::endl;
 			break;
 		}
 		case kml::io::unknown: {
 			std::cout << "Sorry, unknown filetype." << std::endl;
 		}
 
-
-
 	}
 
 	return EXIT_SUCCESS;
 }
-
 
 
 
