@@ -55,7 +55,7 @@ namespace kml {
 template<typename T>
 class regression {
 public:
-	typedef regression type;
+	typedef regression<T> type;
 	typedef T example_type;
 	typedef typename T::first_type input_type;
 	typedef typename T::second_type output_type;
@@ -80,4 +80,3 @@ struct is_regression<regression<T> >: mpl::bool_<true> {};
 
 
 #endif
-
