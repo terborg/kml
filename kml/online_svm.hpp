@@ -848,7 +848,7 @@ public:
 
     // local memory
 
-    static const bool debug = true;
+    static const bool debug = false;
 
     matrix_view< ublas::matrix<double> > H;					// (part of) design matrix H
     symmetric_view< ublas::matrix<double> > R;					// matrix inverse
@@ -1006,7 +1006,8 @@ public:
     /*! \param input an input pattern of input type I
         \param output an output pattern of output type O */
     void increment( key_type const key ) {
-	debug = true;
+
+	   debug = false;
 	
 	std::size_t index = base_type::key_lookup.size();
 	base_type::key_lookup.push_back( key );
@@ -1014,8 +1015,8 @@ public:
         // record prediction error
         if (debug) {
             std::cout << "Starting AOSVR incremental algorithm for key " << key << std::endl;
-	    std::cout << "              the associated index is        " << index << std::endl;
-	}
+	    	std::cout << "              the associated index is        " << index << std::endl;
+		}
         
 
 	//if (index > 581) debug=true;
@@ -1098,8 +1099,8 @@ public:
 	    *j++ = bool_to_float( (*base_type::data)[key].second );
 	    base_type::fill_kernel( key, margin_key.begin(), margin_key.end(), j );
 	    
-	    std::cout << "Filled H to ";
-    	    std::cout << H.view() << std::endl;
+// 	    std::cout << "Filled H to ";
+//     	    std::cout << H.view() << std::endl;
 
 	    	    
 	    if (debug)
@@ -1340,11 +1341,11 @@ public:
             // Equation 11: update condition vector
 	    atlas::axpy( delta_weight_t, margin_sense, condition );
 
-	    if (debug) {
-	    std::cout << "Updated conditions to: ";
-	    for( unsigned int i=0; i<condition.size(); ++i ) std::cout << condition[i] << " ";
-	    std::cout << std::endl;
-	    }
+// 	    if (debug) {
+// 		    std::cout << "Updated conditions to: ";
+// 		    for( unsigned int i=0; i<condition.size(); ++i ) std::cout << condition[i] << " ";
+// 		    std::cout << std::endl;
+// 	    }
 	    
 	    
 	    
@@ -1455,7 +1456,7 @@ public:
 
         unsigned int old_size = R.size1();
         unsigned int new_size = old_size + 1;
-        std::cout << "associated key is " << base_type::key_lookup[idx] << std::endl;
+        //std::cout << "associated key is " << base_type::key_lookup[idx] << std::endl;
 
 	// if a point moves to the margin set, by definition, its condition equals 0.
 	condition[ idx ] = 0.0;
