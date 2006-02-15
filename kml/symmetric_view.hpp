@@ -27,6 +27,8 @@
 #include <boost/numeric/bindings/atlas/cblas.hpp>
 
 
+namespace ublas = boost::numeric::ublas;
+
 namespace kml {
 
 
@@ -361,4 +363,3 @@ private:
 
 
 #endif
-
