@@ -90,9 +90,9 @@ namespace dst {
 		return classification;
 	}
 
-	template<typename PropertyMap>
+	template<typename PropertyMap, typename BackInsertionSequence>
 	void read( std::vector<std::string> const &container, io::problem_type p_type,
-			PropertyMap &map ) {
+			PropertyMap &map, BackInsertionSequence &keys ) {
 
 		typedef PropertyMap map_type;
 		typedef typename boost::property_traits<PropertyMap>::key_type key_type;
@@ -151,6 +151,7 @@ namespace dst {
 				case 'C': {
 					if ( current_example != example_counter ) {
 						map[ current_example ] = std::make_pair( attributes, output );
+						keys.push_back( current_example );
 					}
 					//std::cout << "new example..." << std::endl;
 					current_example = example_counter;
@@ -281,9 +282,9 @@ namespace svm_light {
 	}
 
 	
-	template<typename PropertyMap>
+	template<typename PropertyMap, typename BackInsertionSequence>
 	void read( std::vector<std::string> const &container, io::problem_type p_type,
-				     PropertyMap &map ) {
+				     PropertyMap &map, BackInsertionSequence &keys ) {
 
 		typedef PropertyMap map_type;
 		typedef typename boost::property_traits<PropertyMap>::key_type key_type;
@@ -349,6 +350,7 @@ namespace svm_light {
 			//std::cout << output << ": " << attributes << std::endl;
 	
 			map[ sample_key ] = std::make_pair( attributes, output );
+			keys.push_back( sample_key );
 	
 			++sample_key;
 			++iter;
@@ -433,9 +435,9 @@ namespace svm_torch {
 
 
 	
-	template<typename PropertyMap>
+	template<typename PropertyMap, typename BackInsertionSequence>
 	void read( std::vector<std::string> const &container, io::problem_type p_type,
-			     PropertyMap &map ) {
+			     PropertyMap &map, BackInsertionSequence &keys ) {
 	
 		typedef PropertyMap map_type;
 		typedef typename boost::property_traits<PropertyMap>::key_type key_type;
@@ -487,6 +489,7 @@ namespace svm_torch {
 				output = boost::lexical_cast< output_type >( *i );
 			
 			map[ sample_index ] = std::make_pair( my_attributes, output );
+			keys.push_back( sample_index );
 	
 			++sample_index;
 			++iter;
@@ -517,9 +520,9 @@ namespace data_matrix {
 
 	
 	
-	template<typename PropertyMap>
+	template<typename PropertyMap, typename BackInsertionSequence>
 	void read( std::vector<std::string> const &container, io::problem_type p_type,
-			     PropertyMap &map ) {
+			     PropertyMap &map, BackInsertionSequence &keys ) {
 	
 				     
 		std::cout << "starting to read the data matrix filetype..." << std::endl;
@@ -619,13 +622,13 @@ public:
 		return io::unknown;
 	}
 
-	template<typename PropertyMap>
-	void read( PropertyMap & map ) {
+	template<typename PropertyMap, typename BackInsertionSequence>
+	void read( PropertyMap &map, BackInsertionSequence &keys ) {
 		switch( handler ) {
-			case dst_handler: { io::dst::read( buffer, io::classification, map ); break; }
-			case svm_light_handler: { return io::svm_light::read( buffer, io::classification, map ); break; }
-			case svm_torch_handler: { return io::svm_torch::read( buffer, io::classification, map ); break; }
-			case data_matrix_handler: { return io::data_matrix::read( buffer, io::classification, map ); break; }
+			case dst_handler: { io::dst::read( buffer, io::classification, map, keys ); break; }
+			case svm_light_handler: { io::svm_light::read( buffer, io::classification, map, keys ); break; }
+			case svm_torch_handler: { io::svm_torch::read( buffer, io::classification, map, keys ); break; }
+			case data_matrix_handler: { io::data_matrix::read( buffer, io::classification, map, keys ); break; }
 		}
 	}
 
