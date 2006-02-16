@@ -23,6 +23,7 @@
 #include <boost/call_traits.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/serialization/access.hpp>
+#include <boost/serialization/tracking.hpp>
 #include <boost/type_traits.hpp>
 #include <kml/input_value.hpp>
 #include <kml/distance.hpp>
