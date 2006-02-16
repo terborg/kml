@@ -155,10 +155,31 @@ private:
 
     scalar_type width;
     scalar_type exp_factor;
-};
 
+
+
+    
+};
 
 } // namespace kml
 
+
+
+
+
+namespace boost{ namespace serialization {
+
+template<typename T>
+struct tracking_level< kml::gaussian<T> >
+{
+	typedef mpl::integral_c_tag tag;
+	typedef mpl::int_<track_never> type;
+	BOOST_STATIC_CONSTANT(
+		int, 
+		value = tracking_level::type::value
+	);
+};
+
+}}
 
 #endif
