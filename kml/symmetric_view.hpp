@@ -26,8 +26,8 @@
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/bindings/atlas/cblas.hpp>
 
-
 namespace ublas = boost::numeric::ublas;
+namespace atlas = boost::numeric::bindings::atlas;
 
 namespace kml {
 
