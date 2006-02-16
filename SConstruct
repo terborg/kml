@@ -94,7 +94,7 @@ env.Replace( LIBS = global_link_libs )
 
 cpu = cpuinfo.cpuinfo()
 
-cc_flags = '-Wall '
+cc_flags = ''
 debug_flags = ''
 optimise_flags = ''
 arch_ext = ''
@@ -136,7 +136,7 @@ if env['CXX'] == 'g++':
 elif env['CXX'] == '$CC' and env['CC'] == 'cl':
 	# Set compiler and optimisation flags
     # for now, warnings are disabled; multithreading is enabled for correct linking
-	cc_flags += '/nologo /w /EHsc /Zc:forScope /MT'
+	cc_flags = '/nologo /EHsc /Zc:forScope /MT'
 	optimise_flags = '/O2 /DNDEBUG /DNO_DEBUG'
 	arch_ext = ''
 	

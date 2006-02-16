@@ -169,7 +169,7 @@ namespace dst {
  						if (boost::is_same<output_type, bool>::value)
  							output = (boost::lexical_cast<int>(*j) > 0);
 						else 
-							output = (boost::lexical_cast<output_type>(*j) > 0);
+							output = boost::lexical_cast<output_type>(*j);
 						// set the output to something
 					} else {
 						attributes[ id_mapping[ id ] ] = boost::lexical_cast< double >( *j );
@@ -238,7 +238,7 @@ namespace svm_light {
 		std::vector<std::string>::const_iterator i = container.begin();
 	
 		// check for <line> .=. <target> <feature>:<value> <feature>:<value> ... <feature>:<value>
-		boost::char_separator<char> separator(" ");
+		boost::char_separator<char> separator(" \t");
 		boost::tokenizer<boost::char_separator<char> > first_line( *i, separator );
 		boost::tokenizer<boost::char_separator<char> >::iterator j = first_line.begin();
 
@@ -377,7 +377,7 @@ namespace svm_torch {
 
 
 	bool compatible( std::vector<std::string> const &container ) {
-		boost::char_separator<char> separator(" ");
+		boost::char_separator<char> separator(" \t");
 		std::vector<std::string>::const_iterator i = container.begin();
 		try {
 			boost::tokenizer<boost::char_separator<char> > first_line( *i, separator );
@@ -395,7 +395,7 @@ namespace svm_torch {
 
 
 	io::problem_type problem_type( std::vector<std::string> const &container ) {
-		boost::char_separator<char> separator(" ");
+		boost::char_separator<char> separator(" \t");
 		// try to detect the problem type
 
 		// skip the first line
@@ -676,4 +676,3 @@ void write( char* file_name, PatternMap &dataset ) {
 
 
 #endif
-

@@ -23,7 +23,6 @@
 #include <boost/call_traits.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/serialization/access.hpp>
-#include <boost/serialization/split_member.hpp>
 #include <boost/type_traits.hpp>
 #include <kml/input_value.hpp>
 #include <kml/distance.hpp>
@@ -32,32 +31,29 @@
 namespace kml {
 	
 /*!
+
 \brief Gaussian kernel of the form \f$ f(x)=e^{-\gamma\|x - \mu\|} \f$ where
 	\f$ \gamma = \frac{1}{\sigma^2} \f$
 \param T defines the underlying input data type
 	(distance_square<T, T> must be defined, which is done for
 	scalar and vector types in distance.hpp)
 
-This is a template class that creates a function for the Gaussian kernel. 
+This is a template class that creates a function for the Gaussian kernel.
 
-\todo
-- clean-up
-- finish documentation
-- complexity guarantees
-- loading and saving
+Complexity: O(d+c), i.e., a little more time than needed for computing the dot product
 
 \ingroup kernels
+
 */
 
 template<typename T>
 class gaussian: public std::binary_function<T, T, typename input_value<T>::type> {
 public:
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
     typedef gaussian<T> type;
-    friend class boost::serialization::access;
     typedef typename input_value<T>::type scalar_type;
     typedef typename mpl::int_<0>::type derivative_order;
     typedef typename input_value<T>::type return_type;
+    friend class boost::serialization::access;
 
     /*! Construct an uninitialised Gaussian kernel */
     gaussian() {}
@@ -69,8 +65,8 @@ public:
 
     /*! Refinement of Assignable */
     type &operator=( type const &other ) {
-	if (this != &other) { destroy(); copy(other); }
-	return *this;
+		if (this != &other) { destroy(); copy(other); }
+		return *this;
     }
 
     /*! Construct a Gaussian kernel by providing a value for \f$ \sigma \f$ */
@@ -89,11 +85,10 @@ public:
 		}
 	}
 
-
-    /*! Returns the result of the evaluation of the Gaussian kernel for these points
+	/*! Returns the result of the evaluation of the Gaussian kernel for these points
 		\param u input pattern u
         \param v input pattern v
-	\return \f$ e^{-\gamma\|u - v\|} \f$
+		\return \f$ e^{-\gamma\|u - v\|} \f$
     */
     scalar_type operator()( T const &u, T const &v ) const {
         return std::exp( exp_factor * distance_square( u, v ) );
@@ -102,8 +97,8 @@ public:
 	/*! Sets \f$ \sigma \f$. */
     void set_width( typename boost::call_traits<scalar_type>::param_type sigma ) {
     	assert( sigma > 0.0 );
-	width = sigma;
-	exp_factor = -1.0 / (2.0*sigma*sigma);
+		width = sigma;
+		exp_factor = -1.0 / (2.0*sigma*sigma);
     }
     
 	/*! Returns \f$ \sigma \f$. */
@@ -119,8 +114,8 @@ public:
     /*! Sets \f$ \gamma \f$. */
 	void set_scale_factor( typename boost::call_traits<scalar_type>::param_type gamma ) {
         assert( gamma > 0.0 );
-	width = std::sqrt(0.5 / gamma);
-	exp_factor = -gamma;
+		width = std::sqrt(0.5 / gamma);
+		exp_factor = -gamma;
     }
 
     /*! Returns \f$ \gamma \f$. */
@@ -135,29 +130,26 @@ public:
     
     /*! The dimension of the feature space */
     scalar_type const dimension() const {
-	return std::numeric_limits<scalar_type>::infinity();
+		return std::numeric_limits<scalar_type>::infinity();
     }
 
+    // loading and saving capabilities
     template<class Archive>
-    void load( Archive &archive, unsigned int const version ) {
+    void serialize( Archive &archive, unsigned int const version ) {
     	archive & width;
-	exp_factor = -1.0 / (2.0*width*width);
+    	archive & exp_factor;
     }
     
-    template<class Archive>
-    void save( Archive &archive, unsigned int const version ) const {
-    	archive & width;
-    }
-    
+    // for debugging purposes
     friend std::ostream& operator<<(std::ostream &os, type const &k) {
-	os << "Gaussian kernel (exp(-||u-v||^2/(2*" << k.width << "^2))" << std::endl;
-	return os;
+		os << "Gaussian kernel (exp(-||u-v||^2/(2*" << k.width << "^2))" << std::endl;
+		return os;
     }
 
 private:
     void copy( type const &other ) {
-	width = other.width;
-	exp_factor = other.exp_factor;
+		width = other.width;
+		exp_factor = other.exp_factor;
     }
     void destroy() {}
 
@@ -170,4 +162,3 @@ private:
 
 
 #endif
-

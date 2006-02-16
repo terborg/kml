@@ -17,14 +17,17 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307  *
  ***************************************************************************/
 
-#include <kml/gaussian.hpp>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
 #include <boost/numeric/ublas/vector.hpp>
+#include <kml/gaussian.hpp>
+#include <fstream>
 #include <iostream>
 
 namespace ublas = boost::numeric::ublas;
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
+
   // vector input types
   ublas::vector<double> u(2);
   ublas::vector<double> v(2);
@@ -41,8 +44,22 @@ int main(int argc, char *argv[])
   
   // inline use on scalar input types
   std::cout << kml::gaussian< float >( 1.0 )( 1.5, 2.0 ) << std::endl;
-
+  
+  // save the kernel
+  std::ofstream ofs("testfile.txt");
+  boost::archive::text_oarchive my_oarchive( ofs );
+  my_oarchive << kernel;
+  ofs.close();
+  std::cout << "Saved: " << kernel << std::endl;
+  
+  // ... sometime later, load the kernel
+  kml::gaussian< ublas::vector<double> > new_kernel;
+  std::ifstream ifs("testfile.txt");
+  boost::archive::text_iarchive my_iarchive( ifs );
+  my_iarchive >> new_kernel;
+  ifs.close();
+  std::cout << "Loaded: " << new_kernel << std::endl;
+  
   return EXIT_SUCCESS;
 }
-
 
