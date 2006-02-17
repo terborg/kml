@@ -636,7 +636,6 @@ public:
 
 	file_handler handler;
 
-	file_handler *my_handler;
 	std::vector<std::string> buffer;
 };
 
