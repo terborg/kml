@@ -17,19 +17,12 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307  *
  ***************************************************************************/
 
-
 #ifndef KRLS_HPP
 #define KRLS_HPP
-
-// #include <online_greedy_determinate.hpp>
-// #include "kernels.h"
-
-// #include <design_matrix.hpp>
 
 #include <boost/numeric/bindings/traits/ublas_matrix.hpp>
 #include <boost/numeric/bindings/traits/ublas_symmetric.hpp>
 #include <boost/numeric/bindings/traits/ublas_vector.hpp>
-
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/bindings/atlas/cblas.hpp>
 #include <kml/kernel_machine.hpp>
