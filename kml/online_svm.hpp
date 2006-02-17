@@ -29,7 +29,6 @@
 #include <boost/type_traits/is_same.hpp>
 #include <boost/utility/enable_if.hpp>
 
-#include <kml/online_determinate.hpp>
 #include <kml/matrix_view.hpp>
 #include <kml/symmetric_view.hpp>
 
