@@ -45,145 +45,146 @@ namespace kml {
 
 
 namespace io {
-	enum problem_type { unknown, regression, classification, ranking };
+enum problem_type { unknown, regression, classification, ranking };
 
 
 
 /*!
-
+ 
 The .dst file format is very simple: comma delimited lines of text.
-
+ 
 Lines that start with "A" describe a variable, whose id number is the
 second field in the line. The third field in the line is either 101 (if the
 variable is a class label) or 1 (if the variable is not). For this
 benchmark, all you need to use is that variable id 1000 is the class
 label, while variable ids from 1001 to 1123 are input attributes.
-
+ 
 Lines that start with "C" indicate the start of a new training example. The
 rest of the line identifies the training example.
-
+ 
 Lines that start with "V" are attributes of the current example. The second
 field is the variable id (see "A" lines above), and the third field is the
 value of the variable. If a variable is not specified by a "V" line, its
 value defaults to 0. 
-
+ 
 For example, in this benchmark, if an example has a line that says 
-
+ 
 V,1000,0
-
+ 
 it means that the example has a negative label. If the following line
 appears:
-
+ 
 V,1015,1
-
+ 
 it means that input attribute #15 is true (1). If no such line appears
 before the next "C" line, it means that input attribute #15 is false (0).
-
+ 
 */
 namespace dst {
 
-	bool compatible( std::vector<std::string> const &container ) {
-		return ( (container[0][0]=='A') || (container[0][0]=='V') || (container[0][0]=='C') );
-	}
+bool compatible( std::vector<std::string> const &container ) {
+    return ( (container[0][0]=='A') || (container[0][0]=='V') || (container[0][0]=='C') );
+}
 
-	problem_type problem_type( std::vector<std::string> const &container ) {
-		return classification;
-	}
+problem_type problem_type( std::vector<std::string> const &container ) {
+    return classification;
+}
 
-	template<typename PropertyMap, typename BackInsertionSequence>
-	void read( std::vector<std::string> const &container, io::problem_type p_type,
-			PropertyMap &map, BackInsertionSequence &keys ) {
+template<typename PropertyMap, typename BackInsertionSequence>
+void read( std::vector<std::string> const &container, io::problem_type p_type,
+           PropertyMap &map, BackInsertionSequence &keys ) {
 
-		typedef PropertyMap map_type;
-		typedef typename boost::property_traits<PropertyMap>::key_type key_type;
-		typedef typename boost::property_traits<PropertyMap>::value_type object_type;
+    typedef PropertyMap map_type;
+    typedef typename boost::property_traits<PropertyMap>::key_type key_type;
+    typedef typename boost::property_traits<PropertyMap>::value_type object_type;
 
-		// should become some KML shortcut to do this...
-		typedef typename object_type::first_type input_type;
-		typedef typename object_type::second_type output_type;
+    // should become some KML shortcut to do this...
+    typedef typename object_type::first_type input_type;
+    typedef typename object_type::second_type output_type;
 
-		std::map<unsigned int, int> id_mapping;
-		unsigned int output_class_id(0);
-		bool output_class_found(false);
+    std::map<unsigned int, int> id_mapping;
+    unsigned int output_class_id(0);
+    bool output_class_found(false);
 
-		// first read format description
-		std::vector<std::string>::const_iterator i = container.begin();
-		boost::char_separator<char> csv_separator(",\n\r");
-		unsigned int max_attributes = 0;
- 		while( (i!=container.end()) && ((*i)[0]=='A') ) {
-			boost::tokenizer<boost::char_separator<char> > values( *i, csv_separator );
-			boost::tokenizer<boost::char_separator<char> >::iterator j = values.begin();
+    // first read format description
+    std::vector<std::string>::const_iterator i = container.begin();
+    boost::char_separator<char> csv_separator(",\n\r");
+    unsigned int max_attributes = 0;
+    while( (i!=container.end()) && ((*i)[0]=='A') ) {
+        boost::tokenizer<boost::char_separator<char> > values( *i, csv_separator );
+        boost::tokenizer<boost::char_separator<char> >::iterator j = values.begin();
 
-			// skip past the A
-			++j;
+        // skip past the A
+        ++j;
 
-			// read a possible class id
-			unsigned int id = boost::lexical_cast< unsigned int >( *j++ );
+        // read a possible class id
+        unsigned int id = boost::lexical_cast< unsigned int >( *j++ );
 
-			if ( boost::lexical_cast< unsigned int >( *j ) == 101 ) {
-				output_class_id = id;
-				output_class_found = true;
-			} else {
-				id_mapping[ id ] = max_attributes++;
-			}
+        if ( boost::lexical_cast< unsigned int >( *j ) == 101 ) {
+            output_class_id = id;
+            output_class_found = true;
+        } else {
+            id_mapping[ id ] = max_attributes++;
+        }
 
-			++i;
-		}
-		
-		if (!output_class_found) {
-			std::cout << "Serious problem, could not find an output class id." << std::endl;
-		}
+        ++i;
+    }
 
-		int example_counter(0);
-		int current_example(0);
+    if (!output_class_found) {
+        std::cout << "Serious problem, could not find an output class id." << std::endl;
+    }
 
-		output_type output(0);
+    int example_counter(0);
+    int current_example(0);
 
-		std::cout << "max attributes: " << max_attributes << std::endl;
-		input_type attributes( max_attributes );
+    output_type output(0);
 
-		while(i!=container.end()) {
-			boost::tokenizer<boost::char_separator<char> > tokens( *i, csv_separator );
-			boost::tokenizer<boost::char_separator<char> >::iterator j = tokens.begin();
+    std::cout << "max attributes: " << max_attributes << std::endl;
+    input_type attributes( max_attributes );
 
-			switch( (*i)[0] ) {
-			// the start of a new training example
-				case 'C': {
-					if ( current_example != example_counter ) {
-						map[ current_example ] = std::make_pair( attributes, output );
-						keys.push_back( current_example );
-					}
-					//std::cout << "new example..." << std::endl;
-					current_example = example_counter;
-					attributes.clear();
-					++example_counter;
-					break;
-				}
-				// attributes of the new training example
-				case 'V': {
-					// detect whether it is the output class type, or not...
-					++j; // skip the 'V'
-					
-					unsigned int id = boost::lexical_cast< unsigned int >( *j++ );
-					if ( id == output_class_id ) {
- 						if (boost::is_same<output_type, bool>::value)
- 							output = (boost::lexical_cast<int>(*j) > 0);
-						else 
-							output = boost::lexical_cast<output_type>(*j);
-						// set the output to something
-					} else {
-						attributes[ id_mapping[ id ] ] = boost::lexical_cast< double >( *j );
-					}
-					break;
-				}
-				default: {
-					//std::cout << "Error detected in input file." << std::endl;
-					break;
-				}
-			}
-			++i;
-		}
-	}
+    while(i!=container.end()) {
+        boost::tokenizer<boost::char_separator<char> > tokens( *i, csv_separator );
+        boost::tokenizer<boost::char_separator<char> >::iterator j = tokens.begin();
+
+        switch( (*i)[0] ) {
+            // the start of a new training example
+        case 'C': {
+                if ( current_example != example_counter ) {
+                    map[ current_example ] = std::make_pair( attributes, output );
+                    keys.push_back( current_example );
+                }
+                //std::cout << "new example..." << std::endl;
+                current_example = example_counter;
+                attributes.clear();
+                ++example_counter;
+                break;
+            }
+            // attributes of the new training example
+        case 'V': {
+                // detect whether it is the output class type, or not...
+                ++j; // skip the 'V'
+
+                unsigned int id = boost::lexical_cast< unsigned int >( *j++ );
+                if ( id == output_class_id ) {
+                    if (boost::is_same<output_type, bool>::value)
+                        output = (boost::lexical_cast<int>(*j) > 0);
+                    else
+                        output = boost::lexical_cast<output_type>(*j);
+                    // set the output to something
+                }
+                else {
+                    attributes[ id_mapping[ id ] ] = boost::lexical_cast< double >( *j );
+                }
+                break;
+            }
+        default: {
+                //std::cout << "Error detected in input file." << std::endl;
+                break;
+            }
+        }
+        ++i;
+    }
+}
 
 }
 
@@ -209,24 +210,24 @@ preserve the maximum amount of memory needed):
 -2 Read and parse all values in the file
  
 \ingroup fileio
-
-
+ 
+ 
 The input file example_file contains the training examples. 
 The first lines may contain comments and are ignored if they start with #. 
 Each of the following lines represents one training example and is of the following format: 
-
+ 
 <line> .=. <target> <feature>:<value> <feature>:<value> ... <feature>:<value> # <info>
 <target> .=. +1 | -1 | 0 | <float> 
 <feature> .=. <integer> | "qid"
 <value> .=. <float>
 <info> .=. <string> 
-
+ 
 The target value and each of the feature/value pairs are separated by a space character. 
 Feature/value pairs MUST be ordered by increasing feature number. 
 Features with value zero can be skipped. The string <info> can be used to pass additional 
 information to the kernel (e.g. non feature vector data).
-
-
+ 
+ 
 */
 
 
@@ -234,128 +235,134 @@ information to the kernel (e.g. non feature vector data).
 
 namespace svm_light {
 
-	bool compatible( std::vector<std::string> const &container ) {
-		std::vector<std::string>::const_iterator i = container.begin();
-	
-		// check for <line> .=. <target> <feature>:<value> <feature>:<value> ... <feature>:<value>
-		boost::char_separator<char> separator(" \t");
-		boost::tokenizer<boost::char_separator<char> > first_line( *i, separator );
-		boost::tokenizer<boost::char_separator<char> >::iterator j = first_line.begin();
+bool compatible( std::vector<std::string> const &container ) {
+    std::vector<std::string>::const_iterator i = container.begin();
 
-		// non-empty line is no good
-		if ( j == first_line.end() ) return false;
-		// skip the target
-		++j;
-		// no feature data?
-		if ( j == first_line.end() ) return false;
-	
-		// perform the following test: each token should contain a ':'	
-		bool format_ok = true;
-		while( (j != first_line.end()) && format_ok ) {
-			format_ok = std::find( boost::begin(*j), boost::end(*j), ':' ) != boost::end(*j);
-			++j;
-		}
-		
-		return format_ok;
-	}
+    // check for <line> .=. <target> <feature>:<value> <feature>:<value> ... <feature>:<value>
+    boost::char_separator<char> separator(" \t");
+    boost::tokenizer<boost::char_separator<char> > first_line( *i, separator );
+    boost::tokenizer<boost::char_separator<char> >::iterator j = first_line.begin();
+
+    // non-empty line is no good
+    if ( j == first_line.end() )
+        return false;
+    // skip the target
+    ++j;
+    // no feature data?
+    if ( j == first_line.end() )
+        return false;
+
+    // perform the following test: each token should contain a ':'
+    bool format_ok = true;
+    while( (j != first_line.end()) && format_ok ) {
+        format_ok = std::find( boost::begin(*j), boost::end(*j), ':' ) != boost::end(*j);
+        ++j;
+    }
+
+    return format_ok;
+}
 
 
-	problem_type problem_type( std::vector<std::string> const &container ) {
+problem_type problem_type( std::vector<std::string> const &container ) {
 
-		// try to reject binary classification; each line should start with +1 or with -1
-		std::vector<std::string>::const_iterator i = container.begin();
-		while( (i!=container.end()) && ((*i).size()>3) && ((*i)[1]=='1') && ( ((*i)[0]=='+') || ((*i)[0]=='-') ) ) ++i;
-		if (i==container.end()) return io::classification;
-		
-		// try to reject ranking; each line should contain 'qid'
-		i = container.begin();
-		bool found_qid = true;
-		while ( i!=container.end() && found_qid ) {
-			std::string::const_iterator q_loc = std::find( (*i).begin(), (*i).end(), 'q' );
-			found_qid = (((*i).end()-q_loc)>2) && (q_loc[1]=='i') && (q_loc[2]=='d');
-			++i;
-		}
-		if (found_qid) return io::ranking;
+    // try to reject binary classification; each line should start with +1 or with -1
+    std::vector<std::string>::const_iterator i = container.begin();
+    while( (i!=container.end()) && ((*i).size()>3) && ((*i)[1]=='1') && ( ((*i)[0]=='+') || ((*i)[0]=='-') ) )
+        ++i;
+    if (i==container.end())
+        return io::classification;
 
-		// no other tests available, default to regression
-		return regression;
-	}
+    // try to reject ranking; each line should contain 'qid'
+    i = container.begin();
+    bool found_qid = true;
+    while ( i!=container.end() && found_qid ) {
+        std::string::const_iterator q_loc = std::find( (*i).begin(), (*i).end(), 'q' );
+        found_qid = (((*i).end()-q_loc)>2) && (q_loc[1]=='i') && (q_loc[2]=='d');
+        ++i;
+    }
+    if (found_qid)
+        return io::ranking;
 
-	
-	template<typename PropertyMap, typename BackInsertionSequence>
-	void read( std::vector<std::string> const &container, io::problem_type p_type,
-				     PropertyMap &map, BackInsertionSequence &keys ) {
+    // no other tests available, default to regression
+    return regression;
+}
 
-		typedef PropertyMap map_type;
-		typedef typename boost::property_traits<PropertyMap>::key_type key_type;
-		typedef typename boost::property_traits<PropertyMap>::value_type object_type;
-		typedef typename object_type::first_type input_type;
-		typedef typename object_type::second_type output_type;
-	
-		// quick routine to figure out the maximum feature number
-		std::vector<std::string>::const_iterator iter = container.begin();
-		std::size_t max_attribute_nr = 0;
 
-		// because the feature values are ordened by design, we only need the LAST feature value
-		while( iter != container.end() ) {
-			// start at the end of the line, backwards search for the first occurance of ":", 
-			// find the atrribute number of value in front of that
-			typedef boost::range_const_reverse_iterator<boost::tokenizer<boost::char_separator<char> >::value_type>::type char_iter_type;
-			char_iter_type char_iter = std::find( boost::const_rbegin(*iter), boost::const_rend(*iter), ':' );
-			++char_iter;
-			unsigned int attribute_nr = 0;
-			unsigned int multiplier = 1;
-			while( (*char_iter) != ' ' ) {
-				attribute_nr += boost::lexical_cast< unsigned int >( *char_iter ) * multiplier;
-				multiplier *= 10;
-				++char_iter;
-			}
-			if (attribute_nr > max_attribute_nr) max_attribute_nr = attribute_nr;
-			++iter;
-		}
-	
-		std::cout << "max attribute number: " << max_attribute_nr << std::endl;
-	
-		// these are the separators the input file will be split on:
-		// space, tab, #, and :
-		boost::char_separator<char> separator(" \t#:");
-	
-		// reset the data iterator
-		iter = container.begin();
-		unsigned int sample_key = 0;
-		while (iter != container.end()) {
-	
-			boost::tokenizer<boost::char_separator<char> > tokens( *iter, separator );
-			boost::tokenizer<boost::char_separator<char> >::iterator attribute_iter = tokens.begin();
-	
-			output_type output(0);
-			if (boost::is_same<output_type, bool>::value)
-				output = (boost::lexical_cast<int>(*attribute_iter++) > 0);
-			else
-				output = boost::lexical_cast< output_type >( *attribute_iter++ );
-	
-			input_type attributes( max_attribute_nr );
-			attributes.clear();
-	
-			while( (attribute_iter != tokens.end()) && ((*iter)[0] != static_cast<char>('#')) ) {
-	
-				// FIXME
-				// ERROR: this is not in all cases a number, such as in case of a ranking problem
-				// Figure out the attribute number. This is 1-based, so subtract 1
-				unsigned int attribute_nr = boost::lexical_cast< unsigned int >( *attribute_iter++ ) - 1;
-				// read the input into the input container
-				attributes[ attribute_nr ] = boost::lexical_cast< double >( *attribute_iter++ );
-			}
-		
-			//std::cout << output << ": " << attributes << std::endl;
-	
-			map[ sample_key ] = std::make_pair( attributes, output );
-			keys.push_back( sample_key );
-	
-			++sample_key;
-			++iter;
-		}
-	}
+template<typename PropertyMap, typename BackInsertionSequence>
+void read( std::vector<std::string> const &container, io::problem_type p_type,
+           PropertyMap &map, BackInsertionSequence &keys ) {
+
+    typedef PropertyMap map_type;
+    typedef typename boost::property_traits<PropertyMap>::key_type key_type;
+    typedef typename boost::property_traits<PropertyMap>::value_type object_type;
+    typedef typename object_type::first_type input_type;
+    typedef typename object_type::second_type output_type;
+
+    // quick routine to figure out the maximum feature number
+    std::vector<std::string>::const_iterator iter = container.begin();
+    std::size_t max_attribute_nr = 0;
+
+    // because the feature values are ordened by design, we only need the LAST feature value
+    while( iter != container.end() ) {
+        // start at the end of the line, backwards search for the first occurance of ":",
+        // find the atrribute number of value in front of that
+        typedef boost::range_const_reverse_iterator<boost::tokenizer<boost::char_separator<char> >::value_type>::type char_iter_type;
+        char_iter_type char_iter = std::find( boost::const_rbegin(*iter), boost::const_rend(*iter), ':' );
+        ++char_iter;
+        unsigned int attribute_nr = 0;
+        unsigned int multiplier = 1;
+        while( (*char_iter) != ' ' ) {
+            attribute_nr += boost::lexical_cast< unsigned int >( *char_iter ) * multiplier;
+            multiplier *= 10;
+            ++char_iter;
+        }
+        if (attribute_nr > max_attribute_nr)
+            max_attribute_nr = attribute_nr;
+        ++iter;
+    }
+
+    std::cout << "max attribute number: " << max_attribute_nr << std::endl;
+
+    // these are the separators the input file will be split on:
+    // space, tab, #, and :
+    boost::char_separator<char> separator(" \t#:");
+
+    // reset the data iterator
+    iter = container.begin();
+    unsigned int sample_key = 0;
+    while (iter != container.end()) {
+
+        boost::tokenizer<boost::char_separator<char> > tokens( *iter, separator );
+        boost::tokenizer<boost::char_separator<char> >::iterator attribute_iter = tokens.begin();
+
+        output_type output(0);
+        if (boost::is_same<output_type, bool>::value)
+            output = (boost::lexical_cast<int>(*attribute_iter++) > 0);
+        else
+            output = boost::lexical_cast< output_type >( *attribute_iter++ );
+
+        input_type attributes( max_attribute_nr );
+        attributes.clear();
+
+        while( (attribute_iter != tokens.end()) && ((*iter)[0] != static_cast<char>('#')) ) {
+
+            // FIXME
+            // ERROR: this is not in all cases a number, such as in case of a ranking problem
+            // Figure out the attribute number. This is 1-based, so subtract 1
+            unsigned int attribute_nr = boost::lexical_cast< unsigned int >( *attribute_iter++ ) - 1;
+            // read the input into the input container
+            attributes[ attribute_nr ] = boost::lexical_cast< double >( *attribute_iter++ );
+        }
+
+        //std::cout << output << ": " << attributes << std::endl;
+
+        map[ sample_key ] = std::make_pair( attributes, output );
+        keys.push_back( sample_key );
+
+        ++sample_key;
+        ++iter;
+    }
+}
 }
 
 
@@ -376,125 +383,127 @@ namespace svm_torch {
 
 
 
-	bool compatible( std::vector<std::string> const &container ) {
-		boost::char_separator<char> separator(" \t");
-		std::vector<std::string>::const_iterator i = container.begin();
-		try {
-			boost::tokenizer<boost::char_separator<char> > first_line( *i, separator );
-			boost::tokenizer<boost::char_separator<char> >::iterator j = first_line.begin();
-			if ( j == first_line.end() ) return false;
-			unsigned int samples = boost::lexical_cast<unsigned int>( *j++ );
-			unsigned int attributes = boost::lexical_cast<unsigned int>( *j++ );
-		}
-		catch( boost::bad_lexical_cast & ) {
-			return false;
-		}
-		
-		return true;
-	}
+bool compatible( std::vector<std::string> const &container ) {
+    boost::char_separator<char> separator(" \t");
+    std::vector<std::string>::const_iterator i = container.begin();
+    try {
+        boost::tokenizer<boost::char_separator<char> > first_line( *i, separator );
+        boost::tokenizer<boost::char_separator<char> >::iterator j = first_line.begin();
+        if ( j == first_line.end() )
+            return false;
+        unsigned int samples = boost::lexical_cast<unsigned int>( *j++ );
+        unsigned int attributes = boost::lexical_cast<unsigned int>( *j++ );
+    } catch( boost::bad_lexical_cast & ) {
+        return false;
+    }
+
+    return true;
+}
 
 
-	io::problem_type problem_type( std::vector<std::string> const &container ) {
-		boost::char_separator<char> separator(" \t");
-		// try to detect the problem type
+io::problem_type problem_type( std::vector<std::string> const &container ) {
+    boost::char_separator<char> separator(" \t");
+    // try to detect the problem type
 
-		// skip the first line
-		std::vector<std::string>::const_iterator i = container.begin();
-		++i;
+    // skip the first line
+    std::vector<std::string>::const_iterator i = container.begin();
+    ++i;
 
-		bool classification_assumption = true;
+    bool classification_assumption = true;
 
-		// try to reject binary classification
- 		while( classification_assumption && (i!=container.end()) ) {
-			std::string::const_iterator j( (*i).end() );
-			// first, find a non-space character
-			bool found = false;
-			while( !found && (j != (*i).begin()) ) {
-				--j;
-				found = (*j != ' ');
-			}
-			std::string::const_iterator k( j );
-			++k;
-			// then, find the first space character
-			found = false;
-			while( !found && (j != (*i).begin()) ) {
-				--j;
-				found = (*j == ' ');
-			}
-			if (found) ++j;
-			double value = boost::lexical_cast< double >( std::string(j,k) );
-			classification_assumption = ( (value==1.0) || (value==-1.0) );
-			++i;
- 		}
+    // try to reject binary classification
+    while( classification_assumption && (i!=container.end()) ) {
+        std::string::const_iterator j( (*i).end() );
+        // first, find a non-space character
+        bool found = false;
+        while( !found && (j != (*i).begin()) ) {
+            --j;
+            found = (*j != ' ');
+        }
+        std::string::const_iterator k( j );
+        ++k;
+        // then, find the first space character
+        found = false;
+        while( !found && (j != (*i).begin()) ) {
+            --j;
+            found = (*j == ' ');
+        }
+        if (found)
+            ++j;
+        double value = boost::lexical_cast< double >( std::string(j,k) );
+        classification_assumption = ( (value==1.0) || (value==-1.0) );
+        ++i;
+    }
 
-		if (classification_assumption) return io::classification;
+    if (classification_assumption)
+        return io::classification;
 
-		// no other tests yet, return regression
- 		return io::regression;
-	}
+    // no other tests yet, return regression
+    return io::regression;
+}
 
 
-	
-	template<typename PropertyMap, typename BackInsertionSequence>
-	void read( std::vector<std::string> const &container, io::problem_type p_type,
-			     PropertyMap &map, BackInsertionSequence &keys ) {
-	
-		typedef PropertyMap map_type;
-		typedef typename boost::property_traits<PropertyMap>::key_type key_type;
-		typedef typename boost::property_traits<PropertyMap>::value_type object_type;
-	
-		// should become some KML shortcut to do this...
-		typedef typename object_type::first_type input_type;
-		typedef typename object_type::second_type output_type;
-	
-		unsigned int number_of_samples;
-		unsigned int number_of_attributes;
-	
-		// these are the separators the input file will be split on:
-		// space and tab
-		boost::char_separator<char> separator(" \t");
 
-		std::vector<std::string>::const_iterator iter = container.begin();
-		
-		boost::tokenizer<boost::char_separator<char> > first_line( *iter, separator );
-		boost::tokenizer<boost::char_separator<char> >::iterator i=first_line.begin();
-		number_of_samples = boost::lexical_cast< unsigned int >( *i++ );
-		number_of_attributes = boost::lexical_cast< unsigned int >( *i ) - 1;
-	
-		std::cout << "nr of samples: " << number_of_samples << std::endl;
-		std::cout << "nr of attributes: " << number_of_attributes << std::endl;
-	
-		// go to the next line...
-		++iter;
-	
-		// read the data
-		unsigned int sample_index = 0;
-		input_type my_attributes( number_of_attributes );
-		output_type output;
-		
-		while( iter != container.end() ) {
-			// split the current line
-			boost::tokenizer<boost::char_separator<char> > tokens( *iter, separator );
-			i = tokens.begin();
-	
-			// DENSE vector format
-			for( unsigned int j=0; j<number_of_attributes; ++j ) {
-				my_attributes[j] = boost::lexical_cast< double >( *i++ );
-			}
-			
-	
-			if (boost::is_same<output_type, bool>::value)
-				output = (boost::lexical_cast<double>(*i) > 0.0);
-			else
-				output = boost::lexical_cast< output_type >( *i );
-			
-			map[ sample_index ] = std::make_pair( my_attributes, output );
-			keys.push_back( sample_index );
-	
-			++sample_index;
-			++iter;
-		}
-	}
+template<typename PropertyMap, typename BackInsertionSequence>
+void read( std::vector<std::string> const &container, io::problem_type p_type,
+           PropertyMap &map, BackInsertionSequence &keys ) {
+
+    typedef PropertyMap map_type;
+    typedef typename boost::property_traits<PropertyMap>::key_type key_type;
+    typedef typename boost::property_traits<PropertyMap>::value_type object_type;
+
+    // should become some KML shortcut to do this...
+    typedef typename object_type::first_type input_type;
+    typedef typename object_type::second_type output_type;
+
+    unsigned int number_of_samples;
+    unsigned int number_of_attributes;
+
+    // these are the separators the input file will be split on:
+    // space and tab
+    boost::char_separator<char> separator(" \t");
+
+    std::vector<std::string>::const_iterator iter = container.begin();
+
+    boost::tokenizer<boost::char_separator<char> > first_line( *iter, separator );
+    boost::tokenizer<boost::char_separator<char> >::iterator i=first_line.begin();
+    number_of_samples = boost::lexical_cast< unsigned int >( *i++ );
+    number_of_attributes = boost::lexical_cast< unsigned int >( *i ) - 1;
+
+    std::cout << "nr of samples: " << number_of_samples << std::endl;
+    std::cout << "nr of attributes: " << number_of_attributes << std::endl;
+
+    // go to the next line...
+    ++iter;
+
+    // read the data
+    unsigned int sample_index = 0;
+    input_type my_attributes( number_of_attributes );
+    output_type output;
+
+    while( iter != container.end() ) {
+        // split the current line
+        boost::tokenizer<boost::char_separator<char> > tokens( *iter, separator );
+        i = tokens.begin();
+
+        // DENSE vector format
+        for( unsigned int j=0; j<number_of_attributes; ++j ) {
+            my_attributes[j] = boost::lexical_cast< double >( *i++ );
+        }
+
+
+        if (boost::is_same<output_type, bool>::value)
+            output = (boost::lexical_cast<double>(*i) > 0.0);
+        else
+            output = boost::lexical_cast< output_type >( *i );
+
+        map[ sample_index ] = std::make_pair( my_attributes, output );
+        keys.push_back( sample_index );
+
+        ++sample_index;
+        ++iter;
+    }
+}
 
 } // namespace svm_torch
 
@@ -506,42 +515,42 @@ namespace svm_torch {
 namespace data_matrix {
 
 
-	// 
-	bool compatible( std::vector<std::string> const &container ) {
-		return true;	
-	}
+//
+bool compatible( std::vector<std::string> const &container ) {
+    return true;
+}
 
 
 
-	io::problem_type problem_type( std::vector<std::string> const &container ) {
-		return io::regression;		
-	}
+io::problem_type problem_type( std::vector<std::string> const &container ) {
+    return io::regression;
+}
 
 
-	
-	
-	template<typename PropertyMap, typename BackInsertionSequence>
-	void read( std::vector<std::string> const &container, io::problem_type p_type,
-			     PropertyMap &map, BackInsertionSequence &keys ) {
-	
-				     
-		std::cout << "starting to read the data matrix filetype..." << std::endl;
 
-		std::vector<std::string>::const_iterator i = container.begin();
-		
-		while( i != container.end() ) {
-			std::cout << *i << std::endl;
 
-			
-			++i;
-		}
-		
-		
-		int qq;
-		std::cin >> qq;
-		
+template<typename PropertyMap, typename BackInsertionSequence>
+void read( std::vector<std::string> const &container, io::problem_type p_type,
+           PropertyMap &map, BackInsertionSequence &keys ) {
 
-	}
+
+    std::cout << "starting to read the data matrix filetype..." << std::endl;
+
+    std::vector<std::string>::const_iterator i = container.begin();
+
+    while( i != container.end() ) {
+        std::cout << *i << std::endl;
+
+
+        ++i;
+    }
+
+
+    int qq;
+    std::cin >> qq;
+
+
+}
 
 
 
@@ -563,80 +572,104 @@ namespace data_matrix {
 
 class file {
 public:
-	typedef boost::char_separator<char> char_separator_type;
-	typedef boost::tokenizer< char_separator_type, char* > char_tokenizer;
+    typedef boost::char_separator<char> char_separator_type;
+    typedef boost::tokenizer< char_separator_type, char* > char_tokenizer;
 
 
-	file( std::string const &filename ) {
+    file( std::string const &filename ) {
 
-		// open the file
-		std::ifstream input_file( filename.c_str(), std::ios::in );
-		if ( !input_file.is_open() ) {
-			std::cout << "Could not open file " << filename << std::endl;
-		}
- 		std::cout << "Reading " << filename << "..." << std::flush;
-		std::string line_buffer;
-		while( !input_file.eof() ) {
-			std::getline( input_file, line_buffer );
-			// skip empty lines and lines that begin with a comment mark
-			if ((line_buffer.size()>0) && (line_buffer[0]!='#')) {
-				// strip comments (i.e., anything after '#') from these lines
-				std::string::iterator my_end = std::find( line_buffer.begin(), line_buffer.end(), '#' );
-				buffer.push_back( std::string(line_buffer.begin(), my_end) );
-			}
-		}
-		std::cout << "read " << buffer.size() << " lines." << std::endl;
-		input_file.close();
+        // open the file
+        std::ifstream input_file( filename.c_str(), std::ios::in );
+        if ( !input_file.is_open() ) {
+            std::cout << "Could not open file " << filename << std::endl;
+        }
+        std::cout << "Reading " << filename << "..." << std::flush;
+        std::string line_buffer;
+        while( !input_file.eof() ) {
+            std::getline( input_file, line_buffer );
+            // skip empty lines and lines that begin with a comment mark
+            if ((line_buffer.size()>0) && (line_buffer[0]!='#')) {
+                // strip comments (i.e., anything after '#') from these lines
+                std::string::iterator my_end = std::find( line_buffer.begin(), line_buffer.end(), '#' );
+                buffer.push_back( std::string(line_buffer.begin(), my_end) );
+            }
+        }
+        std::cout << "read " << buffer.size() << " lines." << std::endl;
+        input_file.close();
 
-		if ( buffer.size() == 0 ) {
-			std::cout << "Could not read any contents from " << filename << std::endl;
-		}
+        if ( buffer.size() == 0 ) {
+            std::cout << "Could not read any contents from " << filename << std::endl;
+        }
 
-		if ( io::dst::compatible( buffer) ) {
-			handler = dst_handler;
-			std::cout << "dst handler ok" << std::endl;
-		} else
-		if ( io::svm_light::compatible( buffer ) ) {
-			handler = svm_light_handler;
-			std::cout << "svm light handler ok" << std::endl;
-		} else
-		if ( io::svm_torch::compatible( buffer ) ) {
-			handler = svm_torch_handler;
-			std::cout << "svm torch handler ok" << std::endl;
-		} else
-		if ( io::data_matrix::compatible( buffer ) ) {
-			handler = data_matrix_handler;
-			std::cout << "data matrix handler ok" << std::endl;
-		} else
-		std::cout << "unknown file format!" << std::endl;
+        if ( io::dst::compatible( buffer) ) {
+            handler = dst_handler;
+            std::cout << "dst handler ok" << std::endl;
+        } else
+            if ( io::svm_light::compatible( buffer ) ) {
+                handler = svm_light_handler;
+                std::cout << "svm light handler ok" << std::endl;
+            } else
+                if ( io::svm_torch::compatible( buffer ) ) {
+                    handler = svm_torch_handler;
+                    std::cout << "svm torch handler ok" << std::endl;
+                } else
+                    if ( io::data_matrix::compatible( buffer ) ) {
+                        handler = data_matrix_handler;
+                        std::cout << "data matrix handler ok" << std::endl;
+                    } else
+                        std::cout << "unknown file format!" << std::endl;
 
-	}
+    }
 
-	io::problem_type problem_type() {
-		switch( handler ) {
-			case dst_handler: { return io::dst::problem_type( buffer ); break; }
-			case svm_light_handler: { return io::svm_light::problem_type( buffer ); break; }
-			case svm_torch_handler: { return io::svm_torch::problem_type( buffer ); break; }
-			case data_matrix_handler: { return io::data_matrix::problem_type( buffer ); break; }
-		}
-		return io::unknown;
-	}
+    io::problem_type problem_type() {
+        switch( handler ) {
+        case dst_handler: {
+                return io::dst::problem_type( buffer );
+                break;
+            }
+        case svm_light_handler: {
+                return io::svm_light::problem_type( buffer );
+                break;
+            }
+        case svm_torch_handler: {
+                return io::svm_torch::problem_type( buffer );
+                break;
+            }
+        case data_matrix_handler: {
+                return io::data_matrix::problem_type( buffer );
+                break;
+            }
+        }
+        return io::unknown;
+    }
 
-	template<typename PropertyMap, typename BackInsertionSequence>
-	void read( PropertyMap &map, BackInsertionSequence &keys ) {
-		switch( handler ) {
-			case dst_handler: { io::dst::read( buffer, io::classification, map, keys ); break; }
-			case svm_light_handler: { io::svm_light::read( buffer, io::classification, map, keys ); break; }
-			case svm_torch_handler: { io::svm_torch::read( buffer, io::classification, map, keys ); break; }
-			case data_matrix_handler: { io::data_matrix::read( buffer, io::classification, map, keys ); break; }
-		}
-	}
+    template<typename PropertyMap, typename BackInsertionSequence>
+    void read( PropertyMap &map, BackInsertionSequence &keys ) {
+        switch( handler ) {
+        case dst_handler: {
+                io::dst::read( buffer, io::classification, map, keys );
+                break;
+            }
+        case svm_light_handler: {
+                io::svm_light::read( buffer, io::classification, map, keys );
+                break;
+            }
+        case svm_torch_handler: {
+                io::svm_torch::read( buffer, io::classification, map, keys );
+                break;
+            }
+        case data_matrix_handler: {
+                io::data_matrix::read( buffer, io::classification, map, keys );
+                break;
+            }
+        }
+    }
 
-	enum file_handler { dst_handler, svm_light_handler, svm_torch_handler, data_matrix_handler };
+    enum file_handler { dst_handler, svm_light_handler, svm_torch_handler, data_matrix_handler };
 
-	file_handler handler;
+    file_handler handler;
 
-	std::vector<std::string> buffer;
+    std::vector<std::string> buffer;
 };
 
 
@@ -648,10 +681,10 @@ public:
 /*
 template<typename PatternMap>
 void write( char* file_name, PatternMap &dataset ) {
-
+ 
     // open the file
     std::ofstream output_file( file_name, std::ios::out | std::ios::binary );
-
+ 
     // define the output filter
     iostreams::filtering_ostream out;
     out.push( iostreams::bzip2_compressor() );
