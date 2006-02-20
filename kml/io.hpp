@@ -537,11 +537,21 @@ void read( std::vector<std::string> const &container, io::problem_type p_type,
     std::cout << "starting to read the data matrix filetype..." << std::endl;
 
     std::vector<std::string>::const_iterator i = container.begin();
-
+    
+    // separate on a superset of a csv separator
+    boost::char_separator<char> separator(", \t\n\r");
+    
     while( i != container.end() ) {
-        std::cout << *i << std::endl;
-
-
+        boost::tokenizer<boost::char_separator<char> > values( *i, separator );
+        boost::tokenizer<boost::char_separator<char> >::iterator j = values.begin();
+        
+        while( j != values.end() ) {
+	       std::cout << *j << " ";
+	       ++j;
+    	}
+        std::cout << std::endl;
+	    
+	    
         ++i;
     }
 
