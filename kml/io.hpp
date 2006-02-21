@@ -29,7 +29,6 @@
 #include <boost/tuple/tuple.hpp>
 
 #include <kml/input_value.hpp>
-#include <kml/traits.hpp>
 
 #include <iostream>
 #include <fstream>
