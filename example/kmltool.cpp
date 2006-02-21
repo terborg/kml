@@ -24,6 +24,7 @@
 #include <kml/gaussian.hpp>
 
 #include <boost/numeric/ublas/vector.hpp>
+#include <boost/tuple/tuple.hpp>
 #include <boost/vector_property_map.hpp>
 
 // include kernel machine types
@@ -142,8 +143,8 @@ int main(int argc, char *argv[]) {
 	switch( my_file.problem_type() ) {
 		case kml::io::classification: {
 			std::cout << "entering classification part..." << std::endl;
-			typedef std::pair< ublas::vector<double>, bool > example_type;
-			typedef boost::vector_property_map< std::pair< ublas::vector<double>, bool > > data_type;
+			typedef boost::tuple< ublas::vector<double>, bool > example_type;
+			typedef boost::vector_property_map< boost::tuple< ublas::vector<double>, bool > > data_type;
 			typedef kml::classification< example_type > problem_type;
 			data_type data;
 			std::vector<data_type::key_type> learn_keys;
@@ -190,7 +191,7 @@ int main(int argc, char *argv[]) {
 		}
 		case kml::io::regression: {
 			std::cout << "entering regression part..." << std::endl;
-			typedef std::pair< ublas::vector<double>, double > example_type;
+			typedef boost::tuple< ublas::vector<double>, double > example_type;
 			typedef boost::vector_property_map< example_type > data_type;
 			typedef kml::regression< example_type > problem_type;
 
@@ -251,7 +252,7 @@ int main(int argc, char *argv[]) {
 		}
 		case kml::io::ranking: {
 			std::cout << "entering ranking part..." << std::endl;
-			typedef std::pair< ublas::vector<double>, double > example_type;
+			typedef boost::tuple< ublas::vector<double>, double > example_type;
 			typedef boost::vector_property_map< example_type > data_type;
 			typedef kml::ranking< example_type > problem_type;
 			
