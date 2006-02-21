@@ -53,3 +53,4 @@ struct is_ranking<ranking<T> >: boost::mpl::bool_<true> {};
 }
 
 #endif
+
