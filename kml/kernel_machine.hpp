@@ -88,11 +88,11 @@ public:
 
 
 	typename kernel_type::return_type kernel( key_type const i, key_type const j ) {
-		return kernel_function( (*data)[i].first, (*data)[j].first );
+		return kernel_function( (*data)[i].get<0>(), (*data)[j].get<0>() );
       }
 
 	typename kernel_type::return_type kernel( input_type const &x, key_type const j ) {
-		return kernel_function( x, (*data)[j].first );
+		return kernel_function( x, (*data)[j].get<0>() );
       }
 
 	template<typename KeyIterator, typename OutputIterator>
@@ -101,7 +101,7 @@ public:
 		KeyIterator i(begin);
 		OutputIterator j(out);
 		while (i!=end) {
-			*j = kernel_function( x, (*data)[*i].first );
+			*j = kernel_function( x, (*data)[*i].get<0>() );
 			++i;
 			++j;
 		}
@@ -113,7 +113,7 @@ public:
 		KeyIterator i(begin);
 		OutputIterator j(out);
 		while (i!=end) {
-			*j = kernel_function( (*data)[key].first, (*data)[*i].first );
+			*j = kernel_function( (*data)[key].get<0>(), (*data)[*i].get<0>() );
 			++i;
 			++j;
 		}
@@ -137,7 +137,7 @@ public:
 			std::size_t col = 0;
 			KeyIterator j(begin);
 			while( j != end ) {
- 				out( row, ++col ) = kernel_function( (*data)[*i].first, (*data)[*j].first );				
+ 				out( row, ++col ) = kernel_function( (*data)[*i].get<0>(), (*data)[*j].get<0>() );				
  				++j;
 			}
 			++row;
@@ -226,11 +226,11 @@ public:
 
 
 	typename kernel_type::return_type kernel( key_type const i, key_type const j ) {
-		return kernel_function( (*data)[i].first, (*data)[j].first );
+		return kernel_function( (*data)[i].get<0>(), (*data)[j].get<0>() );
       }
 
 	typename kernel_type::return_type kernel( input_type const &x, key_type const j ) {
-		return kernel_function( x, (*data)[j].first );
+		return kernel_function( x, (*data)[j].get<0>() );
       }
 
 
@@ -240,10 +240,10 @@ public:
 		KeyIterator i(begin);
 		OutputIterator j(out);
 		while (i!=end) {
-			if ( (*data)[*i].second )
-				*j = kernel_function( x, (*data)[*i].first );
+			if ( (*data)[*i].get<1>() )
+				*j = kernel_function( x, (*data)[*i].get<0>() );
 			else
-				*j = -kernel_function( x, (*data)[*i].first );
+				*j = -kernel_function( x, (*data)[*i].get<0>() );
 			++i;
 			++j;
 		}
@@ -254,21 +254,21 @@ public:
                           KeyIterator const begin, KeyIterator const end, OutputIterator out ) {
 		KeyIterator i(begin);
 		OutputIterator j(out);
-		if ( (*data)[key].second ) {
+		if ( (*data)[key].get<1>() ) {
 			while (i!=end) {
-				if ( (*data)[*i].second )
-					*j = kernel_function( (*data)[key].first, (*data)[*i].first );
+				if ( (*data)[*i].get<1>() )
+					*j = kernel_function( (*data)[key].get<0>(), (*data)[*i].get<0>() );
 				else
-					*j = -kernel_function( (*data)[key].first, (*data)[*i].first );
+					*j = -kernel_function( (*data)[key].get<0>(), (*data)[*i].get<0>() );
 				++i;
 				++j;
 			}
 		} else {
 			while (i!=end) {
-				if ( (*data)[*i].second )
-					*j = -kernel_function( (*data)[key].first, (*data)[*i].first );
+				if ( (*data)[*i].get<1>() )
+					*j = -kernel_function( (*data)[key].get<0>(), (*data)[*i].get<0>() );
 				else
-					*j = kernel_function( (*data)[key].first, (*data)[*i].first );
+					*j = kernel_function( (*data)[key].get<0>(), (*data)[*i].get<0>() );
 				++i;
 				++j;
 			}

@@ -116,7 +116,7 @@ public:
         vector_type output( problem_size );
         KeyIterator key_iter( begin );
         for( std::size_t i = 0; i<problem_size; ++i ) {
-	        output[i] = (*base_type::data)[*key_iter++].second;
+	        output[i] = (*base_type::data)[*key_iter++].get<1>();
         }
         vector_type Hty( problem_size + 1 );
         atlas::gemv( static_cast<matrix_type>(ublas::trans(H)), output, Hty );
@@ -651,5 +651,4 @@ public:
 
 
 #endif
-
 

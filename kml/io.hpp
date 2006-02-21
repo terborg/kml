@@ -26,12 +26,14 @@
 #include <boost/range/size.hpp>
 #include <boost/range/value_type.hpp>
 #include <boost/type_traits/is_same.hpp>
+#include <boost/tuple/tuple.hpp>
+
 #include <kml/input_value.hpp>
+#include <kml/traits.hpp>
 
 #include <iostream>
 #include <fstream>
 #include <string>
-
 #include <sstream>
 
 #include <boost/range.hpp>
@@ -99,8 +101,9 @@ void read( std::vector<std::string> const &container, io::problem_type p_type,
     typedef typename boost::property_traits<PropertyMap>::value_type object_type;
 
     // should become some KML shortcut to do this...
-    typedef typename object_type::first_type input_type;
-    typedef typename object_type::second_type output_type;
+    // should do a run-time specialisation per problem_type, as this is probably problem_type specific
+    typedef typename boost::tuples::element<0,object_type>::type input_type;
+    typedef typename boost::tuples::element<1,object_type>::type output_type;
 
     std::map<unsigned int, int> id_mapping;
     unsigned int output_class_id(0);
@@ -150,7 +153,7 @@ void read( std::vector<std::string> const &container, io::problem_type p_type,
             // the start of a new training example
         case 'C': {
                 if ( current_example != example_counter ) {
-                    map[ current_example ] = std::make_pair( attributes, output );
+                    map[ current_example ] = boost::make_tuple( attributes, output );
                     keys.push_back( current_example );
                 }
                 //std::cout << "new example..." << std::endl;
@@ -295,8 +298,8 @@ void read( std::vector<std::string> const &container, io::problem_type p_type,
     typedef PropertyMap map_type;
     typedef typename boost::property_traits<PropertyMap>::key_type key_type;
     typedef typename boost::property_traits<PropertyMap>::value_type object_type;
-    typedef typename object_type::first_type input_type;
-    typedef typename object_type::second_type output_type;
+    typedef typename boost::tuples::element<0,object_type>::type input_type;
+    typedef typename boost::tuples::element<1,object_type>::type output_type;
 
     // quick routine to figure out the maximum feature number
     std::vector<std::string>::const_iterator iter = container.begin();
@@ -356,7 +359,7 @@ void read( std::vector<std::string> const &container, io::problem_type p_type,
 
         //std::cout << output << ": " << attributes << std::endl;
 
-        map[ sample_key ] = std::make_pair( attributes, output );
+        map[ sample_key ] = boost::make_tuple( attributes, output );
         keys.push_back( sample_key );
 
         ++sample_key;
@@ -453,8 +456,8 @@ void read( std::vector<std::string> const &container, io::problem_type p_type,
     typedef typename boost::property_traits<PropertyMap>::value_type object_type;
 
     // should become some KML shortcut to do this...
-    typedef typename object_type::first_type input_type;
-    typedef typename object_type::second_type output_type;
+    typedef typename boost::tuples::element<0,object_type>::type input_type;
+    typedef typename boost::tuples::element<1,object_type>::type output_type;
 
     unsigned int number_of_samples;
     unsigned int number_of_attributes;
@@ -497,7 +500,7 @@ void read( std::vector<std::string> const &container, io::problem_type p_type,
         else
             output = boost::lexical_cast< output_type >( *i );
 
-        map[ sample_index ] = std::make_pair( my_attributes, output );
+        map[ sample_index ] = boost::make_tuple( my_attributes, output );
         keys.push_back( sample_index );
 
         ++sample_index;
@@ -529,46 +532,83 @@ io::problem_type problem_type( std::vector<std::string> const &container ) {
 
 
 
+
+
+template<typename TokenIterator, std::size_t TupleSize>
+struct line_reader {};
+
+template<typename TokenIterator>
+struct line_reader<TokenIterator,0> {
+	line_reader() {
+		std::cout << "Not a tuple type..." << std::endl;	
+	}
+};
+
+template<typename TokenIterator>
+struct line_reader<TokenIterator,1> {
+	line_reader() {
+		std::cout << "Tuple size = 1, instantiated." << std::endl;	
+	}
+};
+
+
+
+
 template<typename PropertyMap, typename BackInsertionSequence>
 void read( std::vector<std::string> const &container, io::problem_type p_type,
            PropertyMap &map, BackInsertionSequence &keys ) {
 
+    typedef typename boost::property_traits<PropertyMap>::key_type key_type;
+    typedef typename boost::property_traits<PropertyMap>::value_type object_type;
+    typedef typename boost::tuples::element<0,object_type>::type input_type;
+    typedef typename boost::tuples::element<1,object_type>::type output_type;
 
-    std::cout << "starting to read the data matrix filetype..." << std::endl;
-
-    std::vector<std::string>::const_iterator i = container.begin();
     
+//     std::cout << "starting to read the data matrix filetype..." << std::endl;
+
     // separate on a superset of a csv separator
     boost::char_separator<char> separator(", \t\n\r");
+    std::vector<std::string>::const_iterator i = container.begin();
+    
+    
+    // check properties of first line
+    boost::tokenizer<boost::char_separator<char> > first_line( *i, separator );
+    boost::tokenizer<boost::char_separator<char> >::iterator line_tok = first_line.begin();
+    unsigned int nr_of_attributes = 0;
+    std::vector<bool> process_column;
+    while( line_tok != first_line.end() ) {
+	    ++line_tok;
+	    ++nr_of_attributes;
+    }
+    
+    std::cout << "nr of columns: " << nr_of_attributes << std::endl;
+    
+    input_type row( nr_of_attributes );
+    unsigned int sample_index = 0;
     
     while( i != container.end() ) {
         boost::tokenizer<boost::char_separator<char> > values( *i, separator );
         boost::tokenizer<boost::char_separator<char> >::iterator j = values.begin();
-        
+
+        int row_entry = 0;
         while( j != values.end() ) {
-	       std::cout << *j << " ";
-	       ++j;
-    	}
-        std::cout << std::endl;
-	    
-	    
+			try {	        
+	        	row[row_entry++] = boost::lexical_cast<double>(*j);
+    	    } catch ( boost::bad_lexical_cast & ) {
+	    	    row[row_entry++] = std::numeric_limits<double>::quiet_NaN();
+       	    }
+	        ++j;
+        }
+        
+       map[ sample_index ] = boost::make_tuple( row, 0.0 );
+       ++sample_index;
         ++i;
     }
 
 
-    int qq;
-    std::cin >> qq;
-
-
 }
 
-
-
-
-
-
 } // namespace data_matrix
-
 
 
 
@@ -613,19 +653,19 @@ public:
 
         if ( io::dst::compatible( buffer) ) {
             handler = dst_handler;
-            std::cout << "dst handler ok" << std::endl;
+            std::cout << "dst handler installed" << std::endl;
         } else
             if ( io::svm_light::compatible( buffer ) ) {
                 handler = svm_light_handler;
-                std::cout << "svm light handler ok" << std::endl;
+                std::cout << "svm light handler installed" << std::endl;
             } else
                 if ( io::svm_torch::compatible( buffer ) ) {
                     handler = svm_torch_handler;
-                    std::cout << "svm torch handler ok" << std::endl;
+                    std::cout << "svm torch handler installed" << std::endl;
                 } else
                     if ( io::data_matrix::compatible( buffer ) ) {
                         handler = data_matrix_handler;
-                        std::cout << "data matrix handler ok" << std::endl;
+                        std::cout << "data matrix handler installed" << std::endl;
                     } else
                         std::cout << "unknown file format!" << std::endl;
 

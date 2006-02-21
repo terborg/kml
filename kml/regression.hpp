@@ -21,8 +21,8 @@
 #define REGRESSION_HPP
 
 #include <boost/mpl/bool.hpp>
+#include <boost/tuple/tuple.hpp>
 
-namespace mpl = boost::mpl;
 
 namespace kml {
 
@@ -57,8 +57,8 @@ class regression {
 public:
 	typedef regression<T> type;
 	typedef T example_type;
-	typedef typename T::first_type input_type;
-	typedef typename T::second_type output_type;
+	typedef typename boost::tuples::element<0,T>::type input_type;
+	typedef typename boost::tuples::element<1,T>::type output_type;
 };
 
 
@@ -68,10 +68,10 @@ public:
 // for (partial) specialisations
 
 template<typename T>
-struct is_regression: mpl::bool_<false> {};
+struct is_regression: boost::mpl::bool_<false> {};
 
 template<typename T>
-struct is_regression<regression<T> >: mpl::bool_<true> {};
+struct is_regression<regression<T> >: boost::mpl::bool_<true> {};
 
 
 

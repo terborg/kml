@@ -140,7 +140,7 @@ public:
             P.matrix(0,0) = 1.0;
 
             // add to weight vector
-		    base_type::weight.push_back( (*base_type::data)[key].second / k_tt );
+		    base_type::weight.push_back( (*base_type::data)[key].get<1>() / k_tt );
 
             // add to support vector set
             base_type::key_lookup.push_back( key );
@@ -191,7 +191,7 @@ public:
 				P.matrix( old_size, old_size ) = 1.0;
 
                 // adjust weight vector alpha (equation 16)
-                factor = (*base_type::data)[key].second - atlas::dot(k_t,base_type::weight);
+                factor = (*base_type::data)[key].get<1>() - atlas::dot(k_t,base_type::weight);
                 atlas::axpy( factor, a_t, base_type::weight );
 		
 				// add new weight to the weight vector
@@ -215,7 +215,7 @@ public:
                 scalar_type factor = 1.0 / (1.0 + atlas::dot( a_t, P_a ));
 
                 // update weights (equation 13)
-                atlas::symv( factor* (*base_type::data)[key].second - atlas::dot(k_t,base_type::weight), 
+                atlas::symv( factor* (*base_type::data)[key].get<1>() - atlas::dot(k_t,base_type::weight), 
                 			 R_view, P_a, static_cast<scalar_type>(1), base_type::weight );
 
                 // update permutation matrix (equation 14)
@@ -239,4 +239,3 @@ private:
 } // namespace kml
 
 #endif
-

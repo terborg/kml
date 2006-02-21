@@ -21,6 +21,7 @@
 #define RANKING_HPP
 
 #include <boost/mpl/bool.hpp>
+#include <boost/tuple/tuple.hpp>
 
 namespace kml {
 
@@ -37,8 +38,8 @@ class ranking {
 public:
 	typedef ranking<T> type;
 	typedef T example_type;
-	typedef typename T::first_type input_type;
-	typedef typename T::second_type output_type;
+	typedef typename boost::tuples::element<0,T>::type input_type;
+	typedef typename boost::tuples::element<1,T>::type output_type;
 };
 
 // Define templates is_ranking so we can recognise the ranking type of problems
