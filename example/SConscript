@@ -9,6 +9,7 @@ if env['PLATFORM'] == 'posix':
 	serialization_lib = ['boost_serialization']
 elif env['PLATFORM'] == 'win32':
 	program_options_lib = [str(env.FindFile( ['libboost_program_options-vc71-mt-s.lib'], env['LIBPATH'] ))]
+	serialization_lib = [str(env.FindFile( ['libboost_serialization-vc71-mt-s.lib'], env['LIBPATH'] ))]	
 else:
 	print "Please configure examples/SConscript."
 
