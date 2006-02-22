@@ -34,6 +34,7 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <map>
 
 #include <boost/range.hpp>
 

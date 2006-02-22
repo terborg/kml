@@ -24,7 +24,7 @@ env.Program('svm_c_ranking.c', LIBS=c_link_libs)
 
 
 
-env.Program('kmltool.cpp', LIBS= atlas_link_libs + program_options_lib )
+#env.Program('kmltool.cpp', LIBS= atlas_link_libs + program_options_lib )
 
 
 
