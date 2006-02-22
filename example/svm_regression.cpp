@@ -27,6 +27,7 @@
 #include <boost/numeric/ublas/io.hpp>
 
 #include <boost/vector_property_map.hpp>
+#include <boost/tuple/tuple.hpp>
 
 
 //#include <kml/online_svm.hpp>
@@ -41,24 +42,24 @@ int main(int argc, char *argv[]) {
     boost::normal_distribution<double> norm_dist( 0.0, 0.1 );
     boost::variate_generator<boost::mt19937, boost::normal_distribution<double> > noise( randomness, norm_dist );
 
-    typedef std::pair<ublas::vector<double>, double> example_type;
+    typedef boost::tuple<ublas::vector<double>, double> example_type;
     typedef boost::vector_property_map< example_type > data_type;
     data_type data;
 
     int N = 50;
     std::vector<ublas::vector<double> > x_vec(N);
     for( int i=0; i<N; ++i ) {
-	example_type::first_type x(1);
+	boost::tuples::element<0,example_type>::type x(1);
 	x[0] = (double(i)/double(N-1))*20.0-10.0;
         x_vec[i] = x;
-        data[i] = std::make_pair( x, boost::math::sinc_pi(x[0]) + noise() );
+        data[i] = boost::make_tuple( x, boost::math::sinc_pi(x[0]) + noise() );
     }
 
 
     std::cout << "Training kernel machine..." << std::endl;
 
     typedef kml::regression< example_type > problem_type;
-    typedef kml::gaussian< example_type::first_type > kernel_type;
+    typedef kml::gaussian< problem_type::input_type > kernel_type;
 
     
 //    kml::online_svm< problem_type, kernel_type, data_type > my_machine( 10.0, 0.1, kernel_type(1.6), data );
