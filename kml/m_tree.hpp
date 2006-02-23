@@ -1,20 +1,20 @@
 /***************************************************************************
  *  The Kernel-Machine Library                                             *
- *  Copyright (C) 2004, 2005 by Rutger W. ter Borg                         *
+ *  Copyright (C) 2004--2006 by Rutger W. ter Borg                         *
  *                                                                         *
- *  This program is free software; you can redistribute it and/or          *
- *  modify it under the terms of the GNU General Public License            *
- *  as published by the Free Software Foundation; either version 2         *
- *  of the License, or (at your option) any later version.                 *
+ *  This library is free software; you can redistribute it and/or          *
+ *  modify it under the terms of the GNU Lesser General Public             *
+ *  License as published by the Free Software Foundation; either           *
+ *  version 2.1 of the License, or (at your option) any later version.     *
  *                                                                         *
- *  This program is distributed in the hope that it will be useful,        *
+ *  This library is distributed in the hope that it will be useful,        *
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of         *
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
- *  GNU General Public License for more details.                           *
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU      *
+ *  Lesser General Public License for more details.                        *
  *                                                                         *
- *  You should have received a copy of the GNU General Public License      *
- *  along with this program; if not, write to the Free Software            *
- *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307  *
+ *  You should have received a copy of the GNU Lesser General Public       *
+ *  License along with this library; if not, write to the Free Software    *
+ *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  *
  ***************************************************************************/
 
 #ifndef M_TREE_HPP
@@ -201,23 +201,23 @@ public:
 	- TODO Minimise the increase in covering radius
 	- DONE Choose the centroid clostest by, and descend the tree (greedy search)
 
-	===>>>> in M-tree momenclature, routing object equals centroid of the child ! ! <<<<==============
-	==->>>> but I don't want a vector of centroids of the childs. <<<=================================
-        ===>>>> I store a radius one level lower than in the original paper for the same reasons ! ! ! <<<
+	in M-tree momenclature, routing object equals centroid of the child!!
+	but I don't want a vector of centroids of the childs.
+        I store a radius one level lower than in the original paper for the same reasons
 
-	===>>> no bookkeeping of the radius until the tree has more than 1 node?
-        ===>>> root node does not have a centroid ! ! ! ! ! 
+	no bookkeeping of the radius until the tree has more than 1 node?
+        root node does not have a centroid!
 
-	-- use the BGL properly: use a visitor class
-	-- first, a down pass (single way), to find the leaf node where to put the object in	
-		===>>> use a predecessor recorder ! ! !! 
-	-- then, an upward pass (using the predecessor recordings) to update the tree.
+	* use the BGL properly: use a visitor class
+	* first, a down pass (single way), to find the leaf node where to put the object in	
+		 (use a predecessor recorder)
+	* then, an upward pass (using the predecessor recordings) to update the tree.
 
-	--> of course, i.e., the centroid of a node _is_ the node's location (was the same in the recursive gonzales)
-	--> so indeed: a inner node has a centroid: but that centroid is a centroid of a node.
+	* of course, i.e., the centroid of a node _is_ the node's location (was the same in the recursive gonzales)
+	* so indeed: a inner node has a centroid: but that centroid is a centroid of a node.
 
-	--> all objects are in the ground level.
-	--> n-ary tree? ... 
+	* all objects are in the ground level.
+	* n-ary tree? ... 
 
 	*/
 	// see section 3.3, at the insert pseudo-code
@@ -229,7 +229,7 @@ public:
 
 			// NO, we do not have child nodes _in which_ this node could reside.
 			// Choose the one with minimum radius
-			// ---> ADJUST THE RADIUS OF THIS NODE !
+			// Adjust radius of child node
 			
 			// there are child nodes, visit these if possible
 
@@ -255,7 +255,7 @@ public:
 				return node;
 			else {
 				// tie this new node to the current node. (no inner node splits yet)
-				// overflow on node level right here !!  !
+				// overflow on node level right here!
 				std::cout << "creating edge " << node << "->" << result << std::endl;
 				boost::add_edge( node, result, m_graph );
 				
@@ -295,7 +295,7 @@ public:
 				// is this node within the radius of this node, or doesn't that matter?
 				// no, should not matter.
 
-				// expected minimum distance can be computed! ... ( dsitance - radius ! ! !)
+				// expected minimum distance can be computed! ... ( dsitance - radius )
 
 				std::cout << "visiting " << *child.first << std::endl;
 				nearest_centroid( *child.first, key, min_dist );
@@ -318,7 +318,7 @@ public:
 	// the split procedure, works bottom-up, starting at node
 	vertex_descriptor split_ground_node( vertex_descriptor const &node ) {
 
-		// ---> the centroid of "node", if it had one, will be ignored!
+		// ---> the centroid of "node", if it had one, will be ignored
 
 		// alright, a new node will be added to the tree.
 		// split the current node 
@@ -347,7 +347,7 @@ public:
 		double max_dist = distance_square( (*pattern_map)[centroid_1], (*pattern_map)[centroid_2] );
 
 		
-		/*!==>> can also be 2 aribtrarily random points!! */
+		// can also be 2 aribtrarily random points!
 		// search for the point furthest away
 		for( ; i != m_graph[node].object.end(); ++i ) {
 			double dist = distance_square( (*pattern_map)[centroid_1], (*pattern_map)[ *i ] );
@@ -368,7 +368,7 @@ public:
 		// partition the objects based on these centroids (rather efficient!)
 		// first..middle belongs to centroid_1, and middle..end belongs to centroid 2
 
-		/*!  TODO use a functor to store the radii of the nodes.!!! */
+		//  TODO use a functor to store the radii of the nodes.
 		typename node::object_iter middle = std::partition(  m_graph[node].object.begin(), m_graph[node].object.end(), 
 								     closer_by(centroid_1,centroid_2,pattern_map) );
                                  //boost::bind( &this_type::closer_by,boost::ref(*this),centroid_1,centroid_2,_1) );
@@ -475,24 +475,10 @@ public:
 		// perhaps local_iterative_improvement is a better name. Or something like that.
 
 		// this is equal to the algorithm for k-means, but then applied for 
-		// k-center. However, an improvement is only an improvement if __BOTH__
+		// k-center. However, an improvement is only an improvement if _BOTH_
 		// radii decrease (i.e. not min_max). 
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+
 	}
 	
 

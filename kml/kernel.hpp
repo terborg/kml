@@ -1,20 +1,20 @@
 /***************************************************************************
  *  The Kernel-Machine Library                                             *
- *  Copyright (C) 2004, 2005 by Rutger W. ter Borg                         *
+ *  Copyright (C) 2004--2006 by Rutger W. ter Borg                         *
  *                                                                         *
- *  This program is free software; you can redistribute it and/or          *
- *  modify it under the terms of the GNU General Public License            *
- *  as published by the Free Software Foundation; either version 2         *
- *  of the License, or (at your option) any later version.                 *
+ *  This library is free software; you can redistribute it and/or          *
+ *  modify it under the terms of the GNU Lesser General Public             *
+ *  License as published by the Free Software Foundation; either           *
+ *  version 2.1 of the License, or (at your option) any later version.     *
  *                                                                         *
- *  This program is distributed in the hope that it will be useful,        *
+ *  This library is distributed in the hope that it will be useful,        *
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of         *
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
- *  GNU General Public License for more details.                           *
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU      *
+ *  Lesser General Public License for more details.                        *
  *                                                                         *
- *  You should have received a copy of the GNU General Public License      *
- *  along with this program; if not, write to the Free Software            *
- *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307  *
+ *  You should have received a copy of the GNU Lesser General Public       *
+ *  License along with this library; if not, write to the Free Software    *
+ *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  *
  ***************************************************************************/
 
 #ifndef KERNEL_HPP
@@ -45,7 +45,7 @@
 \version 0.1
 \section section0 Introduction
 
-The Kernel-Machine Library is a freely available (released under the GPL) C++ library to promote the use and
+The Kernel-Machine Library is a freely available (released under the LGPL) C++ library to promote the use and
 progress of kernel machines. It is both for academic use and for developing real world applications. The
 Kernel-Machine Library draws heavily from features of modern C++ such as template meta-programming to achieve
 high performance while at the same time offering a comfortable interface. It enables compile-time selection of
@@ -250,7 +250,6 @@ std::transform( my_inputs.begin(), my_inputs.end(), test.begin(), my_machine );
 
 
 */
-
 
 
 
