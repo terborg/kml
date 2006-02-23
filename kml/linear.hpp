@@ -127,6 +127,7 @@ template<typename T>
 struct linear: public std::binary_function<T,T,typename input_value<T>::type> {
     typedef linear<T> type;
     typedef typename input_value<T>::type scalar_type;
+    friend class boost::serialization::access;
 
     /*! Construct an uninitialised linear kernel */
     linear() {}
@@ -142,7 +143,12 @@ struct linear: public std::binary_function<T,T,typename input_value<T>::type> {
     /*! Kernel constructor by providing TokenIterators */
    template<typename TokenIterator>
    linear( TokenIterator const begin, TokenIterator const end ) {}
-    
+
+	/*! Returns the result of the evaluation of a linear kernel on two input patters of type T
+	\param u input pattern u
+        \param v input pattern v
+	\return \f$ e^{-\gamma\|u - v\|} \f$
+    */
     inline
     scalar_type operator()( T const &u, T const &v ) const {
     		    return mpl::if_<boost::is_scalar<T>,
@@ -150,6 +156,13 @@ struct linear: public std::binary_function<T,T,typename input_value<T>::type> {
            				detail::vector_inner_prod >::type::compute( u, v );
     }
 
+    // loading and saving capabilities
+    // basically a dummy; we don't need to load or save anything
+    template<class Archive>
+    void serialize( Archive &archive, unsigned int const version ) {
+    }
+
+    // for debugging purposes
     friend std::ostream& operator<<(std::ostream &os, type const &) {
 	os << "Linear kernel (u^T * v)" << std::endl;
 	return os;

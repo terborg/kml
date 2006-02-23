@@ -22,22 +22,43 @@
 
 #include <boost/call_traits.hpp>
 #include <boost/type_traits.hpp>
+#include <kml/input_value.hpp>
 #include <kml/linear.hpp>
 
 namespace kml {
 
-template<typename T, int N=0>
-class polynomial: public std::binary_function<T,
-                                              T,
-                                              typename kml::power_return_type<T,N>::type> {
-public:
+/*!
 
-    typedef polynomial<T,N> type;
-    typedef typename boost::range_value<T>::type scalar_type;
-    typedef typename mpl::int_<N>::type derivative_order;
+\brief polynomial kernel
+\param T defines the underlying input data type
+
+This is a template class that creates a functor for the polynomial kernel.
+
+\ingroup kernels
+
+*/
+
+template<typename T>
+class polynomial: public std::binary_function<T,T,typename input_value<T>::type> {
+public:
+    typedef polynomial<T> type;
+    typedef typename input_value<T>::type scalar_type;
+    typedef typename mpl::int_<0>::type derivative_order;
+    friend class boost::serialization::access;
 
     /*! Construct an uninitialised polynomial kernel */
     polynomial() {}
+
+    /*! Refinement of CopyConstructable */
+    polynomial( type const &other ) {
+       copy( other );
+    }
+
+    /*! Refinement of Assignable */
+    type &operator=( type const &other ) {
+		if (this != &other) { destroy(); copy(other); }
+		return *this;
+    }
 
     /*! Construct a polynomial kernel
         \param gamma  the scale of the inner product
@@ -52,12 +73,28 @@ public:
 	return std::pow( scale * linear<T>()(u,v) + bias, order );
     }
 
+    // loading and saving capabilities
+    template<class Archive>
+    void serialize( Archive &archive, unsigned int const version ) {
+    	archive & scale;
+    	archive & bias;
+	archive & order;
+    }
+
+    // for debugging purposes
     friend std::ostream& operator<<(std::ostream &os, type const &k) {
 	os << "Polynomial kernel (" << k.scale << "<u,v>+" << k.bias << ")^" << k.order << std::endl;
 	return os;
     }
 
 private:
+    void copy( type const &other ) {
+		scale = other.scale;
+		bias = other.bias;
+		order = other.order;
+    }
+    void destroy() {}
+
     scalar_type scale;
     scalar_type bias;
     scalar_type order;
@@ -65,7 +102,9 @@ private:
 };
 
 
-}
+} // namespace kml
 
 #endif
+
+
 

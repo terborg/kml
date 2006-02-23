@@ -39,7 +39,7 @@ namespace kml {
 	(distance_square<T, T> must be defined, which is done for
 	scalar and vector types in distance.hpp)
 
-This is a template class that creates a function for the Gaussian kernel.
+This is a template class that creates a functor for the Gaussian kernel.
 
 Complexity: O(d+c), i.e., a little more time than needed for computing the dot product
 
