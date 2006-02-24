@@ -17,9 +17,9 @@ c_link_libs = []
 
 if env['PLATFORM'] == 'posix':
    boost_search_path = ['/usr/include/boost']
-   atlas_search_path = ['/usr/include', '/usr/include/atlas' ]
+   atlas_search_path = ['/usr/include/atlas' ]
    c_link_libs = ['kml']
-   lib_path = ['/usr/lib' ]
+   lib_path = ['/usr/lib', '/usr/lib64/atlas' ]
    atlas_link_libs = []
    if env.FindFile( 'libatlas.so.3', lib_path ): atlas_link_libs.append( 'atlas' )
    if env.FindFile( 'libcblas.so.3', lib_path ): atlas_link_libs.append( 'cblas' )
