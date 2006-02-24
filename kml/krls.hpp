@@ -101,7 +101,7 @@ public:
 
         vector_type temp_K( base_type::key_lookup.size() );
         base_type::fill_kernel( x, base_type::key_lookup.begin(), base_type::key_lookup.end(), temp_K.begin() );
-        for( int i=0; i < temp_K.size(); ++i )
+        for( unsigned int i=0; i < temp_K.size(); ++i )
             temp_K[i] += lambda_squared;
         return atlas::dot( base_type::weight, temp_K );
 
