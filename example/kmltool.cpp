@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
 		}
 		if ( *k_o == std::string("linear") ) {
 			selected_kernel = linear;
-			std::cout << "gaussian kernel selected" << std::endl;
+			std::cout << "linear kernel selected" << std::endl;
 		}
 		++k_o;
 	}
