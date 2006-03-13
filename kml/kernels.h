@@ -51,7 +51,7 @@
 #include <iostream>
 #include <vector>
 
-#include <kml/math.hpp>
+#include <kml/detail/math.hpp>
 
 
 

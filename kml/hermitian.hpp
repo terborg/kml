@@ -28,7 +28,7 @@
 #include <boost/type_traits.hpp>
 #include <kml/input_value.hpp>
 #include <kml/distance.hpp>
-#include <kml/math.hpp>
+#include <kml/detail/math.hpp>
 #include <kml/power_value.hpp>
 #include <cassert>
 
