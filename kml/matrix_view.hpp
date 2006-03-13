@@ -25,6 +25,14 @@
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/bindings/atlas/cblas.hpp>
 
+#include <boost/serialization/ublas_matrix.hpp>
+
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/split_member.hpp>
+#include <boost/serialization/tracking.hpp>
+
+
+
 
 namespace ublas = boost::numeric::ublas;
 namespace atlas = ::boost::numeric::bindings::atlas;
@@ -64,6 +72,7 @@ atlas::gemv( A.view(), x, b );                  // compute b <- Ax
 template<class M>
 class matrix_view {
 public:
+    friend class boost::serialization::access;
     typedef ublas::vector<double> vector_type;
     typedef M matrix_type;
     typedef typename M::size_type size_type;
@@ -240,9 +249,50 @@ public:
     inline ublas::matrix_column< ublas::matrix_range<M> > const shrinked_column( int nr ) {
         return ublas::column( ublas::matrix_range<M>(matrix, ublas::range(0,view_rows-1),ublas::range(0,view_cols)), nr );
     }
+    
+    
+    // loading and saving capabilities
+    
+    template<class Archive>
+    void save( Archive &archive, unsigned int const version ) const {
+	    // make a copy of the view and save that part only
+    	M matrix_copy( ublas::subrange(matrix, 0, view_rows, 0, view_cols ));
+    	archive << matrix_copy;
+    }
+    
+    template<class Archive>
+    void load( Archive &archive, unsigned int const version ) {
+		// restore the copy of the view
+	    archive >> matrix;
+	    
+	    // store the view size
+	   	view_rows = matrix.size1();
+	   	view_cols = matrix.size2();
+	   	
+	   	// find the value of the MSB of the view_rows, that multiplied by 2 should equal pow2_rows
+	   	unsigned int find_pow2_rows = view_rows;
+	   	unsigned int pow2_rows = 1;
+	   	while( find_pow2_rows > 0 ) {
+		   	find_pow2_rows >>= 1;
+		   	pow2_rows <<= 1;
+	    }
+	    
+	   	// find the value of the MSB of the view_cols, that multiplied by 2 should equal pow2_cols
+	   	unsigned int find_pow2_cols = view_cols;
+	   	unsigned int pow2_cols = 1;
+	   	while( find_pow2_cols > 0 ) {
+		   	find_pow2_cols >>= 1;
+		   	pow2_cols <<= 1;
+	    }
+	    
+	    // (preserved) resize of the matrix to sizes that are powers of 2
+    	matrix.resize( pow2_rows, pow2_cols, true );
+    }
+    
+    // a convenience macro to auto-create the serialize() member function
+    BOOST_SERIALIZATION_SPLIT_MEMBER()
 
-
-    // internal memory is a (dense) matrix
+    // internal memory is a (dense) UBLAS matrix
     M matrix;
 private:
     size_type view_rows;
@@ -253,4 +303,24 @@ private:
 } // namespace kml
 
 
+
+
+
+
+namespace boost{ namespace serialization {
+
+template<typename T>
+struct tracking_level< kml::matrix_view<T> >
+{
+	typedef mpl::integral_c_tag tag;
+	typedef mpl::int_<track_never> type;
+	BOOST_STATIC_CONSTANT(
+		int, 
+		value = tracking_level::type::value
+	);
+};
+
+}}
+
 #endif
+
