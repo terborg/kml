@@ -19,39 +19,37 @@
 
 
 template<class T>
-struct implementation_level<std::complex<T> >
-{
-  typedef mpl::integral_c_tag tag;
-  // typedef mpl::int_<primitive_type> type;
-  typedef mpl::int_<object_serializable> type;
-  BOOST_STATIC_CONSTANT(
-                        int,
-                        value = implementation_level::type::value
-                        );
+struct implementation_level<std::complex<T> > {
+    typedef mpl::integral_c_tag tag;
+    // typedef mpl::int_<primitive_type> type;
+    typedef mpl::int_<object_serializable> type;
+    BOOST_STATIC_CONSTANT(
+        int,
+        value = implementation_level::type::value
+    );
 };
 
 template<class T>
-struct tracking_level<std::complex<T> >
-{
-  typedef mpl::integral_c_tag tag;
-  typedef mpl::int_<track_never> type;
-  BOOST_STATIC_CONSTANT(
-                        int,
-                        value = tracking_level::type::value
-                        );
+struct tracking_level<std::complex<T> > {
+    typedef mpl::integral_c_tag tag;
+    typedef mpl::int_<track_never> type;
+    BOOST_STATIC_CONSTANT(
+        int,
+        value = tracking_level::type::value
+    );
 
-}; 
+};
 
 
 template<class Archive, class T>
 inline void serialize (Archive &ar, std::complex<T>& z, const
-unsigned int file_version) {
-  ar & boost::serialization::make_nvp ("real", real(z));
-  ar & boost::serialization::make_nvp ("imag", imag(z));
-  // ar & real(z);
-  // ar & imag(z);
+                       unsigned int file_version) {
+    ar & boost::serialization::make_nvp ("real", real(z));
+    ar & boost::serialization::make_nvp ("imag", imag(z));
+    // ar & real(z);
+    // ar & imag(z);
 }
-} 
+}
 
 
 #endif

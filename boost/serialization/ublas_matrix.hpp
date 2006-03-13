@@ -26,69 +26,67 @@ namespace serialization {
 
 
 template<class T>
-struct tracking_level<ublas::matrix<T> >
-{
-  typedef mpl::integral_c_tag tag;
-  typedef mpl::int_<track_never> type;
-  BOOST_STATIC_CONSTANT(
-                        int,
-                        value = tracking_level::type::value
-                        );
+struct tracking_level<ublas::matrix<T> > {
+    typedef mpl::integral_c_tag tag;
+    typedef mpl::int_<track_never> type;
+    BOOST_STATIC_CONSTANT(
+        int,
+        value = tracking_level::type::value
+    );
 
-}; 
-	
+};
+
 
 template<class T>
-struct implementation_level<ublas::matrix<T> >
-{
-typedef mpl::integral_c_tag tag;
-// typedef mpl::int_<primitive_type> type;
-typedef mpl::int_<object_serializable> type;
-  BOOST_STATIC_CONSTANT( 
-           int,
-           value = implementation_level::type::value
-  );
+struct implementation_level<ublas::matrix<T> > {
+    typedef mpl::integral_c_tag tag;
+    // typedef mpl::int_<primitive_type> type;
+    typedef mpl::int_<object_serializable> type;
+    BOOST_STATIC_CONSTANT(
+        int,
+        value = implementation_level::type::value
+    );
 };
 
 
 template<class Archive, typename U>
 inline void save (Archive &ar, const ublas::matrix<U> &m, const unsigned int) {
 
-  unsigned int count1 = m.size1();
-  unsigned int count2 = m.size2();
-	
-  ar << BOOST_SERIALIZATION_NVP (count1);
-  ar << BOOST_SERIALIZATION_NVP (count2);
-  
-  for ( unsigned int row = 0; row < count1; ++row ) {
-	  for( unsigned int col = 0; col < count2; ++col ) {
-   	    ar << boost::serialization::make_nvp ("item", m(row,col) );
-      }
-  }
+    unsigned int count1 = m.size1();
+    unsigned int count2 = m.size2();
+
+    ar << BOOST_SERIALIZATION_NVP (count1);
+    ar << BOOST_SERIALIZATION_NVP (count2);
+
+    for ( unsigned int row = 0; row < count1; ++row ) {
+        for( unsigned int col = 0; col < count2; ++col ) {
+            ar << boost::serialization::make_nvp ("item", m(row,col) );
+        }
+    }
 }
-  
+
 
 template<class Archive, typename U>
 inline void load (Archive &ar, ublas::matrix<U> &m, const unsigned int) {
 
-	unsigned int count1;
-	unsigned int count2;
+    unsigned int count1;
+    unsigned int count2;
     ar >> BOOST_SERIALIZATION_NVP (count1);
     ar >> BOOST_SERIALIZATION_NVP (count2);
-    
+
     m.resize( count1, count2 );
-    
-   for ( unsigned int row = 0; row < count1; ++row ) {
-	  for( unsigned int col = 0; col < count2; ++col ) {
-   	    ar >> boost::serialization::make_nvp ("item", m(row,col) );
-      }
-   }
+
+    for ( unsigned int row = 0; row < count1; ++row ) {
+        for( unsigned int col = 0; col < count2; ++col ) {
+            ar >> boost::serialization::make_nvp ("item", m(row,col) );
+        }
+    }
 }
 
 
 template<class Archive, typename U>
 inline void serialize (Archive &ar, ublas::matrix<U>& m, const unsigned int file_version) {
-boost::serialization::split_free (ar, m, file_version);
+    boost::serialization::split_free (ar, m, file_version);
 }
 
 
@@ -104,4 +102,4 @@ boost::serialization::split_free (ar, m, file_version);
 
 
 
-#endif // BOOST_SERIALIZATION_UBLAS_MATRIX_HPP 
+#endif // BOOST_SERIALIZATION_UBLAS_MATRIX_HPP
