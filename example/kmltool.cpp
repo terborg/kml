@@ -17,6 +17,9 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307  *
  ***************************************************************************/
 
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
+
 #include <boost/program_options.hpp>
 #include <iostream>
 
@@ -27,10 +30,13 @@
 #include <boost/tuple/tuple.hpp>
 #include <boost/vector_property_map.hpp>
 
+
+
 // include kernel machine types
 #include <kml/online_svm.hpp>
 #include <kml/rvm.hpp>
 #include <kml/krls.hpp>
+
 
 
 
@@ -136,8 +142,8 @@ int main(int argc, char *argv[]) {
 
 	kml::file my_file( input_file );
 
-
-
+	std::ofstream ofs("testmodel.txt");
+	boost::archive::text_oarchive my_oarchive( ofs );
 
 
 	switch( my_file.problem_type() ) {
@@ -209,12 +215,13 @@ int main(int argc, char *argv[]) {
 							kernel_type my_kernel( k_o, kernel_options.end() );
 							machine_type my_machine( m_o, machine_options.end(), my_kernel, data );
 							my_machine.learn( learn_keys.begin(), learn_keys.end() );
+							my_oarchive << my_machine;
 							break;
 						}
 
 					}
 					break;
-				}
+				} // svm switch
 				case relevance_vector: {
 					switch( selected_kernel ) {
 						case gaussian: {
@@ -223,13 +230,14 @@ int main(int argc, char *argv[]) {
 							kernel_type my_kernel( k_o, kernel_options.end() );
 							machine_type my_machine( m_o, machine_options.end(), my_kernel, data );
 							my_machine.learn( learn_keys.begin(), learn_keys.end() );
+							my_oarchive << my_machine;
 							break;
 						}
 
 
 					} // switch kernel
 					break;
-				}
+				} // rvm switch
 				case krls: {
 					switch( selected_kernel ) {
 						case gaussian: {
@@ -238,6 +246,7 @@ int main(int argc, char *argv[]) {
 							kernel_type my_kernel( k_o, kernel_options.end() );
 							machine_type my_machine( m_o, machine_options.end(), my_kernel, data );
 							my_machine.learn( learn_keys.begin(), learn_keys.end() );
+							my_oarchive << my_machine;
 							break;
 						}
 					}
@@ -284,6 +293,9 @@ int main(int argc, char *argv[]) {
 		}
 
 	}
+
+	// close the model file
+	ofs.close();
 
 	return EXIT_SUCCESS;
 }
