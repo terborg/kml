@@ -29,6 +29,11 @@
 #include <kml/regression.hpp>
 #include <kml/symmetric_view.hpp>
 
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/tracking.hpp>
+#include <boost/serialization/vector.hpp>
+
 
 namespace atlas = boost::numeric::bindings::atlas;
 
@@ -74,6 +79,9 @@ class krls< Problem, Kernel, PropertyMap, typename boost::enable_if< is_regressi
     typedef typename boost::property_traits<PropertyMap>::key_type key_type;
     typedef typename boost::property_traits<PropertyMap>::value_type object_type;
 
+
+    friend class boost::serialization::access;
+
 public:
     krls( scalar_type n, scalar_type l,
           typename boost::call_traits<kernel_type>::param_type k,
@@ -85,7 +93,7 @@ public:
           typename boost::call_traits<kernel_type>::param_type k,
           typename boost::call_traits<PropertyMap>::param_type map ):
     base_type(k,map) {
-        nu = 1e-1;						// default value
+        nu = 1e-1;				// default value
         scalar_type lambda=1e-3;		// default value
         TokenIterator token(begin);
         if ( token != end ) {
@@ -99,11 +107,11 @@ public:
 
     output_type operator()( input_type const &x ) {
 
-        vector_type temp_K( base_type::key_lookup.size() );
-        base_type::fill_kernel( x, base_type::key_lookup.begin(), base_type::key_lookup.end(), temp_K.begin() );
+        vector_type temp_K( basis_key.size() );
+        fill_kernel( x, basis_key.begin(), basis_key.end(), temp_K.begin() );
         for( unsigned int i=0; i < temp_K.size(); ++i )
             temp_K[i] += lambda_squared;
-        return atlas::dot( base_type::weight, temp_K );
+        return atlas::dot( weight, temp_K );
 
     }
 
@@ -125,10 +133,10 @@ public:
         //std::cout << "running key " << key << " through KRLS... " << std::endl;
 
         // calculate the base_type::kernel function on (x_t,x_t), needed later on
-        scalar_type k_tt = base_type::kernel( key, key ) + lambda_squared;
+        scalar_type k_tt = kernel( key, key ) + lambda_squared;
 
         // check whether dictionary is still not initialised
-        if ( base_type::key_lookup.empty() ) {
+        if ( basis_key.empty() ) {
 
             // there is no dictionary yet, so initialise all variables
             // resize the matrix K, its inverse R and matrix P to 1 x 1
@@ -142,10 +150,10 @@ public:
             P.matrix(0,0) = 1.0;
 
             // add to weight vector
-            base_type::weight.push_back( (*base_type::data)[key].get<1>() / k_tt );
+            weight.push_back( (*base_type::data)[key].get<1>() / k_tt );
 
             // add to support vector set
-            base_type::key_lookup.push_back( key );
+            basis_key.push_back( key );
 
         } else {
 
@@ -154,7 +162,7 @@ public:
             vector_type k_t( K.size1() );
 
             // fill vector k_t
-            base_type::fill_kernel( key, base_type::key_lookup.begin(), base_type::key_lookup.end(), k_t.begin() );
+            fill_kernel( key, basis_key.begin(), basis_key.end(), k_t.begin() );
             for( typename vector_type::size_type i=0; i<k_t.size(); ++i )
                 k_t[i] += lambda_squared;
 
@@ -168,7 +176,7 @@ public:
             if (delta_t > nu) {
 
                 // add x_t to support vector set, adjust all needed variables
-                unsigned int old_size = base_type::key_lookup.size();
+                unsigned int old_size = basis_key.size();
 
                 // update K (equation 14)
                 // fetch a view into the last row of the matrix of the _old_ size
@@ -195,20 +203,20 @@ public:
                 P.matrix( old_size, old_size ) = 1.0;
 
                 // adjust weight vector alpha (equation 16)
-                factor = (*base_type::data)[key].get<1>() - atlas::dot(k_t,base_type::weight);
-                atlas::axpy( factor, a_t, base_type::weight );
+                factor = (*base_type::data)[key].get<1>() - atlas::dot(k_t,weight);
+                atlas::axpy( factor, a_t, weight );
 
                 // add new weight to the weight vector
-                base_type::weight.push_back( factor / delta_t );
+                weight.push_back( factor / delta_t );
 
                 // add support vector to the set
-                base_type::key_lookup.push_back( key );
+                basis_key.push_back( key );
 
             } else {
                 // support vector set unchanged (see algorithmic on page 4 of paper)
                 // adjust weight vector and permutation matrix P
                 // P_a <- P_t-1 %*% a_t
-                vector_type P_a( base_type::key_lookup.size() );
+                vector_type P_a( basis_key.size() );
 
                 // spmv(A,x,y)       y <- A x
                 ublas::matrix_range< ublas::matrix<double> > P_range( P.view() );
@@ -219,8 +227,8 @@ public:
                 scalar_type factor = 1.0 / (1.0 + atlas::dot( a_t, P_a ));
 
                 // update weights (equation 13)
-                atlas::symv( factor* (*base_type::data)[key].get<1>() - atlas::dot(k_t,base_type::weight),
-                             R_view, P_a, static_cast<scalar_type>(1), base_type::weight );
+                atlas::symv( factor* (*base_type::data)[key].get<1>() - atlas::dot(k_t,weight),
+                             R_view, P_a, static_cast<scalar_type>(1), weight );
 
                 // update permutation matrix (equation 14)
                 atlas::syr( -factor, P_a, P_view );
@@ -228,18 +236,53 @@ public:
         }
     }
 
+    // loading and saving capabilities
+    template<class Archive>
+    void serialize( Archive &archive, unsigned int const version ) {
+        archive & boost::serialization::base_object<base_type>(*this);
+        archive & nu;
+        archive & lambda_squared;
+        archive & basis_key;
+        archive & weight;
+        archive & K;
+        archive & R;
+        archive & P;
+    }
 
 private:
-
-    symmetric_type K;                // kernel matrix K
-    symmetric_type R;                // inverse of kernel matrix K
-    symmetric_type P;                // permutation matrix P
-    scalar_type nu;                  // ALD parameter
-    scalar_type lambda_squared;      // kernel function addition
+    scalar_type nu;                      // ALD parameter
+    scalar_type lambda_squared;          // kernel function addition
+    std::vector< key_type > basis_key;   // a vector containing basis vector keys
+    std::vector< scalar_type > weight;   // weights associated with the basis vectors
+    symmetric_type K;                    // kernel matrix K
+    symmetric_type R;                    // inverse of kernel matrix K
+    symmetric_type P;                    // permutation matrix P
 };
-
-
 
 } // namespace kml
 
+
+
+
+
+
+namespace boost {
+namespace serialization {
+
+template< typename Problem, typename Kernel, typename PropertyMap, typename Enable >
+struct tracking_level< kml::krls<Problem,Kernel,PropertyMap,Enable> > {
+    typedef mpl::integral_c_tag tag;
+    typedef mpl::int_<track_never> type;
+    BOOST_STATIC_CONSTANT(
+        int,
+        value = tracking_level::type::value
+    );
+};
+
+} // namespace serialization
+} // namespace boost
+
+
 #endif
+
+

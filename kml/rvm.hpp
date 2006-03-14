@@ -37,6 +37,10 @@
 #include <boost/numeric/bindings/atlas/cblas.hpp>
 #include <boost/numeric/bindings/atlas/clapack.hpp>
 
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/tracking.hpp>
+#include <boost/serialization/vector.hpp>
 
 
 
@@ -56,22 +60,23 @@ Implementation of the Fast RVM [1].
 - Classification algorithm
 - Fix the HtH algorithms
  
-
+ 
 \section bibliography References
 -# Michael Tipping and Anita Faul. Fast marginal likelihood maximisation for sparse bayesian models. In Cristopher Bishop and Brendan Frey, editors, Proceedings of the Ninth International Workshop on Artificial Intelligence and Statistics, January 3-6 2003, Key West, Florida, 2003. ISBN 0-9727358-0-1.
-
+ 
 */
 
 
 template< typename Problem, typename Kernel, typename PropertyMap, class Enable = void>
-class rvm: public kernel_machine< Problem, Kernel, PropertyMap > {};
+class rvm: public kernel_machine< Problem, Kernel, PropertyMap > {}
+;
 
 
 
 
 template< typename Problem, typename Kernel, typename PropertyMap >
 class rvm< Problem, Kernel, PropertyMap, typename boost::enable_if< is_regression<Problem> >::type>:
-         public kernel_machine< Problem, Kernel, PropertyMap > {
+    public kernel_machine< Problem, Kernel, PropertyMap > {
 public:
     typedef kernel_machine< Problem, Kernel, PropertyMap > base_type;
     typedef typename base_type::kernel_type kernel_type;
@@ -83,65 +88,69 @@ public:
     typedef ublas::matrix<double> matrix_type;
     typedef ublas::vector<double> vector_type;
 
-    
+    friend class boost::serialization::access;
+
+
     /*!	\param k a construction parameter for the kernel type */
     rvm( typename boost::call_traits<kernel_type>::param_type k,
          typename boost::call_traits<PropertyMap>::param_type map ): base_type(k,map) {}
 
     template< typename TokenIterator >
-    rvm( TokenIterator const begin, TokenIterator const end, 
+    rvm( TokenIterator const begin, TokenIterator const end,
          typename boost::call_traits<kernel_type>::param_type k,
          typename boost::call_traits<PropertyMap>::param_type map ):
-	base_type(k,map) {
-		// no parameters at the moment
-	}
+    base_type(k,map) {
+        // no parameters at the moment
+    }
 
 
-   /*! learn the entire range of keys indicated by this range */
+    /*! learn the entire range of keys indicated by this range */
     template<typename KeyIterator>
     void learn( KeyIterator begin, KeyIterator end ) {
 
-	    bool debug = true;
-	    	    
-	    if (debug)
-	    	std::cout << "Computing H..." << std::flush;
-	    std::size_t problem_size( end-begin );
-	    matrix_type H( problem_size, problem_size + 1 );
-	    base_type::design_matrix( begin, end, H );
-	    if (debug)
-	    	std::cout << "done." << std::endl;
+        bool debug = true;
+
+        if (debug)
+            std::cout << "Computing H..." << std::flush;
+        std::size_t problem_size( end-begin );
+        matrix_type H( problem_size, problem_size + 1 );
+        base_type::design_matrix( begin, end, H );
+        if (debug)
+            std::cout << "done." << std::endl;
 
         if (debug)
             std::cout << "computing Hty..." << std::flush;
         vector_type output( problem_size );
         KeyIterator key_iter( begin );
         for( std::size_t i = 0; i<problem_size; ++i ) {
-	        output[i] = (*base_type::data)[*key_iter++].get<1>();
+            output[i] = (*base_type::data)[*key_iter++].get<1>();
         }
         vector_type Hty( problem_size + 1 );
         atlas::gemv( static_cast<matrix_type>(ublas::trans(H)), output, Hty );
         if (debug)
             std::cout << "done." << std::endl;
-            
+
         std::cout << "computing HtH..." << std::flush;
         matrix_type HtH( problem_size + 1, problem_size + 1 );
         atlas::gemm( static_cast<matrix_type>(ublas::trans(H)), H, HtH );
         std::cout << "done." << std::endl;
-        
+
         vector_type diag_HtH( HtH.size1() );
-        for( unsigned int i=0; i<HtH.size1(); ++i ) diag_HtH[i] = HtH(i,i);
+        for( unsigned int i=0; i<HtH.size1(); ++i )
+            diag_HtH[i] = HtH(i,i);
 
-        
-                
 
-        
+
+
+
         // explanation of variables, following Tipping (1999)
         // theta = 1 / alpha
 
         // create an empty index vector
         std::vector<unsigned int> active_set;
         std::vector<unsigned int> inactive_set( problem_size + 1 );
-	for( std::size_t i=0; i<inactive_set.size(); ++i ) inactive_set[i]=i;
+        for( std::size_t i=0; i<inactive_set.size(); ++i )
+            inactive_set[i]=i;
         vector_type weight_vector( problem_size + 1 );
         vector_type theta( problem_size + 1 );
         theta.clear();
@@ -174,16 +183,17 @@ public:
         theta( max_idx ) = ((Hty(max_idx)*Hty(max_idx)) / HtH(max_idx,max_idx) - variance_estimate) / HtH(max_idx,max_idx);
 
 
-        
-        
-        
+
+
+
         vector_type S( problem_size + 1 );
         vector_type Q( problem_size + 1 );
         vector_type mu;
 
         vector_type residuals( problem_size );
 
-        int best_action = add;  // set to add action (?? ... )
+        int best_action = add
+                              ;  // set to add action (?? ... )
 
         //
         // MAIN LOOP
@@ -214,30 +224,30 @@ public:
             ublas::symmetric_adaptor< matrix_type > sigma_inv_symm( sigma_inv );
 
             mu.resize( active_set.size() );
-            
+
             vector_type Hty_cache( active_set.size() );
             matrix_type HtH_cache( HtH.size1(), active_set.size() );
             matrix_type H_cache( H.size1(), active_set.size() );
-            
-            
+
+
             for( unsigned int i=0; i<active_set.size(); ++i ) {
                 unsigned int index_1 = active_set[i];
                 for( unsigned int j=0; j <= i; ++j ) {
-	                unsigned int index_2 = active_set[ j ];
+                    unsigned int index_2 = active_set[ j ];
                     sigma_inv_symm(i,j) = beta * HtH(index_1, index_2);
                 }
                 sigma_inv_symm(i,i) += static_cast<scalar_type>(1) / theta(index_1);
-                
+
                 // temporary solution: copy Hty elements to Hty_cache
                 // while this should be done with e.g. swap operations
                 Hty_cache[i] = Hty[index_1];
-                
-				// temporary solution: copy column from HtH to HtH_cache
+
+                // temporary solution: copy column from HtH to HtH_cache
                 ublas::column(HtH_cache,i) = ublas::column(HtH,index_1);
-                
-  				// temporary solution: copy column from HtH to HtH_cache
+
+                // temporary solution: copy column from HtH to HtH_cache
                 ublas::column(H_cache,i) = ublas::column(H,index_1);
-                
+
             }
 
             // Invert matrix to form matrix sigma and compute vector mu
@@ -258,15 +268,15 @@ public:
             atlas::posv( sigma_inv_symm, sigma );
 
             // update mu vector
-            
+
             // sigma_symm is active_set.size() by active_set.size()
             // Hty_cache is problem_size by active_set.size()
             // mu is active_set size
-            
-            
+
+
             atlas::symv( sigma_symm, Hty_cache, mu );
             atlas::scal( beta, mu );
-            
+
             /*
 
                 COMPUTATIONS DONE TO ESTIMATE THE NEXT BASIS VECTOR
@@ -381,9 +391,9 @@ public:
             if (debug)
                 std::cout << "index was " << action_index << " and theta was " << theta_l_max << std::endl;
 
-                
-                
-            /*    
+
+
+            /*
                 
               BASIS VECTOR HAS BEEN SELECTED; UPDATE REMAINING VALUES
                 
@@ -477,22 +487,22 @@ public:
 
 
                     // increase the design matrix
-//                     H_cache.resize( H_cache.size1(), H_cache.size2() + 1 );
-//                     if( i==0 )
-//                         for( unsigned int r=0; r<target.size(); ++r )
-//                             H_cache(r,old_size)=1.0;
-//                     else
-//                         for( unsigned int r=0; r<target.size(); ++r )
-//                             H_cache(r,old_size)=base_type::kernel(source[i-1],target[r]);
+                    //                     H_cache.resize( H_cache.size1(), H_cache.size2() + 1 );
+                    //                     if( i==0 )
+                    //                         for( unsigned int r=0; r<target.size(); ++r )
+                    //                             H_cache(r,old_size)=1.0;
+                    //                     else
+                    //                         for( unsigned int r=0; r<target.size(); ++r )
+                    //                             H_cache(r,old_size)=base_type::kernel(source[i-1],target[r]);
 
                     // also increase HtH matrix. Do a preserved resize first
                     // i is the source being added
-//                     HtH_cache.resize( HtH_cache.size1(), HtH_cache.size2()+1 );
-//                     HtH_comp.fill_column( i, ublas::column( HtH_cache, old_size ) );
+                    //                     HtH_cache.resize( HtH_cache.size1(), HtH_cache.size2()+1 );
+                    //                     HtH_comp.fill_column( i, ublas::column( HtH_cache, old_size ) );
 
                     // increase the Hty cache
-//                     Hty_cache.resize( new_size );
-//                     Hty_cache[old_size] = Hty[i];
+                    //                     Hty_cache.resize( new_size );
+                    //                     Hty_cache[old_size] = Hty[i];
 
                     if (debug)
                         std::cout << "Added " << i << " to the active set with theta " << theta(i) << std::endl;
@@ -572,10 +582,10 @@ public:
 
 
         if (debug) {
-        	std::cout << "Relevance Vector Machine (Tipping, 2003)" << std::endl;
-        	std::cout << "Support vectors:   " << active_set.size() << std::endl;
-        	std::cout << "Variance estimate: " << variance_estimate << std::endl;
-	}
+            std::cout << "Relevance Vector Machine (Tipping, 2003)" << std::endl;
+            std::cout << "Support vectors:   " << active_set.size() << std::endl;
+            std::cout << "Variance estimate: " << variance_estimate << std::endl;
+        }
         /*    std::copy( active_set.begin(),  active_set.end(), std::ostream_iterator<scalar_type>(std::cout, " ") );
             std::cout << std::endl;*/
 
@@ -584,23 +594,23 @@ public:
 
         // copy bias to machine
         if ( bias_loc != active_set.end() ) {
-            base_type::bias = mu( bias_loc - active_set.begin() );
+            bias = mu( bias_loc - active_set.begin() );
             preserved_shrink( mu, bias_loc - active_set.begin() );
             active_set.erase( bias_loc );
         } else {
-            base_type::bias = 0.0;
+            bias = 0.0;
         }
 
         // copy support vectors to base type
         //base_type::support_vector.resize( active_set.size() );
         //base_type::weight.resize( active_set.size() );
         //for( unsigned int i=0; i<active_set.size(); ++i ) {
-            //         ublas::matrix_row<MatT const> X_row( X, active_set[i]-1 );  // -1 for bias
-            //         ublas::matrix_row<matrix_type> support_vectors_row( support_vectors, i );
-            //         support_vectors_row.assign( X_row );
-            //         weights( i ) = mu( i );
-            //base_type::weight[i] = mu( i );
-            //base_type::support_vector[i] = source[ active_set[i]-1 ];
+        //         ublas::matrix_row<MatT const> X_row( X, active_set[i]-1 );  // -1 for bias
+        //         ublas::matrix_row<matrix_type> support_vectors_row( support_vectors, i );
+        //         support_vectors_row.assign( X_row );
+        //         weights( i ) = mu( i );
+        //base_type::weight[i] = mu( i );
+        //base_type::support_vector[i] = source[ active_set[i]-1 ];
         //}
 
 
@@ -616,38 +626,51 @@ public:
 
 
 
-
+    // loading and saving capabilities
+    template<class Archive>
+    void serialize( Archive &archive, unsigned int const version ) {
+        archive & boost::serialization::base_object<base_type>(*this);
+        archive & bias;
+    }
 
 
     enum { unknown=0,
-           add,
-           reestimate,
-           remove };
+           add
+               ,
+               reestimate,
+               remove
+                 };
+
+
+    scalar_type bias;
 
 
 
-
-           
-           
-           
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+}
+; // class rvm
 
 } // namespace kml
+
+
+
+
+
+
+namespace boost {
+namespace serialization {
+
+template< typename Problem, typename Kernel, typename PropertyMap, typename Enable >
+struct tracking_level< kml::rvm<Problem,Kernel,PropertyMap,Enable> > {
+    typedef mpl::integral_c_tag tag;
+    typedef mpl::int_<track_never> type;
+    BOOST_STATIC_CONSTANT(
+        int,
+        value = tracking_level::type::value
+    );
+};
+
+} // namespace serialization
+} // namespace boost
 
 
 #endif

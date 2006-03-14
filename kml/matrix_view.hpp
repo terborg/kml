@@ -43,29 +43,29 @@ namespace kml {
 /*!
 \brief A view of a dense matrix.
 \param M underlying dense matrix class
-
+ 
 This class provides a view in a dense matrix, and performs efficient memory management 
 by cutting down the number of calls to .resize() of the underlying matrix. 
-
+ 
 If we consider a matrix that grows by one row or column at a time, 
 a naive resize strategy would cost O(N) memory allocation calls. It will become quadratically 
 more expensive to copy the content of the matrix as it grows in size.
 Because of this, memory management is done in a similar way as that of std::vector.
 If needed, the size of the underlying matrix is doubled in the number of rows or in the number of columns.
 This takes O(log N) memory allocation calls only, delivering a considerable speedup over the naive approach.
-
+ 
 It is assumed matrix view changes by 1 row or 1 column (or both) at a time, for which member
 functions are available.
-
+ 
 It can be directly used in conjunction with calls to atlas bindings, as shown below.
-
+ 
 \code
 kml::matrix_view< ublas::matrix<double> > A;    // view in matrix A
 ublas::vector<double> x;                        // vector x
 ublas::vector<double> b;                        // result vector b
 atlas::gemv( A.view(), x, b );                  // compute b <- Ax
 \endcode
-
+ 
 */
 
 
@@ -90,11 +90,11 @@ public:
         matrix.resize( std::max(rows,1), std::max(cols,1), false );
     }
 
-    
+
     /*! Increase the number of columns in the matrix view by one.
-    
-    
-    */    
+
+
+    */
     void grow_column() {
         if ( view_cols == matrix.size2() )
             matrix.resize( matrix.size1(), matrix.size2() << 1 );
@@ -116,10 +116,10 @@ public:
 
     /*! Remove a column from the current matrix view at a given column index.
         \param index the n'th column, first column is located at 0.
-	
+
         This operation preserves the order of columns, which means that all columns to the 
-	right of the column at index will have to be moved to the left. This is not 
-	the most efficient strategy in removing a column, it will cost O(0.5NM) on average.
+    right of the column at index will have to be moved to the left. This is not 
+    the most efficient strategy in removing a column, it will cost O(0.5NM) on average.
      */
     void remove_column( int index ) {
         ublas::matrix_range<M> matrix_view(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols));
@@ -131,27 +131,27 @@ public:
         --view_cols;
     }
 
-    
+
     /*! Remove a column from the current matrix view at a given column index.
         \param index the n'th column, first column is located at 0.
-	
-	The last column will be swapped with the column at index, after which the size of the view of the matrix
-	will be reduced by 1 column. This is the most efficient way of removing a column from a dense matrix, 
-	it costs O(M). 
-	*/
+
+    The last column will be swapped with the column at index, after which the size of the view of the matrix
+    will be reduced by 1 column. This is the most efficient way of removing a column from a dense matrix, 
+    it costs O(M). 
+    */
     void swap_remove_column( size_type index ) {
         ublas::matrix_range<M> matrix_view(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols));
         ublas::matrix_column< ublas::matrix_range<M> > last_col( matrix_view, view_cols-1);
         ublas::matrix_column< ublas::matrix_range<M> > index_col( matrix_view, index );
-	atlas::copy( last_col, index_col );
-	--view_cols;
+        atlas::copy( last_col, index_col );
+        --view_cols;
     }
 
     /*! Remove a row from the current matrix view at a given row index.
         \param index the m'th row, first row is located at 0.
-	
+
         This operation preserves the order of rows, so all rows have to be moved upwards. This is not 
-	the most efficient strategy in removing a row, with cost of O(0.5NM) on average.
+    the most efficient strategy in removing a row, with cost of O(0.5NM) on average.
      */
     void remove_row( int index ) {
         ublas::matrix_range<M> matrix_view(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols));
@@ -163,16 +163,16 @@ public:
 
     /*! Remove a row from the current matrix view at a given row index.
         \param index the n'th row, first row is located at 0.
-	
-	The last row will be swapped with the row at index, after which the size of the view of the matrix
-	will be reduced by one row. It costs O(N).
-	*/
+
+    The last row will be swapped with the row at index, after which the size of the view of the matrix
+    will be reduced by one row. It costs O(N).
+    */
     void swap_remove_row( int index ) {
-	ublas::matrix_range<M> matrix_view(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols));
+        ublas::matrix_range<M> matrix_view(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols));
         ublas::matrix_row< ublas::matrix_range<M> > last_row( matrix_view, view_rows-1);
         ublas::matrix_row< ublas::matrix_range<M> > index_row( matrix_view, index);
-	atlas::copy( last_row, index_row );
-	--view_rows;
+        atlas::copy( last_row, index_row );
+        --view_rows;
     }
 
     void remove_row_col( int index ) {
@@ -183,28 +183,28 @@ public:
     // work for: row_major matrix with a symmetric view adaptor (row major as well)
     // warning: sensitive code
     void swap_remove_row_col( int index ) {
-	ublas::matrix_range<M> matrix_view(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols));
+        ublas::matrix_range<M> matrix_view(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols));
         int index_last = view_rows-1;
 
-	// perhaps this is an overkill for 1 atlas-op.
-	// perhaps can be done with 2 matrix vector slices?
-	ublas::matrix_row< ublas::matrix_range<M> > last_row( matrix_view, index_last );
+        // perhaps this is an overkill for 1 atlas-op.
+        // perhaps can be done with 2 matrix vector slices?
+        ublas::matrix_row< ublas::matrix_range<M> > last_row( matrix_view, index_last );
         ublas::matrix_row< ublas::matrix_range<M> > index_row( matrix_view, index );
-	ublas::vector_range< ublas::matrix_row< ublas::matrix_range<M> > > last_row_part_1( last_row, ublas::range(0,index) );
-	ublas::vector_range< ublas::matrix_row< ublas::matrix_range<M> > > index_row_part_1( index_row, ublas::range(0,index) );
-	atlas::copy( last_row_part_1, index_row_part_1 );
+        ublas::vector_range< ublas::matrix_row< ublas::matrix_range<M> > > last_row_part_1( last_row, ublas::range(0,index) );
+        ublas::vector_range< ublas::matrix_row< ublas::matrix_range<M> > > index_row_part_1( index_row, ublas::range(0,index) );
+        atlas::copy( last_row_part_1, index_row_part_1 );
 
-	// and a difficult element copy, in same direction. can be atlasified
-	// note that index_last is one less than the matrix size
-	for( int i=index+1; i<index_last; ++i ) {
-		matrix( i, index ) = matrix( index_last, i );
-	}
-	
-	// index_last,index_last -> index,index
-	matrix( index, index ) = matrix( index_last, index_last );
-	
-	--view_rows;
-	--view_cols;
+        // and a difficult element copy, in same direction. can be atlasified
+        // note that index_last is one less than the matrix size
+        for( int i=index+1; i<index_last; ++i ) {
+            matrix( i, index ) = matrix( index_last, i );
+        }
+
+        // index_last,index_last -> index,index
+        matrix( index, index ) = matrix( index_last, index_last );
+
+        --view_rows;
+        --view_cols;
     }
 
     void flush() {
@@ -229,14 +229,14 @@ public:
         return ublas::matrix_range<M>(matrix, ublas::range(0,view_rows-1),ublas::range(0,view_cols-1));
     }
 
-    
+
     inline ublas::matrix_vector_slice<M> const row( int nr ) {
         return ublas::matrix_vector_slice<M>( matrix, ublas::slice( nr, 0, view_cols ), ublas::slice( 0, 1, view_cols ) );
     }
-    
-//     inline ublas::matrix_row< ublas::matrix_range<M> > const row( int nr ) {
-//         return ublas::row( ublas::matrix_range<M>(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols)), nr );
-//     }
+
+    //     inline ublas::matrix_row< ublas::matrix_range<M> > const row( int nr ) {
+    //         return ublas::row( ublas::matrix_range<M>(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols)), nr );
+    //     }
 
     inline ublas::matrix_row< ublas::matrix_range<M> > const shrinked_row( int nr ) {
         return ublas::row( ublas::matrix_range<M>(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols-1)), nr );
@@ -249,46 +249,45 @@ public:
     inline ublas::matrix_column< ublas::matrix_range<M> > const shrinked_column( int nr ) {
         return ublas::column( ublas::matrix_range<M>(matrix, ublas::range(0,view_rows-1),ublas::range(0,view_cols)), nr );
     }
-    
-    
+
+
     // loading and saving capabilities
-    
     template<class Archive>
     void save( Archive &archive, unsigned int const version ) const {
-	    // make a copy of the view and save that part only
-    	M matrix_copy( ublas::subrange(matrix, 0, view_rows, 0, view_cols ));
-    	archive << matrix_copy;
+        // make a copy of the view and save that part only
+        M matrix_copy( ublas::subrange(matrix, 0, view_rows, 0, view_cols ));
+        archive << matrix_copy;
     }
-    
+
     template<class Archive>
     void load( Archive &archive, unsigned int const version ) {
-		// restore the copy of the view
-	    archive >> matrix;
-	    
-	    // store the view size
-	   	view_rows = matrix.size1();
-	   	view_cols = matrix.size2();
-	   	
-	   	// find the value of the MSB of the view_rows, that multiplied by 2 should equal pow2_rows
-	   	unsigned int find_pow2_rows = view_rows;
-	   	unsigned int pow2_rows = 1;
-	   	while( find_pow2_rows > 0 ) {
-		   	find_pow2_rows >>= 1;
-		   	pow2_rows <<= 1;
-	    }
-	    
-	   	// find the value of the MSB of the view_cols, that multiplied by 2 should equal pow2_cols
-	   	unsigned int find_pow2_cols = view_cols;
-	   	unsigned int pow2_cols = 1;
-	   	while( find_pow2_cols > 0 ) {
-		   	find_pow2_cols >>= 1;
-		   	pow2_cols <<= 1;
-	    }
-	    
-	    // (preserved) resize of the matrix to sizes that are powers of 2
-    	matrix.resize( pow2_rows, pow2_cols, true );
+        // restore the copy of the view
+        archive >> matrix;
+
+        // store the view size
+        view_rows = matrix.size1();
+        view_cols = matrix.size2();
+
+        // find the value of the MSB of the view_rows, that multiplied by 2 should equal pow2_rows
+        unsigned int find_pow2_rows = view_rows;
+        unsigned int pow2_rows = 1;
+        while( find_pow2_rows > 0 ) {
+            find_pow2_rows >>= 1;
+            pow2_rows <<= 1;
+        }
+
+        // find the value of the MSB of the view_cols, that multiplied by 2 should equal pow2_cols
+        unsigned int find_pow2_cols = view_cols;
+        unsigned int pow2_cols = 1;
+        while( find_pow2_cols > 0 ) {
+            find_pow2_cols >>= 1;
+            pow2_cols <<= 1;
+        }
+
+        // (preserved) resize of the matrix to sizes that are powers of 2
+        matrix.resize( pow2_rows, pow2_cols, true );
     }
-    
+
     // a convenience macro to auto-create the serialize() member function
     BOOST_SERIALIZATION_SPLIT_MEMBER()
 
@@ -307,20 +306,21 @@ private:
 
 
 
-namespace boost{ namespace serialization {
+namespace boost {
+namespace serialization {
 
 template<typename T>
-struct tracking_level< kml::matrix_view<T> >
-{
-	typedef mpl::integral_c_tag tag;
-	typedef mpl::int_<track_never> type;
-	BOOST_STATIC_CONSTANT(
-		int, 
-		value = tracking_level::type::value
-	);
+struct tracking_level< kml::matrix_view<T> > {
+    typedef mpl::integral_c_tag tag;
+    typedef mpl::int_<track_never> type;
+    BOOST_STATIC_CONSTANT(
+        int,
+        value = tracking_level::type::value
+    );
 };
 
-}}
+}
+}
 
 #endif
 
