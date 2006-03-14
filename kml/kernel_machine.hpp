@@ -292,6 +292,18 @@ public:
     }
 
 
+    // loading and saving capabilities
+    template<class Archive>
+    void serialize( Archive &archive, unsigned int const version ) {
+
+        // here we store whatever we want to store...
+        archive & kernel_function;
+
+
+    }
+
+
+
     //     void clear() {
     //         bias = 0.0;
     //         weight.clear();

@@ -964,6 +964,8 @@ public:
     typedef typename boost::property_traits<PropertyMap>::key_type key_type;
     typedef typename boost::property_traits<PropertyMap>::value_type object_type;
 
+    friend class boost::serialization::access;
+
 
     online_svm( typename boost::call_traits<scalar_type>::param_type max_weight,
                 typename boost::call_traits<kernel_type>::param_type k,
