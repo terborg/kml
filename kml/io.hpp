@@ -581,7 +581,7 @@ void read( std::vector<std::string> const &container, io::problem_type p_type,
 	    ++nr_of_attributes;
     }
     
-    std::cout << "nr of columns: " << nr_of_attributes << std::endl;
+    //std::cout << "nr of columns: " << nr_of_attributes << std::endl;
     
     input_type row( nr_of_attributes );
     unsigned int sample_index = 0;
@@ -653,19 +653,19 @@ public:
 
         if ( io::dst::compatible( buffer) ) {
             handler = dst_handler;
-            std::cout << "dst handler installed" << std::endl;
+            //std::cout << "dst handler installed" << std::endl;
         } else
             if ( io::svm_light::compatible( buffer ) ) {
                 handler = svm_light_handler;
-                std::cout << "svm light handler installed" << std::endl;
+                //std::cout << "svm light handler installed" << std::endl;
             } else
                 if ( io::svm_torch::compatible( buffer ) ) {
                     handler = svm_torch_handler;
-                    std::cout << "svm torch handler installed" << std::endl;
+                    //std::cout << "svm torch handler installed" << std::endl;
                 } else
                     if ( io::data_matrix::compatible( buffer ) ) {
                         handler = data_matrix_handler;
-                        std::cout << "data matrix handler installed" << std::endl;
+                        //std::cout << "data matrix handler installed" << std::endl;
                     } else
                         std::cout << "unknown file format!" << std::endl;
 
