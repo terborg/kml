@@ -601,7 +601,7 @@ void read( std::vector<std::string> const &container, io::problem_type p_type,
 	        ++j;
         }
         
-       map[ sample_index ] = boost::make_tuple( row, 0.0 );
+	map[ sample_index ] = boost::make_tuple( row, boost::lexical_cast<output_type>(0.0) );
        keys.push_back( sample_index );
        ++sample_index;
         ++i;

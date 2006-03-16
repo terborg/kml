@@ -67,6 +67,7 @@ int main(int argc, char *argv[]) {
   std::vector<data_type::key_type>::iterator i;
   cerr << "Reading in test vector...";
   kml::file test_file(argv[2]);
+  test_file.read(test_data, test_keys);
   cerr << "Done, " << std::distance(test_keys.begin(), test_keys.end()) << " points of size " << test_data[0].get<0>().size() << endl;
   for (i = test_keys.begin(); i != test_keys.end(); ++i)
     cout << my_machine(test_data[*i].get<0>()) << endl;
