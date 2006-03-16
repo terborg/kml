@@ -35,7 +35,7 @@ namespace ublas = boost::numeric::ublas;
 
 int main(int argc, char *argv[]) {
 
-  typedef boost::tuple<std::vector<double>, bool> example_type;
+  typedef boost::tuple<std::vector<double>, int> example_type;
   typedef kml::classification<example_type> problem_type;
   typedef boost::vector_property_map<example_type> data_type;
   typedef kml::gaussian<problem_type::input_type> kernel_type;
@@ -45,8 +45,6 @@ int main(int argc, char *argv[]) {
 	      << "usage: svm_classification (trainfile) (testfile)" << endl;
     return 0;
   }
-
-  BOOST_STATIC_ASSERT((boost::is_same<boost::property_traits<data_type>::value_type, example_type >::type::value));
 
   data_type data;
   std::vector<data_type::key_type> learn_keys;

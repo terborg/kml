@@ -88,12 +88,12 @@ namespace kml {
       base_type(k, map), C(max_weight), tol(.001), startpt(randomness) { }
     
     result_type operator() (input_type const &x) {
-      result_type ret=0;
+      scalar_type ret=0;
       for (size_t i=0; i<weight.size(); ++i)
 	if (weight[i] > 0)
 	  ret += weight[i] * (*base_type::data)[i].get<1>() * base_type::kernel(i, x);
       ret -= bias;
-      return ret;
+      return sgn(ret);
     }
     
     int takeStep(int i1, int i2) {
@@ -117,7 +117,7 @@ namespace kml {
       else
 	e2 = (double)operator()((*base_type::data)[i2].get<0>()) - y2;
       
-      output_type s = y1 * y2;
+      scalar_type s = y1 * y2;
       
       if (y1 != y2) {
 	L = std::max(0.0, alpha2 - alpha1);
@@ -231,7 +231,7 @@ namespace kml {
       else 
 	e2 = operator()((*base_type::data)[idx].get<0>()) - y2;
       
-      result_type r2 = e2 * y2;
+      scalar_type r2 = e2 * y2;
       if ((r2 < -tol && alpha2 < C) || (r2 > tol && alpha2 > 0)) {
 	int count = std::count_if(weight.begin(), weight.end(),
 				  (lambda::_1 != 0) && (lambda::_1 != C) );
