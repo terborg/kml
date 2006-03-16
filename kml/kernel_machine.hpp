@@ -101,6 +101,7 @@ public:
                                 typename kernel_type::return_type kernel( input_type const &x, key_type const j ) {
                                                                 return kernel_function( x, (*data)[j].get<0>() );
                                                             }
+  
 
                                                             template<typename KeyIterator, typename OutputIterator>
     void fill_kernel( input_type const &x,
@@ -230,7 +231,10 @@ public:
                                 typename kernel_type::return_type kernel( input_type const &x, key_type const j ) {
                                                                 return kernel_function( x, (*data)[j].get<0>() );
                                                             }
-
+      
+  typename kernel_type::return_type kernel(key_type const i, input_type const &x) {
+    return kernel_function((*data)[i].get<0>(), x);
+  }
 
                                                             template<typename KeyIterator, typename OutputIterator>
     void fill_kernel( input_type const &x,
