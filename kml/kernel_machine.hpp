@@ -31,9 +31,6 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/tracking.hpp>
 
-
-//#include <kml/determinate.hpp>
-
 // for the property traits
 #include <boost/property_map.hpp>
 
