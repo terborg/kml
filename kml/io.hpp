@@ -324,7 +324,7 @@ void read( std::vector<std::string> const &container, io::problem_type p_type,
         ++iter;
     }
 
-    std::cout << "max attribute number: " << max_attribute_nr << std::endl;
+    //std::cout << "max attribute number: " << max_attribute_nr << std::endl;
 
     // these are the separators the input file will be split on:
     // space, tab, #, and :
@@ -344,8 +344,11 @@ void read( std::vector<std::string> const &container, io::problem_type p_type,
         else
             output = boost::lexical_cast< output_type >( *attribute_iter++ );
 
+	// create the input type, which is in this case (still)
+	// assumed to be a dense vector (e.g., std::vector, or ublas::vector). 
+	// clear the input type, it could be uninitialised
         input_type attributes( max_attribute_nr );
-        attributes.clear();
+	std::fill( attributes.begin(), attributes.end(), 0.0 );
 
         while( (attribute_iter != tokens.end()) && ((*iter)[0] != static_cast<char>('#')) ) {
 
@@ -356,8 +359,6 @@ void read( std::vector<std::string> const &container, io::problem_type p_type,
             // read the input into the input container
             attributes[ attribute_nr ] = boost::lexical_cast< double >( *attribute_iter++ );
         }
-
-        //std::cout << output << ": " << attributes << std::endl;
 
         map[ sample_key ] = boost::make_tuple( attributes, output );
         keys.push_back( sample_key );
