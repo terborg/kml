@@ -584,7 +584,7 @@ void read( std::vector<std::string> const &container, io::problem_type p_type,
     //std::cout << "nr of columns: " << nr_of_attributes << std::endl;
     
     input_type row( nr_of_attributes );
-    unsigned int sample_index = 0;
+    key_type sample_index = 0;
     
     while( i != container.end() ) {
         boost::tokenizer<boost::char_separator<char> > values( *i, separator );
@@ -601,6 +601,7 @@ void read( std::vector<std::string> const &container, io::problem_type p_type,
         }
         
        map[ sample_index ] = boost::make_tuple( row, 0.0 );
+       keys.push_back( sample_index );
        ++sample_index;
         ++i;
     }
@@ -758,5 +759,4 @@ void write( char* file_name, PatternMap &dataset ) {
 
 
 #endif
-
 
