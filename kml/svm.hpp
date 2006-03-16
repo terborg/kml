@@ -78,9 +78,10 @@ namespace kml {
     typedef typename Problem::output_type output_type;  
     typedef double scalar_type;
     
+    /*
     typedef typename boost::property_traits<PropertyMap>::key_type key_type;
     typedef typename boost::property_traits<PropertyMap>::value_type value_type;
-    
+    */
     svm( typename boost::call_traits<kernel_type>::param_type k,
 	 typename boost::call_traits<scalar_type>::param_type max_weight,
 	 typename boost::call_traits<PropertyMap>::param_type map ): 
@@ -88,17 +89,17 @@ namespace kml {
     
     result_type operator() (input_type const &x) {
       result_type ret=0;
-      for (size_t i=0; i<base_type::weight.size(); ++i)
-	if (base_type::weight[i] > 0)
-	  ret += base_type::weight[i] * (*base_type::data)[i].get<1>() * base_type::kernel((*base_type::data)[i].get<0>(), x);
-      ret -= base_type::bias;
+      for (size_t i=0; i<weight.size(); ++i)
+	if (weight[i] > 0)
+	  ret += weight[i] * (*base_type::data)[i].get<1>() * base_type::kernel((*base_type::data)[i].get<0>(), x);
+      ret -= bias;
       return ret;
     }
     
     int takeStep(int i1, int i2) {
       if (i1 == i2) return 0; 
       
-      double alpha1 = base_type::weight[i1];
+      double alpha1 = weight[i1];
       output_type y1 = (*base_type::data)[i1].get<1>();
       scalar_type e1, e2, L, H, a2;
       /* p. 49, Platt: "When an error E is required by SMO, it will look up the error in the error cache if the 
@@ -108,7 +109,7 @@ namespace kml {
       else
 	e1 = operator()((*base_type::data)[i1].get<0>()) - y1;
       
-      double alpha2 = base_type::weight[i2];
+      double alpha2 = weight[i2];
       output_type y2 = (*base_type::data)[i2].get<1>();
       /* p. 49 again */
       if (0 != alpha2 && C != alpha2)
@@ -148,8 +149,8 @@ namespace kml {
 	scalar_type f1 = operator()((*base_type::data)[i1].get<0>());
 	scalar_type f2 = operator()((*base_type::data)[i2].get<0>());
 	/* Equation 12.21 */
-	scalar_type v1 = f1 + base_type::bias - (*base_type::data)[i1].get<1>() * alpha1 * k11 - (*base_type::data)[i2].get<1>() * alpha2 * k12;
-	scalar_type v2 = f2 + base_type::bias - (*base_type::data)[i1].get<1>() * alpha1 * k12 - (*base_type::data)[i2].get<1>() * alpha2 * k22;
+	scalar_type v1 = f1 + bias - (*base_type::data)[i1].get<1>() * alpha1 * k11 - (*base_type::data)[i2].get<1>() * alpha2 * k12;
+	scalar_type v2 = f2 + bias - (*base_type::data)[i1].get<1>() * alpha1 * k12 - (*base_type::data)[i2].get<1>() * alpha2 * k22;
 	/* Equation 12.22 */
 	scalar_type gamma = alpha1 + s * alpha2;
 	/* Equation 12.23 -- this is ugly and should maybe be refactored out? */
@@ -185,24 +186,24 @@ namespace kml {
 	a1 = C;
       }
       
-      scalar_type old_bias = base_type::bias;
+      scalar_type old_bias = bias;
       /* Equation 12.9 */
       if (0 != a1 && C != a1)
-	base_type::bias += e1 + y1 * (a1 - alpha1) * k11 + y2 * (a2 - alpha2) * k12;
+	bias += e1 + y1 * (a1 - alpha1) * k11 + y2 * (a2 - alpha2) * k12;
       else {
 	if (0 != a2 && C != a2)
-	  base_type::bias += e2 + y1 * (a1 - alpha1) * k12 + y2 * (a2 - alpha2) * k22;
+	  bias += e2 + y1 * (a1 - alpha1) * k12 + y2 * (a2 - alpha2) * k22;
 	else 
-	  base_type::bias = ((base_type::bias + e1 + y1 * (a1 - alpha1) * k11 + y2 * (a2 - alpha2) * k12) +
-			     (base_type::bias + e2 + y1 * (a1 - alpha1) * k12 + y2 * (a2 - alpha2) * k22)) / 2;
+	  bias = ((bias + e1 + y1 * (a1 - alpha1) * k11 + y2 * (a2 - alpha2) * k12) +
+		  (bias + e2 + y1 * (a1 - alpha1) * k12 + y2 * (a2 - alpha2) * k22)) / 2;
       }
       
       /* TODO figure out what to do about weight vectors for linear SVMs */
       
       /* Update the error cache */
       for (size_t i = 0; i < error_cache.size(); ++i) {
-	if (0 != base_type::weight[i] && C != base_type::weight[i]) {
-	  error_cache[i] += y1 * (a1 - alpha1) * base_type::kernel((*base_type::data)[i1].get<0>(), (*base_type::data)[i].get<0>) + (*base_type::data)[i2].get<1>() * (a2 - alpha2) * base_type::kernel((*base_type::data)[i2].get<0>(), (*base_type::data)[i].get<0>()) - (base_type::bias - old_bias);
+	if (0 != weight[i] && C != weight[i]) {
+	  error_cache[i] += y1 * (a1 - alpha1) * base_type::kernel((*base_type::data)[i1].get<0>(), (*base_type::data)[i].get<0>) + (*base_type::data)[i2].get<1>() * (a2 - alpha2) * base_type::kernel((*base_type::data)[i2].get<0>(), (*base_type::data)[i].get<0>()) - (bias - old_bias);
 	}
 	else {
 	  /* This may not actually be necessary -- I'm not convinced any code paths will ever get here -- but since Platt
@@ -216,15 +217,15 @@ namespace kml {
       error_cache[i1] = 0;
       error_cache[i2] = 0;
       
-      base_type::weight[i1] = a1;
-      base_type::weight[i2] = a2;
+      weight[i1] = a1;
+      weight[i2] = a2;
       return 1;
     }
     
     int examineExample(int idx) {
       output_type y2 = (*base_type::data)[idx].get<1>();
-      double alpha2 = base_type::weight[idx];
-      result_type e2;
+      double alpha2 = weight[idx];
+      scalar_type e2;
       if (alpha2 != 0 && alpha2 != C)
 	e2 = error_cache[idx];
       else 
@@ -232,9 +233,8 @@ namespace kml {
       
       result_type r2 = e2 * y2;
       if ((r2 < -tol && alpha2 < C) || (r2 > tol && alpha2 > 0)) {
-	int count = std::count_if( base_type::weight.begin(), 
-				   base_type::weight.end(),
-				   (lambda::_1 != 0) && (lambda::_1 != C) );
+	int count = std::count_if(weight.begin(), weight.end(),
+				  (lambda::_1 != 0) && (lambda::_1 != C) );
 	
 	
 	if (count > 1) { // use second choice heuristic
@@ -252,7 +252,7 @@ namespace kml {
 	}
 
 	for (size_t i = startpt(size), j = i; i<j+size; ++i) 
-	  if (base_type::weight[i%size] != 0 && base_type::weight[i%size] != C) 
+	  if (weight[i%size] != 0 && weight[i%size] != C) 
 	    if (takeStep(idx, i%size)) 
 	      return 1;
 	
@@ -266,8 +266,8 @@ namespace kml {
     template<typename KeyIterator>
     void learn(KeyIterator begin, KeyIterator end) {
       size = std::distance(begin, end);
-      base_type::weight.clear();
-      base_type::weight.resize(size);
+      weight.clear();
+      weight.resize(size);
       error_cache.clear();
       error_cache.resize(size);
      
@@ -280,7 +280,7 @@ namespace kml {
 	    numChanged += examineExample(i);
 	else 
 	  for (size_t i=0; i < size; ++i)
-	    if (base_type::weight[i] != 0 && base_type::weight[i] != C) 
+	    if (weight[i] != 0 && weight[i] != C) 
 	      numChanged += examineExample(i);
 
 	if (1 == examineAll) 
@@ -291,18 +291,20 @@ namespace kml {
     }
 
     void printweights() {
-      for ( size_t i=0; i<base_type::weight.size(); ++i)
-	std::cout << base_type::weight[i] << " ";
+      for ( size_t i=0; i<weight.size(); ++i)
+	std::cout << weight[i] << " ";
       std::cout << std::endl;
     }
     
-  unsigned int size;
-  scalar_type C;
-  scalar_type tol;
-  std::vector<scalar_type> error_cache;
-  boost::mt19937 randomness;
-  boost::random_number_generator<boost::mt19937> startpt;
-};
+    unsigned int size;
+    scalar_type C;
+    std::vector<scalar_type> weight;
+    scalar_type tol;
+    scalar_type bias;
+    std::vector<scalar_type> error_cache;
+    boost::mt19937 randomness;
+    boost::random_number_generator<boost::mt19937> startpt;
+  };
 
   // Ranking SVM. 
 
@@ -317,8 +319,10 @@ namespace kml {
     typedef typename Problem::output_type output_type;  
     typedef typename base_type::result_type result_type;
 
+    /*
     typedef typename boost::property_traits<PropertyMap>::key_type key_type;
     typedef typename boost::property_traits<PropertyMap>::value_type value_type;
+    */
 
     svm( typename boost::call_traits<kernel_type>::param_type k,
 	 typename boost::call_traits<double>::param_type max_weight,
@@ -371,8 +375,6 @@ namespace kml {
       /* done */
 
       inner_machine.learn(points, target);
-      base_type::weight = inner_machine.weight;
-      base_type::bias = inner_machine.bias;
     }
 
     unsigned int size;
