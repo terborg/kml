@@ -89,7 +89,7 @@ namespace kml {
     
     result_type operator() (input_type const &x) {
       result_type ret=0;
-      for (int i=0; i<weight.size(); ++i)
+      for (size_t i=0; i<weight.size(); ++i)
 	if (weight[i] > 0)
 	  ret += weight[i] * (*base_type::data)[i].get<1>() * base_type::kernel(i, x);
       ret -= bias;
