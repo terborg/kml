@@ -1,21 +1,21 @@
-/***************************************************************************
- *  The Kernel-Machine Library                                             *
- *  Copyright (C) 2005, 2006 by Meredith L. Patterson                      *
- *                                                                         *
- *  This library is free software; you can redistribute it and/or          *
- *  modify it under the terms of the GNU Lesser General Public             *
- *  License as published by the Free Software Foundation; either           *
- *  version 2.1 of the License, or (at your option) any later version.     *
- *                                                                         *
- *  This library is distributed in the hope that it will be useful,        *
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of         *
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU      *
- *  Lesser General Public License for more details.                        *
- *                                                                         *
- *  You should have received a copy of the GNU Lesser General Public       *
- *  License along with this library; if not, write to the Free Software    *
- *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  *
- ***************************************************************************/
+/*****************************************************************************
+ *  The Kernel-Machine Library                                               *
+ *  Copyright (C) 2004, 2005 by Rutger W. ter Borg and Meredith L. Patterson *
+ *                                                                           *
+ *  This program is free software; you can redistribute it and/or            *
+ *  modify it under the terms of the GNU General Public License              *
+ *  as published by the Free Software Foundation; either version 2           *
+ *  of the License, or (at your option) any later version.                   *
+ *                                                                           *
+ *  This program is distributed in the hope that it will be useful,          *
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            *
+ *  GNU General Public License for more details.                             *
+ *                                                                           *
+ *  You should have received a copy of the GNU General Public License        *
+ *  along with this program; if not, write to the Free Software              *
+ *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307    *
+ *****************************************************************************/
 
 /*****************************************************************************
  * Department of Credit Where Credit is Due:                                 *
@@ -89,9 +89,9 @@ namespace kml {
     
     result_type operator() (input_type const &x) {
       result_type ret=0;
-      for (size_t i=0; i<weight.size(); ++i)
+      for (int i=0; i<weight.size(); ++i)
 	if (weight[i] > 0)
-	  ret += weight[i] * (*base_type::data)[i].get<1>() * base_type::kernel((*base_type::data)[i].get<0>(), x);
+	  ret += weight[i] * (*base_type::data)[i].get<1>() * base_type::kernel(i, x);
       ret -= bias;
       return ret;
     }
@@ -132,9 +132,9 @@ namespace kml {
       
       if (L == H) return 0; 
       
-      scalar_type k11 = base_type::kernel((*base_type::data)[i1].get<0>(), (*base_type::data)[i1].get<0>());
-      scalar_type k12 = base_type::kernel((*base_type::data)[i1].get<0>(), (*base_type::data)[i2].get<0>());
-      scalar_type k22 = base_type::kernel((*base_type::data)[i2].get<0>(), (*base_type::data)[i2].get<0>());
+      scalar_type k11 = base_type::kernel(i1, i1);
+      scalar_type k12 = base_type::kernel(i1, i2);
+      scalar_type k22 = base_type::kernel(i2, i2);
       
       /* Equation 12.5 -- the second derivative of W, the objective function */
       double eta = 2 * k12 - k11 - k22;
@@ -203,7 +203,7 @@ namespace kml {
       /* Update the error cache */
       for (size_t i = 0; i < error_cache.size(); ++i) {
 	if (0 != weight[i] && C != weight[i]) {
-	  error_cache[i] += y1 * (a1 - alpha1) * base_type::kernel((*base_type::data)[i1].get<0>(), (*base_type::data)[i].get<0>) + (*base_type::data)[i2].get<1>() * (a2 - alpha2) * base_type::kernel((*base_type::data)[i2].get<0>(), (*base_type::data)[i].get<0>()) - (bias - old_bias);
+	  error_cache[i] += y1 * (a1 - alpha1) * base_type::kernel(i1, i) + (*base_type::data)[i2].get<1>() * (a2 - alpha2) * base_type::kernel(i2, i) - (bias - old_bias);
 	}
 	else {
 	  /* This may not actually be necessary -- I'm not convinced any code paths will ever get here -- but since Platt
