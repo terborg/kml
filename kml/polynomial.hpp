@@ -57,15 +57,6 @@ public:
         copy( other );
     }
 
-    /*! Refinement of Assignable */
-    type &operator=( type const &other ) {
-        if (this != &other) {
-            destroy();
-            copy(other);
-        }
-        return *this;
-    }
-
     /*! Construct a polynomial kernel by providing values for gamma, lambda, and degree
         \param gamma  the scale of the inner product
         \param lambda the bias of the inner product
@@ -78,8 +69,8 @@ public:
     template<typename TokenIterator>
     polynomial( TokenIterator const begin, TokenIterator const end ) {
         // set default values
-        scale = 0.5;
-        bias = 1.0;
+        scale = 1.0;
+        bias = 0.0;
         order = 3.0;
         TokenIterator token(begin);
         if ( token != end )
@@ -90,6 +81,20 @@ public:
             order = boost::lexical_cast<scalar_type>( *token );
     }
 
+    /*! Refinement of Assignable */
+    type &operator=( type const &other ) {
+        if (this != &other) {
+            destroy();
+            copy(other);
+        }
+        return *this;
+    }
+
+    /*! Returns the result of the evaluation of the polynomial kernel for these points
+    	\param u input pattern u
+        \param v input pattern v
+    	\return \f$ (\gamma * u^T v + \lambda)^d \f$
+       */
     scalar_type operator()( T const &u, T const &v ) const {
         return std::pow( scale * linear<T>()(u,v) + bias, order );
     }

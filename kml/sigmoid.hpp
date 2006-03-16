@@ -20,18 +20,116 @@
 #ifndef SIGMOID_HPP
 #define SIGMOID_HPP
 
+#include <boost/call_traits.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/tracking.hpp>
+#include <boost/tokenizer.hpp>
+#include <boost/type_traits.hpp>
+#include <kml/input_value.hpp>
+#include <kml/linear.hpp>
+#include <cmath>
+
+namespace kml {
+
+template<typename T>
+class sigmoid: public std::binary_function<T, T, typename input_value<T>::type> {
+public:
+    typedef sigmoid<T> type;
+    typedef typename input_value<T>::type scalar_type;
+    typedef typename mpl::int_<0>::type derivative_order;
+    typedef typename input_value<T>::type return_type;
+    friend class boost::serialization::access;
+
+    /*! Construct an uninitialised sigmoid kernel */
+    sigmoid() {}
+
+    /*! Refinement of CopyConstructable */
+    sigmoid( type const &other ) {
+        copy( other );
+    }
+
+    /*! Construct a sigmoid kernel by providing a values for gamma and lambda
+        \param gamma  the scale of the inner product
+        \param lambda the bias of the inner product */
+    sigmoid( typename boost::call_traits<scalar_type>::param_type gamma,
+             typename boost::call_traits<scalar_type>::param_type lambda ): scale(gamma), bias(lambda) {}
+
+    /*! Kernel constructor by providing TokenIterators */
+    template<typename Separator>
+    sigmoid( typename boost::tokenizer<Separator>::iterator const begin,
+             typename boost::tokenizer<Separator>::iterator const end ) {
+        scale = 1.0;
+        bias = 0.0;
+        typename boost::tokenizer<Separator>::iterator iter(begin);
+        if ( iter != end )
+            scale = boost::lexical_cast<scalar_type>( *iter++ );
+        if ( iter != end )
+            bias = boost::lexical_cast<scalar_type>( *iter );
+    }
+
+    /*! Refinement of Assignable */
+    type &operator=( type const &other ) {
+        if (this != &other) {
+            destroy();
+            copy(other);
+        }
+        return *this;
+    }
+
+    /*! Returns the result of the evaluation of the sigmoid kernel for these points
+    	\param u input pattern u
+        \param v input pattern v
+    	\return \f$ tanh( \gamma * u^T v + \lambda) \f$
+       */
+    scalar_type operator()( T const &u, T const &v ) const {
+        return std::tanh( scale * linear<T>()(u,v) + bias );
+    }
+
+    // loading and saving capabilities
+    template<class Archive>
+    void serialize( Archive &archive, unsigned int const version ) {
+        archive & scale;
+        archive & bias;
+    }
+
+    // for debugging purposes
+    friend std::ostream& operator<<(std::ostream &os, type const &k) {
+        os << "Sigmoid kernel tanh(" << k.scale << "<u,v>+" << k.bias << ")" << std::endl;
+        return os;
+    }
+
+private:
+    void copy( type const &other ) {
+        scale = other.scale;
+        bias = other.bias;
+    }
+    void destroy() {}
+
+    scalar_type scale;
+    scalar_type bias;
+
+};
+
+} // namespace kml
 
 
 
+namespace boost {
+namespace serialization {
 
+template<typename T>
+struct tracking_level< kml::sigmoid<T> > {
+    typedef mpl::integral_c_tag tag;
+    typedef mpl::int_<track_never> type;
+    BOOST_STATIC_CONSTANT(
+        int,
+        value = tracking_level::type::value
+    );
+};
 
-
-
-
-
-
-
-
+} // namespace serialization
+} // namespace boost
 
 
 #endif
