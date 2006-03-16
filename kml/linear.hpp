@@ -41,10 +41,10 @@ namespace mpl = boost::mpl;
 
 /*!
 Linear kernel
-
+ 
 Template metaprogramming is used to make one generic function work on both scalar and
 vector types.
-
+ 
 \todo 
 - ensure the atlas-specific implementation is not deployed on non-supported types
  
@@ -52,7 +52,8 @@ vector types.
 
 
 
-namespace kml { namespace detail {
+namespace kml {
+namespace detail {
 
 class scalar_inner_prod {
 public:
@@ -78,10 +79,10 @@ public:
 template<int N>
 class power_even {
 public:
-	template<typename T>
-	static typename boost::range_value<T>::type compute( T const &x ) {
-		return std::pow( inner_product(x,x), N>>1 );
-	}
+    template<typename T>
+    static typename boost::range_value<T>::type compute( T const &x ) {
+        return std::pow( inner_product(x,x), N>>1 );
+    }
 };
 
 
@@ -89,10 +90,10 @@ public:
 template<int N>
 class power_uneven {
 public:
-	template<typename T>
-	static T compute( T const &x ) {
-		return power_even<N>::compute(x) * x;
-	}
+    template<typename T>
+    static T compute( T const &x ) {
+        return power_even<N>::compute(x) * x;
+    }
 };
 
 
@@ -115,11 +116,11 @@ public:
 /*!
 \brief Linear kernel
 \param T defines the underlying data type
-
+ 
 The linear kernel is the basic Eucledian inner product.
-
+ 
 \todo Remove the second template parameter
-
+ 
 */
 
 
@@ -137,35 +138,33 @@ struct linear: public std::binary_function<T,T,typename input_value<T>::type> {
 
     /*! Refinement of Assignable */
     type &operator=( type const &other ) {
-	return *this;
+        return *this;
     }
 
     /*! Kernel constructor by providing TokenIterators */
-   template<typename TokenIterator>
-   linear( TokenIterator const begin, TokenIterator const end ) {}
+    template<typename TokenIterator>
+    linear( TokenIterator const begin, TokenIterator const end ) {}
 
-	/*! Returns the result of the evaluation of a linear kernel on two input patters of type T
-	\param u input pattern u
+    /*! Returns the result of the evaluation of a linear kernel on two input patters of type T
+        \param u input pattern u
         \param v input pattern v
-	\return \f$ e^{-\gamma\|u - v\|} \f$
-    */
+        \return u^T v               */
     inline
     scalar_type operator()( T const &u, T const &v ) const {
-    		    return mpl::if_<boost::is_scalar<T>,
-             				detail::scalar_inner_prod,
-           				detail::vector_inner_prod >::type::compute( u, v );
+        return mpl::if_<boost::is_scalar<T>,
+               detail::scalar_inner_prod,
+               detail::vector_inner_prod >::type::compute( u, v );
     }
 
     // loading and saving capabilities
     // basically a dummy; we don't need to load or save anything
     template<class Archive>
-    void serialize( Archive &archive, unsigned int const version ) {
-    }
+    void serialize( Archive &archive, unsigned int const version ) {}
 
     // for debugging purposes
     friend std::ostream& operator<<(std::ostream &os, type const &) {
-	os << "Linear kernel (u^T * v)" << std::endl;
-	return os;
+        os << "Linear kernel (u^T * v)" << std::endl;
+        return os;
     }
 
 };
@@ -175,24 +174,45 @@ struct linear: public std::binary_function<T,T,typename input_value<T>::type> {
 
 template<class T, int N>
 struct power_return_type: mpl::eval_if<
-   mpl::is_even< mpl::int_<N> >,
-   boost::range_value<T>,
-   mpl::identity<T> > {};
+                               mpl::is_even< mpl::int_<N> >,
+                               boost::range_value<T>,
+                       mpl::identity<T> > {}
+                   ;
 
 
 template<typename Vector, int N>
 typename power_return_type<Vector,N>::type power( Vector const &x ) {
-	return mpl::if_<
-		mpl::is_even< mpl::int_<N> >,
-		detail::power_even<N>,
-		detail::power_uneven<N> >::type::compute( x );
-}
+                         return mpl::if_<
+                                mpl::is_even< mpl::int_<N> >,
+                                detail::power_even<N>,
+                                detail::power_uneven<N> >::type::compute( x );
+                     }
 
 
 
 
 
 } // namespace kml
+
+
+
+
+namespace boost {
+namespace serialization {
+
+template<typename T>
+struct tracking_level< kml::linear<T> > {
+	typedef mpl::integral_c_tag tag;
+	typedef mpl::int_<track_never> type;
+	BOOST_STATIC_CONSTANT(
+	int,
+	value = tracking_level::type::value
+	);
+};
+
+} // namespace serialization
+} // namespace boost
+
 
 
 #endif

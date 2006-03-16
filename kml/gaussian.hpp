@@ -30,21 +30,21 @@
 #include <cassert>
 
 namespace kml {
-	
-/*!
 
+/*!
+ 
 \brief Gaussian kernel of the form \f$ f(x)=e^{-\gamma\|x - \mu\|} \f$ where
 	\f$ \gamma = \frac{1}{\sigma^2} \f$
 \param T defines the underlying input data type
 	(distance_square<T, T> must be defined, which is done for
 	scalar and vector types in distance.hpp)
-
+ 
 This is a template class that creates a functor for the Gaussian kernel.
-
+ 
 Complexity: O(d+c), i.e., a little more time than needed for computing the dot product
-
+ 
 \ingroup kernels
-
+ 
 */
 
 template<typename T>
@@ -61,105 +61,105 @@ public:
 
     /*! Refinement of CopyConstructable */
     gaussian( type const &other ) {
-       copy( other );
+        copy( other );
     }
 
     /*! Refinement of Assignable */
     type &operator=( type const &other ) {
-		if (this != &other) { destroy(); copy(other); }
-		return *this;
+        if (this != &other) {
+            destroy();
+            copy(other);
+        }
+        return *this;
     }
 
     /*! Construct a Gaussian kernel by providing a value for \f$ \sigma \f$ */
-	gaussian( typename boost::call_traits<scalar_type>::param_type sigma ) {
-       set_width(sigma);
+    gaussian( typename boost::call_traits<scalar_type>::param_type sigma ) {
+        set_width(sigma);
     }
 
     /*! Kernel constructor by providing TokenIterators */
-	template<typename TokenIterator>
-       gaussian( TokenIterator const begin, TokenIterator const end ) {
-		if (begin == end ) {
-			// default value
-			set_width( 1.0 );
-		} else {
-			set_width( boost::lexical_cast<double>( *begin ) );
-		}
-	}
+    template<typename TokenIterator>
+    gaussian( TokenIterator const begin, TokenIterator const end ) {
+        if (begin == end ) {
+            // default value
+            set_width( 1.0 );
+        } else {
+            set_width( boost::lexical_cast<double>( *begin ) );
+        }
+    }
 
-	/*! Returns the result of the evaluation of the Gaussian kernel for these points
-		\param u input pattern u
-        \param v input pattern v
-		\return \f$ e^{-\gamma\|u - v\|} \f$
-    */
+    /*! Returns the result of the evaluation of the Gaussian kernel for these points
+    	\param u input pattern u
+           \param v input pattern v
+    	\return \f$ e^{-\gamma\|u - v\|} \f$
+       */
     scalar_type operator()( T const &u, T const &v ) const {
         return std::exp( exp_factor * distance_square( u, v ) );
     }
 
-	/*! Sets \f$ \sigma \f$. */
+    /*! Sets \f$ \sigma \f$. */
     void set_width( typename boost::call_traits<scalar_type>::param_type sigma ) {
-    	assert( sigma > 0.0 );
-		width = sigma;
-		exp_factor = -1.0 / (2.0*sigma*sigma);
+        assert( sigma > 0.0 );
+        width = sigma;
+        exp_factor = -1.0 / (2.0*sigma*sigma);
     }
-    
-	/*! Returns \f$ \sigma \f$. */
-	scalar_type const get_width() const {
-    	return width;
-    }
-    
-   	/*! Sets \f$ \gamma \f$. */
-	void set_gamma( typename boost::call_traits<scalar_type>::param_type gamma ) {
-	set_scale_factor( gamma );
+
+    /*! Returns \f$ \sigma \f$. */
+    scalar_type const get_width() const {
+        return width;
     }
 
     /*! Sets \f$ \gamma \f$. */
-	void set_scale_factor( typename boost::call_traits<scalar_type>::param_type gamma ) {
+    void set_gamma( typename boost::call_traits<scalar_type>::param_type gamma ) {
+        set_scale_factor( gamma );
+    }
+
+    /*! Sets \f$ \gamma \f$. */
+    void set_scale_factor( typename boost::call_traits<scalar_type>::param_type gamma ) {
         assert( gamma > 0.0 );
-		width = std::sqrt(0.5 / gamma);
-		exp_factor = -gamma;
+        width = std::sqrt(0.5 / gamma);
+        exp_factor = -gamma;
     }
 
     /*! Returns \f$ \gamma \f$. */
     scalar_type const get_gamma() const {
-    	return -exp_factor;
+        return -exp_factor;
     }
-    
+
     /*! Returns \f$ \gamma \f$. */
     scalar_type const get_scale_factor() const {
-    	return -exp_factor;
+        return -exp_factor;
     }
-    
+
     /*! The dimension of the feature space */
     scalar_type const dimension() const {
-		return std::numeric_limits<scalar_type>::infinity();
+        return std::numeric_limits<scalar_type>::infinity();
     }
 
     // loading and saving capabilities
     template<class Archive>
     void serialize( Archive &archive, unsigned int const version ) {
-    	archive & width;
-    	archive & exp_factor;
+        archive & width;
+        archive & exp_factor;
     }
-    
+
     // for debugging purposes
     friend std::ostream& operator<<(std::ostream &os, type const &k) {
-		os << "Gaussian kernel (exp(-||u-v||^2/(2*" << k.width << "^2))" << std::endl;
-		return os;
+        os << "Gaussian kernel (exp(-||u-v||^2/(2*" << k.width << "^2))" << std::endl;
+        return os;
     }
 
 private:
     void copy( type const &other ) {
-		width = other.width;
-		exp_factor = other.exp_factor;
+        width = other.width;
+        exp_factor = other.exp_factor;
     }
     void destroy() {}
 
     scalar_type width;
     scalar_type exp_factor;
 
-
-
-    
 };
 
 } // namespace kml
@@ -168,19 +168,20 @@ private:
 
 
 
-namespace boost{ namespace serialization {
+namespace boost {
+namespace serialization {
 
 template<typename T>
-struct tracking_level< kml::gaussian<T> >
-{
-	typedef mpl::integral_c_tag tag;
-	typedef mpl::int_<track_never> type;
-	BOOST_STATIC_CONSTANT(
-		int, 
-		value = tracking_level::type::value
-	);
+struct tracking_level< kml::gaussian<T> > {
+    typedef mpl::integral_c_tag tag;
+    typedef mpl::int_<track_never> type;
+    BOOST_STATIC_CONSTANT(
+        int,
+        value = tracking_level::type::value
+    );
 };
 
-}}
+}
+}
 
 #endif

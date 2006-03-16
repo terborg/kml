@@ -21,6 +21,9 @@
 #define POLYNOMIAL_HPP
 
 #include <boost/call_traits.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/tracking.hpp>
 #include <boost/type_traits.hpp>
 #include <kml/input_value.hpp>
 #include <kml/linear.hpp>
@@ -28,14 +31,14 @@
 namespace kml {
 
 /*!
-
+ 
 \brief polynomial kernel
 \param T defines the underlying input data type
-
+ 
 This is a template class that creates a functor for the polynomial kernel.
-
+ 
 \ingroup kernels
-
+ 
 */
 
 template<typename T>
@@ -51,47 +54,65 @@ public:
 
     /*! Refinement of CopyConstructable */
     polynomial( type const &other ) {
-       copy( other );
+        copy( other );
     }
 
     /*! Refinement of Assignable */
     type &operator=( type const &other ) {
-		if (this != &other) { destroy(); copy(other); }
-		return *this;
+        if (this != &other) {
+            destroy();
+            copy(other);
+        }
+        return *this;
     }
 
-    /*! Construct a polynomial kernel
+    /*! Construct a polynomial kernel by providing values for gamma, lambda, and degree
         \param gamma  the scale of the inner product
         \param lambda the bias of the inner product
-        \param d      the order of the polynomial kernel
-      */
+        \param degree the order of the polynomial kernel  */
     polynomial( typename boost::call_traits<scalar_type>::param_type gamma,
                 typename boost::call_traits<scalar_type>::param_type lambda,
-                typename boost::call_traits<scalar_type>::param_type d): scale(gamma), bias(lambda), order(d) {}
+                typename boost::call_traits<scalar_type>::param_type degree ): scale(gamma), bias(lambda), order(degree) {}
+
+    /*! Construct a polynomial kernel by providing TokenIterators */
+    template<typename TokenIterator>
+    polynomial( TokenIterator const begin, TokenIterator const end ) {
+        // set default values
+        scale = 0.5;
+        bias = 1.0;
+        order = 3.0;
+        TokenIterator token(begin);
+        if ( token != end )
+            scale = boost::lexical_cast<scalar_type>( *token++ );
+        if ( token != end )
+            bias = boost::lexical_cast<scalar_type>( *token++ );
+        if ( token != end )
+            order = boost::lexical_cast<scalar_type>( *token );
+    }
 
     scalar_type operator()( T const &u, T const &v ) const {
-	return std::pow( scale * linear<T>()(u,v) + bias, order );
+        return std::pow( scale * linear<T>()(u,v) + bias, order );
     }
 
     // loading and saving capabilities
     template<class Archive>
     void serialize( Archive &archive, unsigned int const version ) {
-    	archive & scale;
-    	archive & bias;
-	archive & order;
+        archive & scale;
+        archive & bias;
+        archive & order;
     }
 
     // for debugging purposes
     friend std::ostream& operator<<(std::ostream &os, type const &k) {
-	os << "Polynomial kernel (" << k.scale << "<u,v>+" << k.bias << ")^" << k.order << std::endl;
-	return os;
+        os << "Polynomial kernel (" << k.scale << "<u,v>+" << k.bias << ")^" << k.order << std::endl;
+        return os;
     }
 
 private:
     void copy( type const &other ) {
-		scale = other.scale;
-		bias = other.bias;
-		order = other.order;
+        scale = other.scale;
+        bias = other.bias;
+        order = other.order;
     }
     void destroy() {}
 
@@ -103,6 +124,27 @@ private:
 
 
 } // namespace kml
+
+
+
+
+
+namespace boost {
+namespace serialization {
+
+template<typename T>
+struct tracking_level< kml::polynomial<T> > {
+    typedef mpl::integral_c_tag tag;
+    typedef mpl::int_<track_never> type;
+    BOOST_STATIC_CONSTANT(
+        int,
+        value = tracking_level::type::value
+    );
+};
+
+} // namespace serialization
+} // namespace boost
+
 
 #endif
 
