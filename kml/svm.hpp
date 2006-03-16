@@ -42,238 +42,244 @@
 #include <boost/random/random_number_generator.hpp>
 #include <boost/range/value_type.hpp>
 #include <boost/lambda/lambda.hpp>
+#include <boost/tuple/tuple.hpp>
+#include <boost/vector_property_map.hpp>
+#include <boost/numeric/ublas/vector.hpp>
 
 #include <algorithm>
 #include <vector>
 #include <iostream>
 #include <utility>
+#include <iterator>
 
-#include <kml/determinate.hpp>
+#include <kml/kernel_machine.hpp>
 #include <kml/classification.hpp>
 #include <kml/ranking.hpp>
 #include <kml/regression.hpp>
 
 namespace lambda = boost::lambda;
+namespace ublas = boost::numeric::ublas;
 
 namespace kml {
 
-  template<typename Problem, template<typename, int> class K, class Enable = void>
-  class svm: public determinate<typename Problem::input_type, typename Problem::output_type, K> {};
-
+  template<typename Problem, typename Kernel, typename PropertyMap, class Enable = void>
+  class svm: public kernel_machine<Problem, Kernel, PropertyMap> {};
+  
   // Classification SVM
-
-  template<typename Problem, template<typename, int> class K>
-  class svm<Problem, K, typename boost::enable_if<is_classification<Problem> >::type >:
-    public determinate<typename Problem::input_type, typename Problem::output_type, K> {
-public:
-  typedef determinate<typename Problem::input_type, typename Problem::output_type, K> base_type;
-  typedef typename base_type::kernel_type kernel_type;
-  typedef typename base_type::result_type result_type;
-  typedef typename Problem::input_type input_type; 
-  typedef typename Problem::output_type output_type;  
-  typedef double scalar_type;
-
-  svm( typename boost::call_traits<kernel_type>::param_type k,
-       typename boost::call_traits<double>::param_type max_weight ): 
-    base_type(k), C(max_weight), tol(.001), startpt(randomness) { }
-
-  result_type operator() (input_type const &x) {
-    result_type ret=0;
-    for (size_t i=0; i<base_type::weight.size(); ++i)
-      if (base_type::weight[i] > 0)
-	ret += base_type::weight[i] * target[i] * base_type::kernel(points[i], x);
-    ret -= base_type::bias;
-    return ret;
-  }
-
-  int takeStep(int i1, int i2) {
-    if (i1 == i2) return 0; 
-
-    double alpha1 = base_type::weight[i1];
-    output_type y1 = target[i1];
-    scalar_type e1, e2, L, H, a2;
-    /* p. 49, Platt: "When an error E is required by SMO, it will look up the error in the error cache if the 
-       corresponding Lagrange multiplier is not at bound." */
-    if (0 != alpha1 && C != alpha1) 
-      e1 = error_cache[i1];
-    else
-      e1 = operator()(points[i1]) - y1;
-
-    double alpha2 = base_type::weight[i2];
-    output_type y2 = target[i2];
-    /* p. 49 again */
-    if (0 != alpha2 && C != alpha2)
-      e2 = error_cache[i2];
-    else
-      e2 = (double)operator()(points[i2]) - y2;
+  
+  template<typename Problem, typename Kernel, typename PropertyMap>
+  class svm<Problem, Kernel, PropertyMap, typename boost::enable_if<is_classification<Problem> >::type>:
+    public kernel_machine<Problem, Kernel, PropertyMap> {
+  public:
+    typedef kernel_machine<Problem, Kernel, PropertyMap> base_type;
+    typedef typename base_type::kernel_type kernel_type;
+    typedef typename base_type::result_type result_type;
+    typedef typename Problem::input_type input_type; 
+    typedef typename Problem::output_type output_type;  
+    typedef double scalar_type;
     
-    output_type s = y1 * y2;
-
-    if (y1 != y2) {
-      L = std::max(0.0, alpha2 - alpha1);
-      H = std::min(C, C + alpha2 - alpha1);
+    typedef typename boost::property_traits<PropertyMap>::key_type key_type;
+    typedef typename boost::property_traits<PropertyMap>::value_type value_type;
+    
+    svm( typename boost::call_traits<kernel_type>::param_type k,
+	 typename boost::call_traits<scalar_type>::param_type max_weight,
+	 typename boost::call_traits<PropertyMap>::param_type map ): 
+      base_type(k, map), C(max_weight), tol(.001), startpt(randomness) { }
+    
+    result_type operator() (input_type const &x) {
+      result_type ret=0;
+      for (size_t i=0; i<base_type::weight.size(); ++i)
+	if (base_type::weight[i] > 0)
+	  ret += base_type::weight[i] * (*base_type::data)[i].get<1>() * base_type::kernel((*base_type::data)[i].get<0>(), x);
+      ret -= base_type::bias;
+      return ret;
     }
-    else {
-      /* Equation 12.3 */
-      L = std::max(0.0, alpha1 + alpha2 - C);
-      /* Equation 12.4 */
-      H = std::min(C, alpha1 + alpha2);
-    }
-
-    if (L == H) return 0; 
-
-    scalar_type k11 = base_type::kernel(points[i1], points[i1]);
-    scalar_type k12 = base_type::kernel(points[i1], points[i2]);
-    scalar_type k22 = base_type::kernel(points[i2], points[i2]);
-
-    /* Equation 12.5 -- the second derivative of W, the objective function */
-    double eta = 2 * k12 - k11 - k22;
-    if (eta < 0) {
-      /* Equation 12.6 */
-      a2 = alpha2 - y2 * (e1-e2) / eta;
-      /* Equation 12.7 */
-      if (a2 < L) a2 = L;
-      else if (a2 > H) a2 = H;
-    }
-    else {  /* This block handles corner cases; usually this means a training vector has been repeated */
-      scalar_type f1 = operator()(points[i1]);
-      scalar_type f2 = operator()(points[i2]);
-      /* Equation 12.21 */
-      scalar_type v1 = f1 + base_type::bias - target[i1] * alpha1 * k11 - target[i2] * alpha2 * k12;
-      scalar_type v2 = f2 + base_type::bias - target[i1] * alpha1 * k12 - target[i2] * alpha2 * k22;
-      /* Equation 12.22 */
-      scalar_type gamma = alpha1 + s * alpha2;
-      /* Equation 12.23 -- this is ugly and should maybe be refactored out? */
-      scalar_type Lobj = gamma - s * L + L - .5 * k11 * (gamma - s * L) * (gamma - s * L) - .5 * k22 * L * L - s * k12 * (gamma - s * L) * L - target[i1] * (gamma - s * L) * v1 - target[i2] * L * v2;
-      scalar_type Hobj = gamma - s * H + H - .5 * k11 * (gamma - s * H) * (gamma - s * H) - .5 * k22 * L * L - s * k12 * (gamma - s * H) * H - target[i1] * (gamma - s * H) * v1 - target[i2] * H * v2;
+    
+    int takeStep(int i1, int i2) {
+      if (i1 == i2) return 0; 
       
-      /* Now we move the Lagrangian multipliers to the endpoint which has the highest value for W */
-      if (Lobj > Hobj + EPS)
-	a2 = L;
-      else if (Lobj < Hobj - EPS)
-	a2 = H;
+      double alpha1 = base_type::weight[i1];
+      output_type y1 = (*base_type::data)[i1].get<1>();
+      scalar_type e1, e2, L, H, a2;
+      /* p. 49, Platt: "When an error E is required by SMO, it will look up the error in the error cache if the 
+	 corresponding Lagrange multiplier is not at bound." */
+      if (0 != alpha1 && C != alpha1) 
+	e1 = error_cache[i1];
       else
-	a2 = alpha2;
-    }
-
-    /* If a2 is within epsilon of 0 or C, then call it a boundary example */
-    if (a2 < .00000001)
-      a2 = 0;
-    else if (a2 > C - .00000001)
-      a2 = C;    
-    if (fabs(a2 - alpha2) < EPS*(a2 + alpha2 + EPS)) 
-      return 0;
-    
-
-    /* Equation 12.8 */
-    double a1 = alpha1 + s*(alpha2 - a2);
-    if (a1 < 0) {
-      a2 += s*a1;
-      a1 = 0;
-    }
-    else if (a1 > C) {
-      a2 += s * (a1 - C);
-      a1 = C;
-    }
-
-    scalar_type old_bias = base_type::bias;
-    /* Equation 12.9 */
-    if (0 != a1 && C != a1)
-      base_type::bias += e1 + y1 * (a1 - alpha1) * k11 + y2 * (a2 - alpha2) * k12;
-    else {
-      if (0 != a2 && C != a2)
-	base_type::bias += e2 + y1 * (a1 - alpha1) * k12 + y2 * (a2 - alpha2) * k22;
-      else 
-	base_type::bias = ((base_type::bias + e1 + y1 * (a1 - alpha1) * k11 + y2 * (a2 - alpha2) * k12) +
-			   (base_type::bias + e2 + y1 * (a1 - alpha1) * k12 + y2 * (a2 - alpha2) * k22)) / 2;
-    }
-
-    /* TODO figure out what to do about weight vectors for linear SVMs */
-
-    /* Update the error cache */
-    for (size_t i = 0; i < error_cache.size(); ++i) {
-      if (0 != base_type::weight[i] && C != base_type::weight[i]) {
-	error_cache[i] += y1 * (a1 - alpha1) * base_type::kernel(points[i1], points[i]) + target[i2] * (a2 - alpha2) * base_type::kernel(points[i2], points[i]) - (base_type::bias - old_bias);
+	e1 = operator()((*base_type::data)[i1].get<0>()) - y1;
+      
+      double alpha2 = base_type::weight[i2];
+      output_type y2 = (*base_type::data)[i2].get<1>();
+      /* p. 49 again */
+      if (0 != alpha2 && C != alpha2)
+	e2 = error_cache[i2];
+      else
+	e2 = (double)operator()((*base_type::data)[i2].get<0>()) - y2;
+      
+      output_type s = y1 * y2;
+      
+      if (y1 != y2) {
+	L = std::max(0.0, alpha2 - alpha1);
+	H = std::min(C, C + alpha2 - alpha1);
       }
       else {
-	/* This may not actually be necessary -- I'm not convinced any code paths will ever get here -- but since Platt
-	   says we only keep cached error values if the Lagrange multiplier is non-bound, I'm covering my bases. */
-	if (error_cache[i] > 0)
-	  error_cache[i] = 0;
+	/* Equation 12.3 */
+	L = std::max(0.0, alpha1 + alpha2 - C);
+	/* Equation 12.4 */
+	H = std::min(C, alpha1 + alpha2);
       }
-    }
-    /* p. 49, Platt: "When a Lagrange multiplier is non-bound and is involved in a joint optimization, its cached error
-       is set to zero." But, hey, if it's a bound multiplier, we don't cache its error. So just make it zero anyway. */
-    error_cache[i1] = 0;
-    error_cache[i2] = 0;
-
-    base_type::weight[i1] = a1;
-    base_type::weight[i2] = a2;
-    return 1;
-  }
-  
-  int examineExample(int idx) {
-    output_type y2 = target[idx];
-    double alpha2 = base_type::weight[idx];
-    result_type e2;
-    if (alpha2 != 0 && alpha2 != C)
-      e2 = error_cache[idx];
-    else 
-      e2 = operator()(points[idx]) - y2;
-    
-    result_type r2 = e2 * y2;
-    if ((r2 < -tol && alpha2 < C) || (r2 > tol && alpha2 > 0)) {
-      int count = std::count_if( base_type::weight.begin(), 
-				 base_type::weight.end(),
-				 (lambda::_1 != 0) && (lambda::_1 != C) );
-				
-				
-      if (count > 1) { // use second choice heuristic
-	scalar_type tmp = 0, tmp2 = 0;
-	int k = 0;
-	for (size_t i = 0; i < error_cache.size(); ++i) {
-	  tmp2 = fabs(error_cache[idx] - error_cache[i]);
-	  if (tmp2 > tmp) {
-	    tmp = tmp2;
-	    k = i;
-	  }
-	}
-	if (takeStep(idx, k)) 
-	  return 1;	
-      }
-
-      for (size_t i = startpt(points.size()), j = i; i<j+points.size(); ++i) 
-	if (base_type::weight[i%points.size()] != 0 && base_type::weight[i%points.size()] != C) 
-	  if (takeStep(idx, i%points.size())) 
-	    return 1;
-	
-      for (size_t i = startpt(points.size()), j = i; i<j+points.size(); ++i) 
-	if (takeStep(idx, i%points.size())) 
-	  return 1;
-    }
-    return 0;
-  }
-    
-    template< class IRange, class ORange >
-    void learn( IRange const &input, ORange const &output ) {
-      points = input;
-      target = output;
-      base_type::weight.clear();
-      base_type::weight.resize(points.size());
-      base_type::support_vector.clear();
-      base_type::support_vector.resize(points.size());
-      error_cache.clear();
-      error_cache.resize(points.size());
       
+      if (L == H) return 0; 
+      
+      scalar_type k11 = base_type::kernel((*base_type::data)[i1].get<0>(), (*base_type::data)[i1].get<0>());
+      scalar_type k12 = base_type::kernel((*base_type::data)[i1].get<0>(), (*base_type::data)[i2].get<0>());
+      scalar_type k22 = base_type::kernel((*base_type::data)[i2].get<0>(), (*base_type::data)[i2].get<0>());
+      
+      /* Equation 12.5 -- the second derivative of W, the objective function */
+      double eta = 2 * k12 - k11 - k22;
+      if (eta < 0) {
+	/* Equation 12.6 */
+	a2 = alpha2 - y2 * (e1-e2) / eta;
+	/* Equation 12.7 */
+	if (a2 < L) a2 = L;
+	else if (a2 > H) a2 = H;
+      }
+      else {  /* This block handles corner cases; usually this means a training vector has been repeated */
+	scalar_type f1 = operator()((*base_type::data)[i1].get<0>());
+	scalar_type f2 = operator()((*base_type::data)[i2].get<0>());
+	/* Equation 12.21 */
+	scalar_type v1 = f1 + base_type::bias - (*base_type::data)[i1].get<1>() * alpha1 * k11 - (*base_type::data)[i2].get<1>() * alpha2 * k12;
+	scalar_type v2 = f2 + base_type::bias - (*base_type::data)[i1].get<1>() * alpha1 * k12 - (*base_type::data)[i2].get<1>() * alpha2 * k22;
+	/* Equation 12.22 */
+	scalar_type gamma = alpha1 + s * alpha2;
+	/* Equation 12.23 -- this is ugly and should maybe be refactored out? */
+	scalar_type Lobj = gamma - s * L + L - .5 * k11 * (gamma - s * L) * (gamma - s * L) - .5 * k22 * L * L - s * k12 * (gamma - s * L) * L - (*base_type::data)[i1].get<1>() * (gamma - s * L) * v1 - (*base_type::data)[i2].get<1>() * L * v2;
+	scalar_type Hobj = gamma - s * H + H - .5 * k11 * (gamma - s * H) * (gamma - s * H) - .5 * k22 * L * L - s * k12 * (gamma - s * H) * H - (*base_type::data)[i1].get<1>() * (gamma - s * H) * v1 - (*base_type::data)[i2].get<1>() * H * v2;
+	
+	/* Now we move the Lagrangian multipliers to the endpoint which has the highest value for W */
+	if (Lobj > Hobj + EPS)
+	  a2 = L;
+	else if (Lobj < Hobj - EPS)
+	  a2 = H;
+	else
+	  a2 = alpha2;
+      }
+      
+      /* If a2 is within epsilon of 0 or C, then call it a boundary example */
+      if (a2 < .00000001)
+	a2 = 0;
+      else if (a2 > C - .00000001)
+	a2 = C;    
+      if (fabs(a2 - alpha2) < EPS*(a2 + alpha2 + EPS)) 
+	return 0;
+      
+      
+      /* Equation 12.8 */
+      double a1 = alpha1 + s*(alpha2 - a2);
+      if (a1 < 0) {
+	a2 += s*a1;
+	a1 = 0;
+      }
+      else if (a1 > C) {
+	a2 += s * (a1 - C);
+	a1 = C;
+      }
+      
+      scalar_type old_bias = base_type::bias;
+      /* Equation 12.9 */
+      if (0 != a1 && C != a1)
+	base_type::bias += e1 + y1 * (a1 - alpha1) * k11 + y2 * (a2 - alpha2) * k12;
+      else {
+	if (0 != a2 && C != a2)
+	  base_type::bias += e2 + y1 * (a1 - alpha1) * k12 + y2 * (a2 - alpha2) * k22;
+	else 
+	  base_type::bias = ((base_type::bias + e1 + y1 * (a1 - alpha1) * k11 + y2 * (a2 - alpha2) * k12) +
+			     (base_type::bias + e2 + y1 * (a1 - alpha1) * k12 + y2 * (a2 - alpha2) * k22)) / 2;
+      }
+      
+      /* TODO figure out what to do about weight vectors for linear SVMs */
+      
+      /* Update the error cache */
+      for (size_t i = 0; i < error_cache.size(); ++i) {
+	if (0 != base_type::weight[i] && C != base_type::weight[i]) {
+	  error_cache[i] += y1 * (a1 - alpha1) * base_type::kernel((*base_type::data)[i1].get<0>(), (*base_type::data)[i].get<0>) + (*base_type::data)[i2].get<1>() * (a2 - alpha2) * base_type::kernel((*base_type::data)[i2].get<0>(), (*base_type::data)[i].get<0>()) - (base_type::bias - old_bias);
+	}
+	else {
+	  /* This may not actually be necessary -- I'm not convinced any code paths will ever get here -- but since Platt
+	     says we only keep cached error values if the Lagrange multiplier is non-bound, I'm covering my bases. */
+	  if (error_cache[i] > 0)
+	    error_cache[i] = 0;
+	}
+      }
+      /* p. 49, Platt: "When a Lagrange multiplier is non-bound and is involved in a joint optimization, its cached error
+	 is set to zero." But, hey, if it's a bound multiplier, we don't cache its error. So just make it zero anyway. */
+      error_cache[i1] = 0;
+      error_cache[i2] = 0;
+      
+      base_type::weight[i1] = a1;
+      base_type::weight[i2] = a2;
+      return 1;
+    }
+    
+    int examineExample(int idx) {
+      output_type y2 = (*base_type::data)[idx].get<1>();
+      double alpha2 = base_type::weight[idx];
+      result_type e2;
+      if (alpha2 != 0 && alpha2 != C)
+	e2 = error_cache[idx];
+      else 
+	e2 = operator()((*base_type::data)[idx].get<0>()) - y2;
+      
+      result_type r2 = e2 * y2;
+      if ((r2 < -tol && alpha2 < C) || (r2 > tol && alpha2 > 0)) {
+	int count = std::count_if( base_type::weight.begin(), 
+				   base_type::weight.end(),
+				   (lambda::_1 != 0) && (lambda::_1 != C) );
+	
+	
+	if (count > 1) { // use second choice heuristic
+	  scalar_type tmp = 0, tmp2 = 0;
+	  int k = 0;
+	  for (size_t i = 0; i < error_cache.size(); ++i) {
+	    tmp2 = fabs(error_cache[idx] - error_cache[i]);
+	    if (tmp2 > tmp) {
+	      tmp = tmp2;
+	      k = i;
+	    }
+	  }
+	  if (takeStep(idx, k)) 
+	  return 1;	
+	}
+
+	for (size_t i = startpt(size), j = i; i<j+size; ++i) 
+	  if (base_type::weight[i%size] != 0 && base_type::weight[i%size] != C) 
+	    if (takeStep(idx, i%size)) 
+	      return 1;
+	
+	for (size_t i = startpt(size), j = i; i<j+size; ++i) 
+	  if (takeStep(idx, i%size)) 
+	    return 1;
+      }
+      return 0;
+    }
+    
+    template<typename KeyIterator>
+    void learn(KeyIterator begin, KeyIterator end) {
+      size = std::distance(begin, end);
+      base_type::weight.clear();
+      base_type::weight.resize(size);
+      error_cache.clear();
+      error_cache.resize(size);
+     
       int numChanged = 0;
       int examineAll = 1;
       while (numChanged > 0 || examineAll) {
 	numChanged = 0;
 	if (examineAll) 
-	  for (size_t i=0; i < points.size(); ++i) 
+	  for (size_t i=0; i < size; ++i) 
 	    numChanged += examineExample(i);
 	else 
-	  for (size_t i=0; i < points.size(); ++i)
+	  for (size_t i=0; i < size; ++i)
 	    if (base_type::weight[i] != 0 && base_type::weight[i] != C) 
 	      numChanged += examineExample(i);
 
@@ -285,75 +291,99 @@ public:
     }
 
     void printweights() {
-      for ( std::size_t i=0; i<base_type::weight.size(); ++i)
+      for ( size_t i=0; i<base_type::weight.size(); ++i)
 	std::cout << base_type::weight[i] << " ";
       std::cout << std::endl;
     }
     
-    scalar_type C;
-    scalar_type tol;
-    std::vector<double> error_cache;
-    std::vector<input_type> points;
-    std::vector<output_type> target;
-    boost::mt19937 randomness;
-    boost::random_number_generator<boost::mt19937> startpt;
-  };
+  unsigned int size;
+  scalar_type C;
+  scalar_type tol;
+  std::vector<scalar_type> error_cache;
+  boost::mt19937 randomness;
+  boost::random_number_generator<boost::mt19937> startpt;
+};
 
   // Ranking SVM. 
-  /*
-template<typename I, typename O, template<typename,int> class K>
-class svm<I,O,K, typename boost::enable_if<boost::is_same<O,int> >::type>:
-    public determinate<I,O,K> {
-  */
 
-  template<typename Problem, template<typename, int> class K>
-  class svm<Problem, K, typename boost::enable_if<is_ranking<Problem> >::type >:
-    public determinate<typename Problem::input_type, typename Problem::output_type, K> {
+  template<typename Problem, typename Kernel, typename PropertyMap>
+  class svm<Problem, Kernel, PropertyMap, typename boost::enable_if<is_ranking<Problem> >::type >:
+    public kernel_machine<Problem, Kernel, PropertyMap> {
   public:
-    typedef determinate<typename Problem::input_type, typename Problem::output_type, K> base_type;
+    typedef kernel_machine<Problem, Kernel, PropertyMap> base_type;
     typedef typename base_type::kernel_type kernel_type;
     typedef double scalar_type;
     typedef typename Problem::input_type input_type;
     typedef typename Problem::output_type output_type;  
     typedef typename base_type::result_type result_type;
 
+    typedef typename boost::property_traits<PropertyMap>::key_type key_type;
+    typedef typename boost::property_traits<PropertyMap>::value_type value_type;
+
     svm( typename boost::call_traits<kernel_type>::param_type k,
-	 typename boost::call_traits<double>::param_type max_weight ): 
-      base_type(k), C(max_weight), inner_machine(k, max_weight) {}
+	 typename boost::call_traits<double>::param_type max_weight,
+	 typename boost::call_traits<PropertyMap>::param_type map): 
+      base_type(k, map), C(max_weight), inner_machine(k, max_weight, map) {}
+
+    /* hm, this is interesting: we'll have to remember to reset the data to the new propertymap */
 
     result_type operator()(input_type const &x) {
       return inner_machine(x);
     }
 
 
-    template<class IRange, class ORange>
-    void learn(IRange const &input, ORange const &output) {
+    template<typename KeyIterator>
+    void learn(KeyIterator begin, KeyIterator end) {
+      size = std::distance(begin, end);
       std::vector<input_type> points;
       std::vector<int> target;
-      for (unsigned int i = 0; i < input.size()-1; ++i)  // no need to compare against the last point, we already did
-	for (unsigned int j = i+1; j < input.size(); ++j) 
-	  if (output[i].first == output[j].first) 
-	    if (output[i].second != output[j].second) {
+      for (unsigned int i = 0; i < size-1; ++i)  // no need to compare against the last point, we already did
+	for (unsigned int j = i+1; j < size; ++j)
+	  if ((*base_type::data)[i].get<1>().first == (*base_type::data)[j].get<1>().first) 
+	    if ((*base_type::data)[i].get<1>().second != (*base_type::data)[j].get<1>().second) {
 	      input_type diff_vec;
-	      std::transform(input[i].begin(), input[i].end(), input[j].begin(), std::back_inserter(diff_vec),
+	      std::transform((*base_type::data)[i].get<0>().begin(), 
+			     (*base_type::data)[i].get<0>.end(), 
+			     (*base_type::data)[j].get<0>().begin(), 
+			     std::back_inserter(diff_vec),
 			     std::minus<typename boost::range_value<input_type>::type>());
+	      /* problem: we actually need to be populating a new propertymap */
 	      points.push_back(diff_vec);
-	      target.push_back(sgn(output[i].second - output[j].second));
+	      target.push_back(sgn((*base_type::data)[i].get<1>().second - (*base_type::data)[j].get<1>().second));
 	    }
+
+      /* Let's see if artificially creating a second class works */
+
+      bool one_class = true;
+      for (unsigned int i=1; i<target.size(); ++i) 
+	if (target[i] != target[0]) {
+	  one_class = false;
+	  break;
+	}
+
+      if (one_class) 
+	for (unsigned int i=0; i<target.size(); i=i+2) {
+	  target[i] = -target[i];
+	  for (unsigned int j=0; j<points[i].size(); ++j)
+	    points[i][j] = -points[i][j];
+	}
+
+      /* done */
 
       inner_machine.learn(points, target);
       base_type::weight = inner_machine.weight;
-      base_type::support_vector = inner_machine.support_vector;
       base_type::bias = inner_machine.bias;
     }
 
+    unsigned int size;
     scalar_type epsilon;
     scalar_type C;
     std::vector<input_type> points;
     std::vector<output_type> target;
 
-    typedef kml::classification<input_type, int> problem_type;
-    svm<problem_type, K> inner_machine;
+    typedef boost::tuple<ublas::vector<input_type>, int> example_type;
+    typedef kml::classification<example_type> problem_type;
+    svm<problem_type, Kernel, PropertyMap> inner_machine;
   };
 
 } // namespace kml
