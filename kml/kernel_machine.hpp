@@ -129,6 +129,31 @@ public:
 
 
 
+
+
+    template<typename KeyIterator, typename Matrix>
+    void kernel_matrix( KeyIterator const begin, KeyIterator const end, Matrix &out ) {
+        // row by row filling
+        KeyIterator i(begin);
+        std::size_t row = 0;
+        while( i != end ) {
+            std::size_t col = 0;
+            KeyIterator j(begin);
+            while( j != end ) {
+                out( row, col ) = kernel_function( (*data)[*i].get<0>(), (*data)[*j].get<0>() );
+		++col;
+                ++j;
+            }
+            ++row;
+            ++i;
+        }
+    }
+
+
+
+
+
+
     // to fill e.g. a column of H, use fill_kernel
     // from boost documentation:
     // An algorithm that iterates through the range [m.begin1 (), m.end1 ()) will
