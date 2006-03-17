@@ -128,6 +128,7 @@ template<typename T>
 struct linear: public std::binary_function<T,T,typename input_value<T>::type> {
     typedef linear<T> type;
     typedef typename input_value<T>::type scalar_type;
+    typedef typename input_value<T>::type return_type;
     friend class boost::serialization::access;
 
     /*! Construct an uninitialised linear kernel */

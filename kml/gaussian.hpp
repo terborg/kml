@@ -52,7 +52,6 @@ class gaussian: public std::binary_function<T, T, typename input_value<T>::type>
 public:
     typedef gaussian<T> type;
     typedef typename input_value<T>::type scalar_type;
-    typedef typename mpl::int_<0>::type derivative_order;
     typedef typename input_value<T>::type return_type;
     friend class boost::serialization::access;
 
