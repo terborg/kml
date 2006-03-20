@@ -31,8 +31,6 @@
 // TODO fix old algorithms from kernels.h
 #include "kernels.h"
 
-
-
 // include AFTER enough traits have been included, of course... (?)
 #include <boost/numeric/bindings/atlas/cblas.hpp>
 #include <boost/numeric/bindings/atlas/clapack.hpp>
@@ -92,15 +90,22 @@ public:
 
 
     /*!	\param k a construction parameter for the kernel type */
-    rvm( typename boost::call_traits<kernel_type>::param_type k,
-         typename boost::call_traits<PropertyMap>::param_type map ): base_type(k,map) {}
+    rvm( typename boost::call_traits<scalar_type>::param_type var,
+         typename boost::call_traits<kernel_type>::param_type k,
+         typename boost::call_traits<PropertyMap>::param_type map ): base_type(k,map), variance_estimate(var) {}
 
+
+    /*! Construct a RVM using TokenIterators */
     template< typename TokenIterator >
     rvm( TokenIterator const begin, TokenIterator const end,
          typename boost::call_traits<kernel_type>::param_type k,
          typename boost::call_traits<PropertyMap>::param_type map ):
     base_type(k,map) {
-        // no parameters at the moment
+        // default parameter setting
+        variance_estimate = 0.1;
+        TokenIterator token(begin);
+        if ( token != end )
+            variance_estimate = boost::lexical_cast<double>( *token );
     }
 
 
@@ -158,8 +163,6 @@ public:
         // theta is 1/alpha, as in Ralf Herbrich's R implementation
         // it is easier to prune near-zero values than "very large" values
 
-        scalar_type variance_estimate;
-        variance_estimate = 0.1;
 
         // look for the best basis vector we could add
         // If NOT done, e.g., if we would always start with the intercept term
@@ -631,6 +634,7 @@ public:
     void serialize( Archive &archive, unsigned int const version ) {
         archive & boost::serialization::base_object<base_type>(*this);
         archive & bias;
+        archive & variance_estimate;
     }
 
 
@@ -642,8 +646,10 @@ public:
                  };
 
 
-    scalar_type bias;
 
+    // RVM variables
+    scalar_type bias;
+    scalar_type variance_estimate;
 
 
 }
@@ -674,4 +680,3 @@ struct tracking_level< kml::rvm<Problem,Kernel,PropertyMap,Enable> > {
 
 
 #endif
-
