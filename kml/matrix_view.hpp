@@ -84,10 +84,22 @@ public:
         view_cols=0;
     }
 
+
+    unsigned int find_pow2_neighbour( unsigned int n ) {
+	unsigned int answer = 1;
+	while ( n > 0 ) {
+		answer <<= 1;
+		n >>= 1;
+	}
+	return answer;
+    }
+
     // if you have some pre-knowledge, or want to pre-reserve memory
     // does not preserve the matrix!!
     void reserve( size_type rows, size_type cols ) {
-        matrix.resize( std::max(rows,1), std::max(cols,1), false );
+	view_rows = rows;
+	view_cols = cols;
+        matrix.resize( find_pow2_neighbour(rows), find_pow2_neighbour(cols), false );
     }
 
 

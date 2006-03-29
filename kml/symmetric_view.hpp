@@ -85,6 +85,8 @@ public:
     // if you have some pre-knowledge, or want to pre-reserve memory
     // does not preserve the matrix!!
     void reserve( size_type rows, size_type cols ) {
+	view_rows = rows;
+	view_cols = cols;
         matrix.resize( std::max(rows,1), std::max(cols,1), false );
     }
 
