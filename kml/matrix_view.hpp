@@ -237,8 +237,13 @@ public:
 
     // also provide shrinked views: this is very useful for the inverted matrix updates
     // i.e. the matrix is resized first, and then an algorithm computes the updated inverse
-    inline ublas::matrix_range<M> const shrinked_view() {
+    inline ublas::matrix_range<M> const shrinked_view() const {
         return ublas::matrix_range<M>(matrix, ublas::range(0,view_rows-1),ublas::range(0,view_cols-1));
+    }
+
+    // also provide a shrunken column view (view_rows x view_cols-1)
+    inline ublas::matrix_range<M> const shrinked_column_view() const {
+        return ublas::matrix_range<M>(matrix,ublas::range(0,view_rows),ublas::range(0,view_cols-1));
     }
 
 
