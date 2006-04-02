@@ -51,7 +51,6 @@
 #include <iostream>
 #include <utility>
 #include <iterator>
-#include <ext/numeric>
 
 #include <kml/kernel_machine.hpp>
 #include <kml/classification.hpp>
@@ -361,11 +360,8 @@ namespace kml {
 	for (unsigned int i=0; i<count; i=i+2) 
 	  inner_data[i] = boost::make_tuple(std::vector<scalar_type>(std::transform(inner_data[i].get<0>().begin(), inner_data[i].get<0>().end(), inner_data[i].get<0>().begin(), std::negate<scalar_type>()), inner_data[i].get<0>().end()), -inner_data[i].get<1>());
 
-
       inner_machine.set_data(inner_data);
-      std::vector<int> learn_keys(count);
-      __gnu_cxx::iota(learn_keys.begin(), learn_keys.end(), 0);
-      inner_machine.learn(learn_keys.begin(), learn_keys.end());
+      inner_machine.learn(inner_data.storage_begin(), inner_data.storage_end());
     }
 
     unsigned int size;

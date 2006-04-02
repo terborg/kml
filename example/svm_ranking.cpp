@@ -22,7 +22,6 @@
 #include <fstream>
 #include <string>
 #include <sstream>
-#include <ext/numeric>
 
 using std::string; using std::cout; using std::endl; 
 using std::ifstream; using std::stringstream;
@@ -79,11 +78,8 @@ int main(int argc, char *argv[]) {
   data[11] = boost::make_tuple(point, 3, 1);
   point.resize(0);
 
-  std::vector<int> learn_keys(12);
-  __gnu_cxx::iota(learn_keys.begin(), learn_keys.end(), 0);
-
   kml::svm<problem_type, kernel_type, PropertyMap> my_machine(3.162277, 1.0, data);
-  my_machine.learn(learn_keys.begin(), learn_keys.end());
+  my_machine.learn(data.storage_begin(), data.storage_end());
 
   /*
   std::cerr << "Weight vector (size " << my_machine.weight.size() << "): ";
