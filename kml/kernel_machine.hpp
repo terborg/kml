@@ -354,6 +354,116 @@ public:
     /*    std::vector<double> weight;*/
 };
 
+/*! \brief Ranking kernel machine
+ 
+	This is used as a base for various ranking kernel machines, for example kml::svm.
+ 
+	\param Problem a ranking problem type, for example kml::ranking
+	\param Kernel kernel to be used by the machine
+ 
+	\ingroup kernel_machines
+*/
+template< typename Problem, typename Kernel, typename PropertyMap >
+class kernel_machine<Problem, Kernel, PropertyMap, typename boost::enable_if< is_ranking<Problem> >::type >:
+    public std::unary_function< typename Problem::input_type, typename Problem::output_type > {
+
+public:
+    typedef Kernel kernel_type;
+    typedef typename Problem::input_type input_type;
+    typedef typename Problem::group_type group_type;
+    typedef typename Problem::output_type output_type;
+    typedef typename boost::property_traits<PropertyMap>::key_type key_type;
+    typedef typename boost::property_traits<PropertyMap>::value_type object_type;
+
+    // FIXME make this something else...
+    typedef double scalar_type;
+
+
+    kernel_machine( typename boost::call_traits<kernel_type>::param_type k,
+                    typename boost::call_traits<PropertyMap>::param_type map ):
+    kernel_function(k), data(&map) {}
+
+
+    typename kernel_type::return_type kernel( key_type const i, key_type const j ) {
+                                    return kernel_function( (*data)[i].get<0>(), (*data)[j].get<0>() );
+                                }
+
+                                typename kernel_type::return_type kernel( input_type const &x, key_type const j ) {
+                                                                return kernel_function( x, (*data)[j].get<0>() );
+                                                            }
+      
+  typename kernel_type::return_type kernel(key_type const i, input_type const &x) {
+    return kernel_function((*data)[i].get<0>(), x);
+  }
+
+                                                            template<typename KeyIterator, typename OutputIterator>
+    void fill_kernel( input_type const &x,
+                      KeyIterator const begin, KeyIterator const end, OutputIterator out ) {
+        KeyIterator i(begin);
+        OutputIterator j(out);
+        while (i!=end) {
+            if ( (*data)[*i].get<1>() )
+                *j = kernel_function( x, (*data)[*i].get<0>() );
+            else
+                *j = -kernel_function( x, (*data)[*i].get<0>() );
+            ++i;
+            ++j;
+        }
+    }
+
+    template<typename KeyIterator, typename OutputIterator>
+    void fill_kernel( key_type const key,
+                      KeyIterator const begin, KeyIterator const end, OutputIterator out ) {
+        KeyIterator i(begin);
+        OutputIterator j(out);
+        if ( (*data)[key].get<1>() ) {
+            while (i!=end) {
+                if ( (*data)[*i].get<1>() )
+                    *j = kernel_function( (*data)[key].get<0>(), (*data)[*i].get<0>() );
+                else
+                    *j = -kernel_function( (*data)[key].get<0>(), (*data)[*i].get<0>() );
+                ++i;
+                ++j;
+            }
+        } else {
+            while (i!=end) {
+                if ( (*data)[*i].get<1>() )
+                    *j = -kernel_function( (*data)[key].get<0>(), (*data)[*i].get<0>() );
+                else
+                    *j = kernel_function( (*data)[key].get<0>(), (*data)[*i].get<0>() );
+                ++i;
+                ++j;
+            }
+        }
+    }
+
+    void set_data( PropertyMap const &map ) {
+        data = &map;
+    }
+
+
+    // loading and saving capabilities
+    template<class Archive>
+    void serialize( Archive &archive, unsigned int const version ) {
+
+        // here we store whatever we want to store...
+        archive & kernel_function;
+
+
+    }
+
+    /// kernel_function used by the machine
+    kernel_type kernel_function;
+
+    /// pointer to data container used by the machine
+    PropertyMap const *data;
+
+
+    /// to translate to a sequential view
+    //     std::map< key_type, std::size_t > key_mapping;
+    //     std::vector< key_type > key_lookup;
+
+};
 
 
 } // namespace kml

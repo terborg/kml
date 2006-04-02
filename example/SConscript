@@ -4,7 +4,7 @@ Import('atlas_link_libs')
 Import('c_link_libs')
 
 # KML tool configuration
-if env['PLATFORM'] == 'posix':
+if (env['PLATFORM'] == 'posix' or env['PLATFORM'] == 'darwin'):
 	program_options_lib = ['boost_program_options']
 	serialization_lib = ['boost_serialization']
 elif env['PLATFORM'] == 'win32':

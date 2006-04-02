@@ -27,8 +27,10 @@
 namespace kml {
 
 /*! \brief Defines a ranking problem.
-	\param I the input type
-	\param O the output type
+	\param T the example type
+
+The example type should be a boost::tuple defining the input as the first
+element, the group as the second element, and the output as the third element.
 
 	\sa regression, classification
 	\ingroup problem
@@ -40,7 +42,8 @@ public:
 	typedef ranking<T> type;
 	typedef T example_type;
 	typedef typename boost::tuples::element<0,T>::type input_type;
-	typedef typename boost::tuples::element<1,T>::type output_type;
+        typedef typename boost::tuples::element<1,T>::type group_type;
+	typedef typename boost::tuples::element<2,T>::type output_type;
 };
 
 // Define templates is_ranking so we can recognise the ranking type of problems

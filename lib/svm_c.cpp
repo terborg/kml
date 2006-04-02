@@ -22,6 +22,8 @@
 
 #include <kml/svm.hpp>
 #include <kml/gaussian.hpp>
+#include <kml/linear.hpp>
+#include <kml/polynomial.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/bindings/traits/std_vector.hpp>
 #include <boost/numeric/bindings/traits/ublas_vector.hpp>
@@ -34,6 +36,8 @@
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/random_number_generator.hpp>
 #include <boost/range/value_type.hpp>
+#include <boost/tuple/tuple.hpp>
+#include <boost/vector_property_map.hpp>
 #include <vector>
 #include <utility>
 
@@ -42,86 +46,91 @@
 namespace ublas = boost::numeric::ublas;
 namespace mpl = boost::mpl;
 
-typedef kml::classification<std::vector<double>, int> class_double;
-typedef kml::ranking<std::vector<double>, double> rank_double;
-  
+typedef std::vector<double> input_type;
+
+typedef boost::tuple<input_type, int> class_ex_type;
+typedef boost::tuple<input_type, int, double> rank_ex_type;
+
+typedef boost::vector_property_map<class_ex_type> class_property_map;
+typedef boost::vector_property_map<rank_ex_type> rank_property_map;
+
+typedef kml::gaussian<input_type> gaussian_k;
+typedef kml::polynomial<input_type> polynomial_k;
+typedef kml::linear<input_type> linear_k;
+
+typedef kml::classification<class_ex_type> class_prob;
+typedef kml::ranking<rank_ex_type> rank_prob;
+
 extern "C" {  
-  void printweights(void *v) {
-    kml::svm<class_double, kml::gaussian>* m = (kml::svm<class_double, kml::gaussian> *) v;
-    m->printweights();
-  }
 
   void* kml_new_classification_double_gaussian(double k, double s) { 
-    return (void *) new kml::svm<class_double, kml::gaussian>(k, s);
+    class_property_map m;
+    return (void *) new kml::svm<class_prob, gaussian_k, class_property_map>(k, s, m);
   }
 
   void* kml_copy_classification_double_gaussian(void *v) {
-    kml::svm<class_double, kml::gaussian>* m = (kml::svm<class_double, kml::gaussian> *) v;
-    return (void *) new kml::svm<class_double, kml::gaussian>(*m);
+    kml::svm<class_prob, gaussian_k, class_property_map>* m = (kml::svm<class_prob, gaussian_k, class_property_map> *) v;
+    return (void *) new kml::svm<class_prob, gaussian_k, class_property_map>(*m);
   }
 
   void kml_delete_classification_double_gaussian(void *v) {
-    delete (kml::svm<class_double, kml::gaussian>*) v;
+    delete (kml::svm<class_prob, gaussian_k, class_property_map>*) v;
   }
 
-  void kml_learn_classification_double_gaussian(void *v, double **p, int **t,
+  void kml_learn_classification_double_gaussian(void *v, double **p, int *t,
 						int sz_row, int sz_col) {
-    kml::svm<class_double, kml::gaussian>* m = (kml::svm<class_double, kml::gaussian> *) v;
-    std::vector<std::vector<double> > points;
+    kml::svm<class_prob, gaussian_k, class_property_map>* m = (kml::svm<class_prob, gaussian_k, class_property_map> *) v;
+    class_property_map data;
     for (int j = 0; j < sz_row; ++j) {
-      points.push_back(std::vector<double>(*p, (*p) + sz_col));
-      ++p;
+      data[j] = boost::make_tuple(std::vector<double>(*p, (*p) + sz_col), *t);
+      ++p; ++t;
     }
-    std::vector<int> target;
-    for (int j = 0; j < sz_row; ++j) {
-      target.push_back((*t)[1]);
-      ++t;
-    }
-    m->learn(points, target);
+    m->set_data(data);
+    // need a way to get the indices off a propertymap!
+    /*    m->learn(points, target); */
   }
 
   double kml_classify_double_gaussian(void *v, double *i, int sz) {
-    kml::svm<class_double, kml::gaussian>* m = (kml::svm<class_double, kml::gaussian> *) v;
+    kml::svm<class_prob, gaussian_k, class_property_map>* m = (kml::svm<class_prob, gaussian_k, class_property_map> *) v;
     if (m->operator()(std::vector<double>(i, i+sz)) > 0)
       return 1;
     else
-      return 0;
+      return 0; // This way we can coerce to boolean trivially. Should try return (m->operator()(std::vector<double>(i, i+sz)) > 0) though.
   }
 
   void* kml_new_ranking_double_gaussian(double k, double s) {
-    return (void *) new kml::svm<rank_double, kml::gaussian>(k, s);
+    rank_property_map m;
+    return (void *) new kml::svm<rank_prob, gaussian_k, rank_property_map>(k, s, m);
   }
 
   void* kml_copy_ranking_double_gaussian(void *v) {
-    kml::svm<rank_double, kml::gaussian>* m = (kml::svm<rank_double, kml::gaussian> *) v;
-    return (void *) new kml::svm<rank_double, kml::gaussian>(*m);
+    kml::svm<rank_prob, gaussian_k, rank_property_map>* m = (kml::svm<rank_prob, gaussian_k, rank_property_map> *) v;
+    return (void *) new kml::svm<rank_prob, gaussian_k, rank_property_map>(*m);
   }
 
   void kml_delete_ranking_double_gaussian(void *v) {
-    delete (kml::svm<rank_double, kml::gaussian>*) v;
+    delete (kml::svm<rank_prob, gaussian_k, rank_property_map>*) v;
   }
 
-  void kml_learn_ranking_double_gaussian(void *v, double **p, int **t, int sz_row,
-					 int sz_col) {
-    kml::svm<rank_double, kml::gaussian>* m = (kml::svm<rank_double, kml::gaussian> *) v;
-    std::vector<std::vector<double> > points;
+  void kml_learn_ranking_double_gaussian(void *v, double **p, int *g, int *t, 
+					 int sz_row, int sz_col) {
+    kml::svm<rank_prob, gaussian_k, rank_property_map>* m = (kml::svm<rank_prob, gaussian_k, rank_property_map> *) v;
+    rank_property_map data;
     for (int j = 0; j < sz_row; ++j) {
-      points.push_back(std::vector<double>(*p, (*p) + sz_col));
-      ++p;
+      data[j] = boost::make_tuple(std::vector<double>(*p, (*p) + sz_col), *g, *t);
+      ++p; ++g; ++t;
     }
-    std::vector<std::pair<int,int> > target;
-    for (int j=0; j < sz_row; ++j) {
-      target.push_back(std::make_pair(**t, *((*t)+1))); // .first is group, .second is rank
-      ++t;
-    }
-    m->learn(points, target);
-  }
- 
-  double kml_rank_double_gaussian(void* v, double *i, int sz) {
-    kml::svm<rank_double, kml::gaussian>* m = (kml::svm<rank_double, kml::gaussian> *) v;
+    m->set_data(data);
 
-    return m->operator()(std::vector<double>(i, i+sz));
-  }  
+    /// again, fix this
+    /* m->learn(points, groups, target); */
+  }
+
+  double kml_rank_double_gaussian(void* v, double *i, int sz) {
+    kml::svm<rank_prob, gaussian_k, rank_property_map>* m = (kml::svm<rank_prob, gaussian_k, rank_property_map> *) v;
+    return (m->operator()(std::vector<double>(i, i+sz)));
+  }
+
 }
 
 #endif

@@ -10,15 +10,19 @@
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/normal_distribution.hpp>
 #include <kml/gaussian.hpp>
+#include <kml/ranking.hpp>
 #include <kml/svm.hpp>
 #include <kml/io.hpp>
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/numeric/ublas/vector.hpp>
+#include <boost/tuple/tuple.hpp>
+#include <boost/vector_property_map.hpp>
+#include <vector>
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <sstream>
-#include <utility>
+#include <ext/numeric>
 
 using std::string; using std::cout; using std::endl; 
 using std::ifstream; using std::stringstream;
@@ -26,69 +30,62 @@ using std::getline; using std::cerr;
 
 namespace ublas = boost::numeric::ublas;
 
-typedef kml::ranking<std::vector<double>, int> problem_type;
-typedef std::vector<std::vector<double> >::iterator vec_iter;
+typedef boost::tuple<std::vector<double>, int, double> example_type;
+typedef kml::ranking<example_type> problem_type;
+typedef kml::gaussian<problem_type::input_type> kernel_type;
+typedef boost::vector_property_map<example_type> PropertyMap;
 
 int main(int argc, char *argv[]) {
 
-  std::vector<std::vector<double> > points;
-  std::vector<double> point;
+  PropertyMap data;
+  problem_type::input_type point;
+
   point.push_back(1); point.push_back(1); point.push_back(0); point.push_back(0.2); point.push_back(0);
-  points.push_back(point);
+  data[0] = boost::make_tuple(point, 1, 3);
   point.resize(0);
   point.push_back(0); point.push_back(0); point.push_back(1); point.push_back(0.1); point.push_back(1);
-  points.push_back(point);
+  data[1] = boost::make_tuple(point, 1, 2);
   point.resize(0);
   point.push_back(0); point.push_back(1); point.push_back(0); point.push_back(0.4); point.push_back(0);
-  points.push_back(point);
+  data[2] = boost::make_tuple(point, 1, 1);
   point.resize(0);
   point.push_back(0); point.push_back(0); point.push_back(1); point.push_back(0.3); point.push_back(0);
-  points.push_back(point);
+  data[3] = boost::make_tuple(point, 1, 1);
   point.resize(0);
 
   point.push_back(0); point.push_back(0); point.push_back(1); point.push_back(0.2); point.push_back(0);
-  points.push_back(point);
+  data[4] = boost::make_tuple(point, 2, 1);
   point.resize(0);
   point.push_back(1); point.push_back(0); point.push_back(1); point.push_back(0.4); point.push_back(0);
-  points.push_back(point);
+  data[5] = boost::make_tuple(point, 2, 2);
   point.resize(0);
   point.push_back(0); point.push_back(0); point.push_back(1); point.push_back(0.1); point.push_back(0);
-  points.push_back(point);
+  data[6] = boost::make_tuple(point, 2, 1);
   point.resize(0);
   point.push_back(0); point.push_back(0); point.push_back(1); point.push_back(0.2); point.push_back(0);
-  points.push_back(point);
+  data[7] = boost::make_tuple(point, 2, 1);
   point.resize(0);
 
   point.push_back(0); point.push_back(0); point.push_back(1); point.push_back(0.1); point.push_back(1);
-  points.push_back(point);
+  data[8] = boost::make_tuple(point, 3, 2);
   point.resize(0);
   point.push_back(1); point.push_back(1); point.push_back(0); point.push_back(0.3); point.push_back(0);
-  points.push_back(point);
+  data[9] = boost::make_tuple(point, 3, 3);
   point.resize(0);
   point.push_back(1); point.push_back(0); point.push_back(0); point.push_back(0.4); point.push_back(1);
-  points.push_back(point);
+  data[10] = boost::make_tuple(point, 3, 4);
   point.resize(0);
   point.push_back(0); point.push_back(1); point.push_back(1); point.push_back(0.5); point.push_back(0);
-  points.push_back(point);
+  data[11] = boost::make_tuple(point, 3, 1);
   point.resize(0);
 
-  std::vector<std::pair<int, int> > target;
-  target.push_back(std::make_pair(1,3));
-  target.push_back(std::make_pair(1,2));
-  target.push_back(std::make_pair(1,1));
-  target.push_back(std::make_pair(1,1));
-  target.push_back(std::make_pair(2,1));
-  target.push_back(std::make_pair(2,2));
-  target.push_back(std::make_pair(2,1));
-  target.push_back(std::make_pair(2,1));
-  target.push_back(std::make_pair(3,2));
-  target.push_back(std::make_pair(3,3));
-  target.push_back(std::make_pair(3,4));
-  target.push_back(std::make_pair(3,1));
+  std::vector<int> learn_keys(12);
+  __gnu_cxx::iota(learn_keys.begin(), learn_keys.end(), 0);
 
-  kml::svm<problem_type, kml::gaussian> my_machine(3.162277, 1.0);
-  my_machine.learn(points, target);
+  kml::svm<problem_type, kernel_type, PropertyMap> my_machine(3.162277, 1.0, data);
+  my_machine.learn(learn_keys.begin(), learn_keys.end());
 
+  /*
   std::cerr << "Weight vector (size " << my_machine.weight.size() << "): ";
   for (unsigned int i=0; i<my_machine.weight.size(); ++i)
     std::cerr << my_machine.weight[i] << ", ";
@@ -104,8 +101,8 @@ int main(int argc, char *argv[]) {
       std::cerr << *it2 << ", ";
     std::cerr << "]" << std::endl;
   }
-
-  std::vector<std::vector<double> > testpoints;
+  */
+  std::vector<problem_type::input_type> testpoints;
   point.push_back(1);
   point.push_back(0);
   point.push_back(0);
@@ -135,9 +132,7 @@ int main(int argc, char *argv[]) {
   testpoints.push_back(point);
   point.resize(0);
 
-  std::vector<int> testtarget;
-
-  for (vec_iter i = testpoints.begin(); i != testpoints.end(); ++i)
+  for (std::vector<problem_type::input_type>::iterator i = testpoints.begin(); i != testpoints.end(); ++i)
     cout << my_machine(*i) << endl;
   return 0;
 }

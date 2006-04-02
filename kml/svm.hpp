@@ -51,6 +51,7 @@
 #include <iostream>
 #include <utility>
 #include <iterator>
+#include <ext/numeric>
 
 #include <kml/kernel_machine.hpp>
 #include <kml/classification.hpp>
@@ -73,27 +74,22 @@ namespace kml {
   public:
     typedef kernel_machine<Problem, Kernel, PropertyMap> base_type;
     typedef typename base_type::kernel_type kernel_type;
-    typedef typename base_type::result_type result_type;
     typedef typename Problem::input_type input_type; 
     typedef typename Problem::output_type output_type;  
     typedef double scalar_type;
     
-    /*
-    typedef typename boost::property_traits<PropertyMap>::key_type key_type;
-    typedef typename boost::property_traits<PropertyMap>::value_type value_type;
-    */
     svm( typename boost::call_traits<kernel_type>::param_type k,
 	 typename boost::call_traits<scalar_type>::param_type max_weight,
 	 typename boost::call_traits<PropertyMap>::param_type map ): 
-      base_type(k, map), C(max_weight), tol(.001), startpt(randomness) { }
+      base_type(k, map), C(max_weight), tol(.001), bias(0), startpt(randomness) { }
     
-    result_type operator() (input_type const &x) {
+    output_type operator() (input_type const &x) {
       scalar_type ret=0;
       for (size_t i=0; i<weight.size(); ++i)
-	if (weight[i] > 0)
+	if (weight[i] > 0) 
 	  ret += weight[i] * (*base_type::data)[i].get<1>() * base_type::kernel(i, x);
       ret -= bias;
-      return sgn(ret);
+      return (output_type)ret;
     }
     
     int takeStep(int i1, int i2) {
@@ -270,6 +266,7 @@ namespace kml {
       weight.resize(size);
       error_cache.clear();
       error_cache.resize(size);
+      bias = 0;
      
       int numChanged = 0;
       int examineAll = 1;
@@ -308,6 +305,8 @@ namespace kml {
 
   // Ranking SVM. 
 
+  // data<0> is the point; data<1> is the group it belongs in; data<2> is the rank assigned to it.
+
   template<typename Problem, typename Kernel, typename PropertyMap>
   class svm<Problem, Kernel, PropertyMap, typename boost::enable_if<is_ranking<Problem> >::type >:
     public kernel_machine<Problem, Kernel, PropertyMap> {
@@ -317,75 +316,64 @@ namespace kml {
     typedef double scalar_type;
     typedef typename Problem::input_type input_type;
     typedef typename Problem::output_type output_type;  
-    typedef typename base_type::result_type result_type;
-
-    /*
-    typedef typename boost::property_traits<PropertyMap>::key_type key_type;
-    typedef typename boost::property_traits<PropertyMap>::value_type value_type;
-    */
+    typedef boost::tuple<input_type, double> inner_example_type;
+    typedef kml::classification<inner_example_type> inner_problem_type;
+    typedef boost::vector_property_map<inner_example_type> InnerPropertyMap;
+    typedef svm<inner_problem_type, kernel_type, InnerPropertyMap> inner_svm_type;
 
     svm( typename boost::call_traits<kernel_type>::param_type k,
 	 typename boost::call_traits<double>::param_type max_weight,
 	 typename boost::call_traits<PropertyMap>::param_type map): 
-      base_type(k, map), C(max_weight), inner_machine(k, max_weight, map) {}
+      base_type(k, map), C(max_weight), inner_machine(k, max_weight, inner_data) { }
 
-    /* hm, this is interesting: we'll have to remember to reset the data to the new propertymap */
-
-    result_type operator()(input_type const &x) {
+    output_type operator()(input_type const &x) {
       return inner_machine(x);
     }
-
 
     template<typename KeyIterator>
     void learn(KeyIterator begin, KeyIterator end) {
       size = std::distance(begin, end);
-      std::vector<input_type> points;
-      std::vector<int> target;
+      unsigned int count=0;
       for (unsigned int i = 0; i < size-1; ++i)  // no need to compare against the last point, we already did
 	for (unsigned int j = i+1; j < size; ++j)
-	  if ((*base_type::data)[i].get<1>().first == (*base_type::data)[j].get<1>().first) 
-	    if ((*base_type::data)[i].get<1>().second != (*base_type::data)[j].get<1>().second) {
+	  if ((*base_type::data)[i].get<1>() == (*base_type::data)[j].get<1>()) 
+	    if ((*base_type::data)[i].get<2>() != (*base_type::data)[j].get<2>()) {
 	      input_type diff_vec;
 	      std::transform((*base_type::data)[i].get<0>().begin(), 
-			     (*base_type::data)[i].get<0>.end(), 
+			     (*base_type::data)[i].get<0>().end(), 
 			     (*base_type::data)[j].get<0>().begin(), 
 			     std::back_inserter(diff_vec),
 			     std::minus<typename boost::range_value<input_type>::type>());
-	      /* problem: we actually need to be populating a new propertymap */
-	      points.push_back(diff_vec);
-	      target.push_back(sgn((*base_type::data)[i].get<1>().second - (*base_type::data)[j].get<1>().second));
+	      inner_data[count] = boost::make_tuple(diff_vec, sgn((*base_type::data)[i].get<2>() - (*base_type::data)[j].get<2>()));
+	      ++count;
 	    }
 
       /* Let's see if artificially creating a second class works */
 
       bool one_class = true;
-      for (unsigned int i=1; i<target.size(); ++i) 
-	if (target[i] != target[0]) {
+      for (unsigned int i=1; i<count; ++i) 
+	if (inner_data[i].get<1>() != inner_data[0].get<1>()) {
 	  one_class = false;
 	  break;
 	}
 
       if (one_class) 
-	for (unsigned int i=0; i<target.size(); i=i+2) {
-	  target[i] = -target[i];
-	  for (unsigned int j=0; j<points[i].size(); ++j)
-	    points[i][j] = -points[i][j];
-	}
+	for (unsigned int i=0; i<count; i=i+2) 
+	  inner_data[i] = boost::make_tuple(std::vector<scalar_type>(std::transform(inner_data[i].get<0>().begin(), inner_data[i].get<0>().end(), inner_data[i].get<0>().begin(), std::negate<scalar_type>()), inner_data[i].get<0>().end()), -inner_data[i].get<1>());
 
-      /* done */
 
-      inner_machine.learn(points, target);
+      inner_machine.set_data(inner_data);
+      std::vector<int> learn_keys(count);
+      __gnu_cxx::iota(learn_keys.begin(), learn_keys.end(), 0);
+      inner_machine.learn(learn_keys.begin(), learn_keys.end());
     }
 
     unsigned int size;
     scalar_type epsilon;
     scalar_type C;
-    std::vector<input_type> points;
-    std::vector<output_type> target;
 
-    typedef boost::tuple<ublas::vector<input_type>, int> example_type;
-    typedef kml::classification<example_type> problem_type;
-    svm<problem_type, Kernel, PropertyMap> inner_machine;
+    inner_svm_type inner_machine;
+    InnerPropertyMap inner_data;
   };
 
 } // namespace kml
