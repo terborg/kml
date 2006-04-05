@@ -31,6 +31,7 @@
 
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/tracking.hpp>
+#include <boost/shared_ptr.hpp>
 
 // for the property traits
 #include <boost/property_map.hpp>
@@ -197,8 +198,7 @@ public:
     kernel_type kernel_function;
 
     /// pointer to data container used by the machine
-    PropertyMap const *data;
-
+      PropertyMap const *data;
 
     /// to translate to a sequential view
     //     std::map< key_type, std::size_t > key_mapping;
@@ -246,6 +246,9 @@ public:
                     typename boost::call_traits<PropertyMap>::param_type map ):
     kernel_function(k), data(&map) {}
 
+    kernel_machine(kernel_machine &k): kernel_function(k.kernel_function) {
+      data = new PropertyMap(*(k.data));
+    }
 
     typename kernel_type::return_type kernel( key_type const i, key_type const j ) {
                                     return kernel_function( (*data)[i].get<0>(), (*data)[j].get<0>() );
@@ -315,7 +318,15 @@ public:
     //     }
 
     void set_data( PropertyMap const &map ) {
-        data = &map;
+      data = &map;
+    }
+
+    void set_data(PropertyMap const *map) {
+      data = map;
+    }
+
+    void set_kernel( kernel_type const &k ) {
+        kernel_function = k;
     }
 
 
@@ -341,7 +352,6 @@ public:
 
     /// pointer to data container used by the machine
     PropertyMap const *data;
-
 
     /// to translate to a sequential view
     //     std::map< key_type, std::size_t > key_mapping;

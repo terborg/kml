@@ -28,6 +28,7 @@
 #include <boost/vector_property_map.hpp>
 #include <vector>
 #include <utility>
+#include <iostream>
 
 #include "kml/svm_c.h"
 
@@ -54,7 +55,9 @@ extern "C" {
   }
 
   void* kml_copy_class_double_gaussian(void *v) {
+    std::cout << "Casting" << std::endl;
     kml::svm<class_prob, gaussian_k, class_property_map>* m = (kml::svm<class_prob, gaussian_k, class_property_map> *) v;
+    std::cout << "Size according to copy_double_gaussian: " << std::distance(m->data->storage_begin(), m->data->storage_end()) << std::endl;
     return (void *) new kml::svm<class_prob, gaussian_k, class_property_map>(*m);
   }
 
@@ -72,6 +75,7 @@ extern "C" {
     }
     m->set_data(data);
     m->learn(data.storage_begin(), data.storage_end()); 
+    std::cout << std::distance(m->data->storage_begin(), m->data->storage_end()) << std::endl;
   }
 
   double kml_classify_double_gaussian(void *v, double *i, int sz) {

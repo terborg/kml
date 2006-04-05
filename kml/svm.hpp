@@ -77,18 +77,30 @@ namespace kml {
     typedef typename Problem::input_type input_type; 
     typedef typename Problem::output_type output_type;  
     typedef double scalar_type;
-    
+
     svm( typename boost::call_traits<kernel_type>::param_type k,
 	 typename boost::call_traits<scalar_type>::param_type max_weight,
 	 typename boost::call_traits<PropertyMap>::param_type map ): 
       base_type(k, map), C(max_weight), tol(.001), bias(0), startpt(randomness) { }
 
+    svm(svm &s): base_type(s.kernel_function, *(s.data)), startpt(randomness) { 
+      C = s.C; weight = s.weight; tol = .0001; bias = s.bias; 
+      std::cout << "In copy constructor" << std::endl;
+      base_type::data = new PropertyMap(*(s.data));
+      std::cout << "Leaving copy constructor" << std::endl;
+    }
+
     output_type operator() (input_type const &x) {
       scalar_type ret=0;
-      for (size_t i=0; i<weight.size(); ++i)
-	if (weight[i] > 0) 
+      std::cerr << "weight vector has " << weight.size() << " elements" << std::endl;
+      for (size_t i=0; i<weight.size(); ++i) 
+	if (weight[i] > 0) {
+	  /* so, what's happening here is the data isn't getting copy-constructed right. */
+	  //	  std::cerr << (*base_type::data)[i].get<1>() << std::endl;
 	  ret += weight[i] * (*base_type::data)[i].get<1>() * base_type::kernel(i, x);
+	}
       ret -= bias;
+      std::cerr << "returning " << ret << std::endl;
       return (output_type)ret;
     }
     
