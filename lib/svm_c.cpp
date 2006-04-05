@@ -110,12 +110,10 @@ extern "C" {
     return (m->operator()(std::vector<double>(i, i+sz)));
   }
 
-  /*
   void* kml_new_class_double_polynomial(double g, double l, double d, double s) { 
-    std::list<double> t;
-    t.push_back(g); t.push_back(l); t.push_back(d);
+    polynomial_k p(g, l, d);
     class_property_map m;
-    return (void *) new kml::svm<class_prob, polynomial_k, class_property_map>(t.begin(), t.end(), s, m);
+    return (void *) new kml::svm<class_prob, polynomial_k, class_property_map>(p, s, m);
   }
 
   void* kml_copy_class_double_polynomial(void *v) {
@@ -147,9 +145,10 @@ extern "C" {
       return 0; // This way we can coerce to boolean trivially. Should try return (m->operator()(std::vector<double>(i, i+sz)) > 0) though.
   }
 
-  void* kml_new_rank_double_polynomial(double k, double s) {
+  void* kml_new_rank_double_polynomial(double g, double l, double d, double s) {
+    polynomial_k p(g, l, d);
     rank_property_map m;
-    return (void *) new kml::svm<rank_prob, polynomial_k, rank_property_map>(k, s, m);
+    return (void *) new kml::svm<rank_prob, polynomial_k, rank_property_map>(p, s, m);
   }
 
   void* kml_copy_rank_double_polynomial(void *v) {
@@ -175,9 +174,10 @@ extern "C" {
     return (m->operator()(std::vector<double>(i, i+sz)));
   }
 
-  void* kml_new_class_double_linear(double k, double s) { 
+  void* kml_new_class_double_linear(double s) { 
+    linear_k l;
     class_property_map m;
-    return (void *) new kml::svm<class_prob, linear_k, class_property_map>(k, s, m);
+    return (void *) new kml::svm<class_prob, linear_k, class_property_map>(l, s, m);
   }
 
   void* kml_copy_class_double_linear(void *v) {
@@ -209,9 +209,10 @@ extern "C" {
       return 0; // This way we can coerce to boolean trivially. Should try return (m->operator()(std::vector<double>(i, i+sz)) > 0) though.
   }
 
-  void* kml_new_rank_double_linear(double k, double s) {
+  void* kml_new_rank_double_linear(double s) {
+    linear_k l;
     rank_property_map m;
-    return (void *) new kml::svm<rank_prob, linear_k, rank_property_map>(k, s, m);
+    return (void *) new kml::svm<rank_prob, linear_k, rank_property_map>(l, s, m);
   }
 
   void* kml_copy_rank_double_linear(void *v) {
@@ -237,7 +238,6 @@ extern "C" {
     return (m->operator()(std::vector<double>(i, i+sz)));
   }
 
-  */
 }
 
 #endif

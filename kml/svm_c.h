@@ -19,7 +19,6 @@ extern "C" {
 					 int sz_row, int sz_col);
   double kml_rank_double_gaussian(void *v, double *i, int sz);
 
-  /*
   void* kml_new_class_double_polynomial(double g, double l, double d, double s);
   void* kml_copy_class_double_polynomial(void *v);
   void kml_delete_class_double_polynomial(void *v);
@@ -34,6 +33,8 @@ extern "C" {
 					   int sz_row, int sz_col);
   double kml_rank_double_polynomial(void *v, double *i, int sz);
   
+
+  /*
   void* kml_new_class_double_linear(double k, double s);
   void* kml_copy_class_double_linear(void *v);
   void kml_delete_class_double_linear(void *v);

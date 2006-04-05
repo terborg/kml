@@ -4,9 +4,10 @@
 
 Import( 'env' )
 Import( 'arch_ext' )
+Import('atlas_link_libs')
 import os
 
-env.SharedLibrary('kml', ['svm_c.cpp'])
+env.SharedLibrary('kml', ['svm_c.cpp'], LIBS=atlas_link_libs)
 
 #
 # In case of a Windows platform, build the win32 cblas.dll file on the basis of a ATLAS installation
