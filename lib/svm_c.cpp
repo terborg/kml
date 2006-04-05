@@ -175,9 +175,8 @@ extern "C" {
   }
 
   void* kml_new_class_double_linear(double s) { 
-    linear_k l;
     class_property_map m;
-    return (void *) new kml::svm<class_prob, linear_k, class_property_map>(l, s, m);
+    return (void *) new kml::svm<class_prob, linear_k, class_property_map>(linear_k(), s, m);
   }
 
   void* kml_copy_class_double_linear(void *v) {
@@ -210,9 +209,8 @@ extern "C" {
   }
 
   void* kml_new_rank_double_linear(double s) {
-    linear_k l;
     rank_property_map m;
-    return (void *) new kml::svm<rank_prob, linear_k, rank_property_map>(l, s, m);
+    return (void *) new kml::svm<rank_prob, linear_k, rank_property_map>(linear_k(), s, m);
   }
 
   void* kml_copy_rank_double_linear(void *v) {
