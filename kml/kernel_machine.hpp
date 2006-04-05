@@ -22,6 +22,7 @@
 
 #include <boost/lambda/bind.hpp>
 #include <boost/utility/enable_if.hpp>
+#include <boost/call_traits.hpp>
 #include <kml/regression.hpp>
 #include <kml/classification.hpp>
 #include <kml/ranking.hpp>

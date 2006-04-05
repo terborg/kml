@@ -45,6 +45,7 @@
 #include <boost/tuple/tuple.hpp>
 #include <boost/vector_property_map.hpp>
 #include <boost/numeric/ublas/vector.hpp>
+#include <boost/call_traits.hpp>
 
 #include <algorithm>
 #include <vector>
@@ -81,7 +82,7 @@ namespace kml {
 	 typename boost::call_traits<scalar_type>::param_type max_weight,
 	 typename boost::call_traits<PropertyMap>::param_type map ): 
       base_type(k, map), C(max_weight), tol(.001), bias(0), startpt(randomness) { }
-    
+
     output_type operator() (input_type const &x) {
       scalar_type ret=0;
       for (size_t i=0; i<weight.size(); ++i)

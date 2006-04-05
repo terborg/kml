@@ -110,9 +110,12 @@ extern "C" {
     return (m->operator()(std::vector<double>(i, i+sz)));
   }
 
-  void* kml_new_class_double_polynomial(double k, double s) { 
+  /*
+  void* kml_new_class_double_polynomial(double g, double l, double d, double s) { 
+    std::list<double> t;
+    t.push_back(g); t.push_back(l); t.push_back(d);
     class_property_map m;
-    return (void *) new kml::svm<class_prob, polynomial_k, class_property_map>(k, s, m);
+    return (void *) new kml::svm<class_prob, polynomial_k, class_property_map>(t.begin(), t.end(), s, m);
   }
 
   void* kml_copy_class_double_polynomial(void *v) {
@@ -234,7 +237,7 @@ extern "C" {
     return (m->operator()(std::vector<double>(i, i+sz)));
   }
 
-
+  */
 }
 
 #endif
