@@ -86,8 +86,13 @@ namespace kml {
     svm(svm &s): base_type(s.kernel_function, *(s.data)), startpt(randomness) { 
       C = s.C; weight = s.weight; tol = .0001; bias = s.bias; 
       std::cout << "In copy constructor" << std::endl;
+      std::cout << "data's location: " << s.data << std::endl;
       base_type::data = new PropertyMap(*(s.data));
       std::cout << "Leaving copy constructor" << std::endl;
+    }
+
+    ~svm() {
+      std::cout << "Destructor got called" << std::endl;
     }
 
     output_type operator() (input_type const &x) {

@@ -51,14 +51,21 @@ extern "C" {
 
   void* kml_new_class_double_gaussian(double k, double s) { 
     class_property_map m;
-    return (void *) new kml::svm<class_prob, gaussian_k, class_property_map>(k, s, m);
+    kml::svm<class_prob, gaussian_k, class_property_map> *v = new kml::svm<class_prob, gaussian_k, class_property_map>(k, s, m);
+    std::cerr << "data's location from new: " << v->data << std::endl;
+    return (void *) v;
+    //    return (void *) new kml::svm<class_prob, gaussian_k, class_property_map>(k, s, m);
   }
 
   void* kml_copy_class_double_gaussian(void *v) {
     std::cout << "Casting" << std::endl;
     kml::svm<class_prob, gaussian_k, class_property_map>* m = (kml::svm<class_prob, gaussian_k, class_property_map> *) v;
-    std::cout << "Size according to copy_double_gaussian: " << std::distance(m->data->storage_begin(), m->data->storage_end()) << std::endl;
-    return (void *) new kml::svm<class_prob, gaussian_k, class_property_map>(*m);
+    std::cerr << "data's location before copying: " << m->data << std::endl;
+    //    std::cout << "data's size after casting: " << std::distance(m->data->storage_begin(), m->data->storage_end()) << std::endl;
+    kml::svm<class_prob, gaussian_k, class_property_map>* m1 = new kml::svm<class_prob, gaussian_k, class_property_map>(*m);
+    std::cerr << "data's location after copying: " << m1->data << std::endl;
+    return (void *) m1;
+      //    return (void *) new kml::svm<class_prob, gaussian_k, class_property_map>(*m);
   }
 
   void kml_delete_class_double_gaussian(void *v) {
@@ -73,13 +80,16 @@ extern "C" {
       data[j] = boost::make_tuple(std::vector<double>(*p, (*p) + sz_col), *t);
       ++p; ++t;
     }
+    std::cerr << "data's location before learning: " << m->data << std::endl;
     m->set_data(data);
     m->learn(data.storage_begin(), data.storage_end()); 
-    std::cout << std::distance(m->data->storage_begin(), m->data->storage_end()) << std::endl;
+    std::cerr << "data's location after learning: " << m->data << std::endl;
+    std::cout << "data's size after learning: " << std::distance(m->data->storage_begin(), m->data->storage_end()) << std::endl;
   }
 
   double kml_classify_double_gaussian(void *v, double *i, int sz) {
     kml::svm<class_prob, gaussian_k, class_property_map>* m = (kml::svm<class_prob, gaussian_k, class_property_map> *) v;
+    std::cerr << "data's location when classifying: " << m->data << std::endl;
     if (m->operator()(std::vector<double>(i, i+sz)) > 0)
       return 1;
     else
