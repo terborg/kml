@@ -187,6 +187,13 @@ public:
         --view_rows;
     }
 
+    void swap_row( int index1, int index2 ) {
+        ublas::matrix_range<M> matrix_view(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols));
+        ublas::matrix_row< ublas::matrix_range<M> > index1_row( matrix_view, index1 );
+        ublas::matrix_row< ublas::matrix_range<M> > index2_row( matrix_view, index2 );
+	atlas::swap( index1_row, index2_row );
+    }
+
     void remove_row_col( int index ) {
         remove_column(index);
         remove_row(index);
