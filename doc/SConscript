@@ -1,0 +1,13 @@
+
+Import('env')
+
+obj = []
+obj += env.HTML( 'index.tex' )
+obj += env.HTML( 'installation.tex' )
+
+#for loc in ['subdir']:
+	#o = SConscript( dirs= loc )
+	#obj += o
+
+Return( 'obj' )
+

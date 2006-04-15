@@ -1,0 +1,192 @@
+
+\documentclass{article}
+\input{myinclude}
+
+\begin{document}
+
+
+\title{Microsoft Visual C++ Howto}
+\maketitle
+
+This page describes the necessary steps to start using 
+the Kernel-Machine Library with Microsoft Visual C++.
+A fully featured free version of Microsoft Visual
+C++ can be downloaded from the
+\href{http://msdn.microsoft.com/visualc/vctoolkit2003/}{Visual
+C++ Toolkit 2003 homepage}.\\
+
+
+\section{Install the Kernel-Machine Library}
+
+This step is relatively simple: download
+\href{research/kml/kml-0.1.zip}{kml-0.1.zip}
+and unzip it to a directory of your choice.
+
+
+\section{Install the Boost Libraries}
+
+On Windows x86 platforms, the Boost Libraries can most easily 
+be installed using self-extracting prebuilt executables.
+%
+\begin{itemize}
+\item First, download the 
+\href{http://prdownloads.sourceforge.net/boost/boost_1_32_0.exe?download}
+{self-extracting executable file} from Sourceforge. 
+After the download is complete, run the
+executable which will then extract the files to a directory of your
+choice.
+
+\item Second, download the zip archive of the prebuilt
+\href{http://prdownloads.sourceforge.net/boost/boost-jam-3.1.10-1-ntx86.zip?download}
+{Boost.Jam tool}, also from Sourceforge. 
+Extract the \texttt{bjam.exe} file to the Boost directory created by the first step, 
+and execute it. Wait for the compilation process to finish.
+\end{itemize}
+%
+The Boost libraries are now installed. If anything went wrong, then more detailed information about 
+Boost can be found at  \href{http://www.boost.org/}{Boost's homepage}.
+
+
+
+\section{Install Boost Numeric Bindings}
+
+Download \href{research/kml/boost\_bindings.zip}{boost\_bindings.zip}
+and unzip it into the Boost directory. Make sure the subdirectories are aligned, 
+i.e. the directory stucture 
+\texttt{boost\textbackslash{}numeric\textbackslash{}bindings} should exist. 
+
+
+\section{Install ATLAS Binaries}
+
+Dynamic loadable libraries of ATLAS can be obtained in two ways: by using 
+convenient prebuilt libraries provided here (if available), or by creating DLLs
+of ATLAS by hand. 
+
+\subsection{Prebuilt ATLAS libraries}
+
+The following files are available here: 
+\href{research/kml/WinNT\_ATHLONSSE1.zip}{WinNT\_ATHLONSSE1.zip}
+and
+\href{research/kml/WinNT\_PIIISSE1.zip}{WinNT\_PIIISSE1.zip}
+. If you use these, you can skip the next subsection and go ahead to 
+section \ref{section:using_kml}.
+
+If your architecture is not listed here, and if you have successfully 
+built an ATLAS dll and lib (as described below), please send us a copy of the dll and
+lib file. It will then be provided here as well.
+
+
+
+
+\subsection{Build your own ATLAS binaries}
+
+
+
+
+\subsubsection{Obtain the Software}
+
+\begin{itemize}
+\item First, download and unzip the ATLAS 
+\href{http://prdownloads.sourceforge.net/math-atlas/atlas3.6.0.tar.gz?download}
+{platform-independent sources}
+from Sourceforge. 
+\item Apply the patches ``\href{http://math-atlas.sourceforge.net/errata.html#winsse}
+{Assembler renaming problem for Windows machine}'' and the ``
+\href{http://math-atlas.sourceforge.net/errata.html#longcomp}
+{String overrun in config for long compiler paths}'', 
+described at the 
+\href{http://math-atlas.sourceforge.net/errata.html}
+{ATLAS errata page}. There patches need to be applied, otherwise the
+ATLAS build process will most probably fail.
+
+\item Download and install Cygwin from the
+\href{http://www.cygwin.com/}{Cygwin homepage}. Add the
+following additional packages to the default install:
+Devel->gcc-g++, Devel->gcc-g77 and Devel->make.
+
+\end{itemize}
+
+\subsubsection{Compile ATLAS}
+
+Open a Cywin console window, and change to the ATLAS root
+directory, and start the configuration of ATLAS.
+
+\begin{verbatim}
+cd C:/ATLAS
+make config
+\end{verbatim}
+%
+In this step ATLAS wants to figure out more about your CPU.
+If you are not sure about the exact specifics of your processor, then
+you could try a hardware detection program, such as 
+\href{http://www.cpuid.org/cpuz.php}{CPU-Z}.
+
+You will be asked a series of questions, shown below. If you press enter 
+without answering, it will use the [default] value. 
+%
+\begin{verbatim}
+Enter number at top left of screen [0]: 24
+Have you scoped the errata file? [y]:
+Are you ready to continue? [y]:
+Enter your machine type:
+   1. Other/UNKNOWN
+   2. AMD Athlon
+   3. 32 bit AMD Hammer
+   4. 64 bit AMD Hammer
+   5. Pentium PRO
+   6. Pentium II
+   7. Pentium III
+   8. Pentium 4
+Enter machine number [1]: 2
+enable Posix  threads support? [n]: 
+use express setup? [y]:
+Enter Architecture name (ARCH) [WinNT_ATHLONSSE1]:
+Enter Maximum cache size (KB) [4096]:
+Enter File creation delay in seconds [0]:
+Use supplied default values for install? [y]:
+\end{verbatim}
+%
+After these questions have been answered, ATLAS will create makefiles on the basis of your
+configuration. It will give you a confirmation of success. You can now issue the next 
+command, which is something like 
+%
+\begin{verbatim}
+make install arch=WinNT_ATHLONSSE1
+\end{verbatim}
+%
+This will start the ATLAS compilation process. After compiling, 
+you will have a subdirectory called \texttt{lib/WinNT\_ATHLONSSE1} 
+in your ATLAS directory, which should contain the following files: 
+\texttt{libatlas.a}, \texttt{libcblas.a}, \texttt{libf77blas.a}, and 
+\texttt{liblapack.a}.
+
+
+\subsubsection{Create the dll and lib}
+
+Download 
+\href{research/kml/kml\_win\_dll.sh}{kml\_win\_dll.sh}
+to the directory that contains the \texttt{libatlas.a}, etc., files.  
+(Re-)Open a Cygwin console, and change to that directory. Run the command
+\begin{verbatim}
+./kml_win_dll.sh
+\end{verbatim}
+%
+You will get a message ``Generating
+the KML ATLAS DLL''. After this command is complete, you should be able to see new 
+files called \texttt{kml\_atlas.dll} and \texttt{kml\_atlas.lib} in that directory.
+
+
+\section{Link to the DLL and lib in Visual C++}
+\label{section:using_kml}
+
+In order to link against the ATLAS routines, you need to do two things in 
+Visual Studio.
+First, put the \texttt{kml\_atlas.dll} file in one of your path
+directories: the directory the executable of your
+own program resides will do. Second, instruct the linker to link your 
+project against \texttt{kml\_atlas.lib}.
+
+
+
+\end{document}
+
