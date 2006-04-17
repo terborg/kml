@@ -1,5 +1,8 @@
 
 Import('env')
+Import('install_dir')
+
+kml_path = 'research/kml/'
 
 obj = []
 obj += env.HTML( 'index.tex' )
@@ -8,6 +11,19 @@ obj += env.HTML( 'installation.tex' )
 #for loc in ['subdir']:
 	#o = SConscript( dirs= loc )
 	#obj += o
+
+
+env.Install( install_dir + '/' + kml_path, [ 
+	'boost_bindings.tar.gz', 
+	'boost_bindings.zip', 
+	'kml-0.1.tar.gz', 
+	'kml-0.1.zip',
+	'WinNT_PIIISSE1.zip',
+	'WinNT_ATHLONSSE1.zip',
+	'kml_win_dll.sh'
+	] )
+
+
 
 Return( 'obj' )
 
