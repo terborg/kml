@@ -12,6 +12,8 @@ obj += env.HTML( 'installation.tex' )
 	#o = SConscript( dirs= loc )
 	#obj += o
 
+env.Install( install_dir + '/research/kml/', 'install_WinNT_VC.html' )
+
 
 env.Install( install_dir + '/' + kml_path, [ 
 	'boost_bindings.tar.gz', 
