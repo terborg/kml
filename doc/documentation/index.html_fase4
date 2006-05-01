@@ -49,7 +49,7 @@ of specialised algorithms.</p>
             <li>Concepts
               <ul class="toc3">
                 <li>Similarity Function</li>
-                <li>Mercer Kernel</li>
+                <li><a href="research/kml/documentation/mercer_kernel.html">Mercer Kernel</a></li>
               </ul>
             </li>
             <li>Available Kernel Functions

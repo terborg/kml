@@ -11,6 +11,7 @@ obj += env.XHTML( 'index.html_fase4' )
 obj += env.HTML( 'design.tex' )
 
 # kernel functions
+obj += env.HTML( 'mercer_kernel.tex' )
 obj += env.HTML( 'linear.tex' )
 obj += env.HTML( 'gaussian.tex' )
 obj += env.HTML( 'hermitian.tex' )

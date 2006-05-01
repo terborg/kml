@@ -12,13 +12,12 @@
 
 \section*{Description}
 
-\texttt{Linear<T>} is a kernel function. Specifically, it is a Mercer Kernel. If k is an object of class \texttt{linear<T>}, and u and v are objects of class T, then k(u,v) returns the inner product 
+\texttt{Linear<T>} is a kernel function. Specifically, it is a \href{research/kml/documentation/mercer_kernel.html}{Mercer Kernel}.
+ If k is an object of class \texttt{linear<T>}, and u and v are objects of class T, then k(u,v) returns the inner product 
 %
 $$k(u,v) = u^T v $$
 %
-or, if T is a scalar type,
-%
-$$k(u,v) = u * v.$$
+which is defined to be the product if T is a scalar type. 
 
 
 \section*{Example}
@@ -47,8 +46,8 @@ T & The linear argument type \\
 
 \section*{Model of}
 
-Mercer Kernel, Default Constructable, Copy Constructable
-
+\href{research/kml/documentation/mercer_kernel.html}{Mercer Kernel}, 
+Default Constructable, Copy Constructable
 
 \section*{Type requirements}
 
