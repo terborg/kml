@@ -21,7 +21,6 @@ env.Program('svm_ranking.cpp' )
 env.Program('incomplete_cholesky.cpp', LIBS=atlas_link_libs )
 
 
-env.Program('online_svm_classification.cpp', LIBS=atlas_link_libs )
 env.Program('svm_c_ranking.c', LIBS=c_link_libs)
 
 

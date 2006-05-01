@@ -262,7 +262,7 @@ int main(int argc, char *argv[]) {
         }
     case kml::io::ranking: {
             std::cout << "entering ranking part..." << std::endl;
-            typedef boost::tuple< ublas::vector<double>, double > example_type;
+            typedef boost::tuple< ublas::vector<double>, int, double > example_type;
             typedef boost::vector_property_map< example_type > data_type;
             typedef kml::ranking< example_type > problem_type;
 
