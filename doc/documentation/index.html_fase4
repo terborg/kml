@@ -57,8 +57,8 @@ of specialised algorithms.</p>
                 <li><a href="research/kml/documentation/linear.html">linear</a></li>
                 <li><a href="research/kml/documentation/gaussian.html">gaussian</a></li>
                 <li><a href="research/kml/documentation/hermitian.html">hermitian</a></li>
-                <li>polynomial</li>
-                <li>sigmoid</li>
+                <li><a href="research/kml/documentation/polynomial.html">polynomial</a></li>
+                <li><a href="research/kml/documentation/sigmoid.html">sigmoid</a></li>
               </ul>
             </li>
           </ul>

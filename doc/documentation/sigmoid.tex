@@ -3,45 +3,42 @@
 \input{myinclude}
 \usepackage[numbers]{natbib}
 
-\newcommand{\half}{\tfrac{1}{2}}
-
 \begin{document}
 
-\title{linear<T>}
+\title{sigmoid<T>}
 \maketitle
 
 \section*{Description}
 
-\texttt{Linear<T>} is a kernel function. Specifically, it is a Mercer Kernel. If k is an object of class \texttt{linear<T>}, and u and v are objects of class T, then k(u,v) returns the inner product 
+\texttt{Sigmoid<T>} is a kernel function. Specifically, it is a Similarity Function. If k is an object of class \texttt{sigmoid<T>}, and u and v are objects of class T, then k(u,v) returns
 %
-$$k(u,v) = u^T v $$
+$$k(u,v) =  $$
 %
-or, if T is a scalar type,
-%
-$$k(u,v) = u * v.$$
+where $\sigma$ is the width of the kernel. 
 
 
 \section*{Example}
+
 
 \highlightcpp{}
 \begin{verbatim}
 vector< double > u(10);
 vector< double > v(10);
-linear< vector< double > > kernel;
+sigmoid< vector< double > > kernel(1.0);
 cout << kernel( u, v ) << endl;
 \end{verbatim}
 
 
 \section*{Definition}
 
-Defined in the KML header \href{linear.hpp}{linear.hpp}.
+Defined in the KML header \href{sigmoid.hpp}{sigmoid.hpp}.
 
 
 \section*{Template Parameters}
 
 \begin{tabular}{lll}
 \textbf{Parameter} & \textbf{Description} & \textbf{Default} \\ 
-T & The linear argument type \\ 
+T & The sigmoid argument type \\ 
 \end{tabular}
 
 
@@ -52,14 +49,14 @@ Mercer Kernel, Default Constructable, Copy Constructable
 
 \section*{Type requirements}
 
-T must be a vector type or a numeric type; distance_squared<T> should evaluate.
+T must be a vector type or a numeric type; linear<T> should evaluate.
 
 
 \section*{Members}
 
 \begin{tabular}{lll}
 \textbf{Member} & \textbf{Where defined} & \textbf{Description} \\ 
-\texttt{linear()} & \href{http://www.sgi.com/tech/stl/DefaultConstructible.html}{Default Constructable} & The default constructor \\
+\texttt{sigmoid()} & \href{http://www.sgi.com/tech/stl/DefaultConstructible.html}{Default Constructable} & The default constructor \\
 \texttt{result_type} & Input value & The type of the result: \texttt{input_value<T>} \\
 \end{tabular}
 
@@ -68,8 +65,9 @@ T must be a vector type or a numeric type; distance_squared<T> should evaluate.
 \section*{See also}
 
 The Mercel Kernel overview, Adaptable Binary Function,
+\href{research/kml/documentation/linear.html}{linear}, 
+\href{research/kml/documentation/polynomial.html}{polynomial}, 
 \href{research/kml/documentation/gaussian.html}{gaussian}
-\href{research/kml/documentation/sigmoid.html}{sigmoid}
 
 \bibliographystyle{unsrtnat}
 \bibliography{/home/rutger/documents/bibliography/references}
