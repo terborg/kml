@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xml:lang="en">
+  <head>
+    <title>Kernel-Machine Library</title>
+  </head>
+  <body>
+    <div id="c">
+     <h1>Kernel-Machine Library</h1>
+
+<p class="noindent">
+The Kernel-Machine Library is a freely available (released under the 
+<a href="http://www.gnu.org/copyleft/lesser.html">LGPL</a>) C++ library to
+promote the use and progress of kernel machines.</p>
+
+<p>It is both for academic use and for developing real world applications. 
+The Kernel-Machine Library draws heavily from features of modern C++ such 
+as template meta-programming to achieve high performance while at the 
+same time offering a comfortable interface. It enables compile-time selection 
+of specialised algorithms.</p>
+
+      <h3>Contents</h3>
+      <ul class="toc">
+        <li><a href="research/kml/documentation/design.html">Design of the KML</a></li>
+        <li>Installation</li>
+
+        <li>Supervised Learning
+          <ul class="toc2">
+            <li>Problem Types
+              <ul class="toc3">
+                <li>Regression</li>
+                <li>Classification</li>
+                <li>Ranking</li>
+              </ul>
+            </li>
+            <li>Algorithm Concepts
+              <ul class="toc3">
+                <li>Learner</li>
+                <li>Batch Learner</li>
+                <li>Incremental Learner</li>
+                <li>Decremental Learner</li>
+              </ul>
+            </li>
+          </ul>
+        </li><!-- supervised learning -->
+
+        <li>Kernel Functions
+          <ul class="toc2">
+            <li>Concepts
+              <ul class="toc3">
+                <li>Similarity Function</li>
+                <li>Mercer Kernel</li>
+              </ul>
+            </li>
+            <li>Available Kernel Functions
+              <ul class="toc3">
+                <li><a href="research/kml/documentation/linear.html">linear</a></li>
+                <li><a href="research/kml/documentation/gaussian.html">gaussian</a></li>
+                <li><a href="research/kml/documentation/hermitian.html">hermitian</a></li>
+                <li>polynomial</li>
+                <li>sigmoid</li>
+              </ul>
+            </li>
+          </ul>
+        </li><!-- kernel functions -->
+
+        <li>Kernel Machines
+          <ul class="toc2">
+            <li>Concepts
+              <ul class="toc3">
+                <li>Support Vector Machine</li>
+                <li>Relevance Vector Machine</li>
+              </ul>
+            </li>
+            <li>Algorithms
+              <ul class="toc3">
+                <li>Sequential Minimisation Optimisation</li>
+                <li>Cauwenbergs Algorithm</li>
+                <li>Type-II Maximum Likelihood Optimisation</li>
+                <li>Fast Marginal Likelihood Optimisation</li>
+                <li>Kernel Recursive Least Squares</li>
+              </ul>
+            </li>
+          </ul>
+        </li><!-- kernel machines -->
+
+        <li>Utilities (to be categorised?)
+          <ul class="toc2">
+            <li><a href="research/kml/documentation/view_matrix.html">view matrix</a></li>
+            <li><a href="research/kml/documentation/incomplete_cholesky.html">incomplete cholesky</a></li>
+          </ul>
+        </li>
+      </ul>
+
+      <h3>Supported Platforms</h3>
+The Kernel-Machine Library works with a recent C++ compiler. Compilers that are known to work correctly, are:
+   <ul>
+     <li>GCC 3.3.x, 4.0.x</li>
+     <li>MSVC 7.1, 8.0</li>
+   </ul>
+
+
+    </div>
+  </body>
+</html>
+
+
+

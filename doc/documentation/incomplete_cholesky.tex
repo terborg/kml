@@ -1,0 +1,350 @@
+
+\documentclass{article}
+\input{myinclude}
+\usepackage[numbers]{natbib}
+
+
+% algorithm display
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+% for the figures of xfig
+\usepackage{color}
+
+% linebreaks for urls
+\usepackage{url}
+
+% some math definitions
+\newcommand{\x}{x}
+\newcommand{\sv}{Q}
+\newcommand{\svm}{Q}
+\newcommand{\sve}{q}
+\newcommand{\nsve}{\mathbf{e}}
+\newcommand{\nonsv}{A}
+\newcommand{\nonsvm}{A}
+\newcommand{\nonsve}{a}
+\newcommand{\origin}{0}
+\newcommand{\gramm}{G}
+\newcommand{\ce}{R}
+\newcommand{\coordm}{R}
+
+
+
+\begin{document}
+
+
+\title{Incomplete Cholesky Factorisation}
+\maketitle
+
+\tableofcontents
+
+\section*{Description}
+
+The incomplete Cholesky is used in conjunction with 
+Support Vector Machines in \citep{fine01efficient}, ...
+
+
+In this section we will give a geometric interpretation to 
+the incomplete cholesky factorisation.
+
+We will start with subsection~\ref{subsection:two_circle_intersection},
+where we show that it is possible to project a vector on another vector
+by means of a two-circle intersection. We incrementally extend the
+idea to a three-sphere intersection in subsection~\ref{subsection:three_sphere_intersection},
+and conclude this section with a generic projection operator
+obtained by an associated $n$-hypersphere intersection.
+
+$$A=QR$$
+
+where matrix $\nonsv$ is has columns with mapped defined by be a
+shorthand notation for our set of data $\mathcal{D}$ mapped into
+$\mathcal{H}$,%
+%
+\begin{equation}
+\nonsv=\{\nonsve_{1},...,\nonsve_{n}\}=\{\Phi(\x_{1}),...,\Phi(\x_{n})\}.
+\label{equation:set_to_origin}
+\end{equation}
+%
+Obviously, the inner product of vectors $\nonsve_{i}$ in $\nonsv$
+may be expressed in terms of kernels,
+%
+\begin{equation}
+\nonsve_{i}^{\mathrm{T}}\nonsve_{j}=\Phi(\x_{i})^{\mathrm{T}}\Phi(\x_{j})=k(\x_{i},\x_{j}),
+\label{equation:inner_product_V}
+\end{equation}%
+%
+whereas the the squared length of a vector $\nonsve_{i}$ may be expressed
+as
+%
+$$\Vert\nonsve_{i}\Vert^{2}=\Vert\Phi(\x_{i})-\origin\Vert^{2}=k(\x_{i},\x_{i})$$
+%
+where $\origin$ denotes the origin of feature space $\mathcal{H}$.
+
+
+\subsection{The Two-Circle Intersection\label{subsection:two_circle_intersection}}
+
+Normally, one begins the Gram-Schmidt procedure by projecting one
+vector onto another. 
+
+The key to the geometric interpretation of the incomplete
+cholesky factorisation is to re-express the projection
+of vector $\nonsve_{2}$ onto basis vector $\sve_{1}:\nonsve_{1}/\ce_{1,1}$
+as presented in Equation~\ref{equation:standard_projection} in terms
+of distances. Figure~\ref{figure:two_circle_intersection} shows two circles
+on a two-dimensional plane defined by the span of $\sve_{1}$ and
+$\nonsve_{2}$. %
+\begin{figure}
+\begin{center}
+\figwithmath{two_circle_intersection}
+\end{center}
+\caption{The projection of vector $\nonsve_{2}$ on vector $\sve_{1}$, and
+its associated two-circle intersection problem.%
+\label{figure:two_circle_intersection}}
+\end{figure}
+%
+The centres of the circles are placed at the origin and the head
+of $\nonsve_{1}$. They have radii such that they go through the head
+of vector $\nonsve_{2}$. This means that the left circle has a radius
+of $\Vert\nonsve_{2}\Vert$ equal to the length of vector $\nonsve_{2}$,
+and that the right circle has a radius of $d(\nonsve_{1},\nonsve_{2})$.
+The \emph{lens} of any circle-circle intersection is perpendicular
+to the line through its centres. In this case this means that the
+intersection is perpendicular to $\sve_{1}$, thereby fulfilling the
+necessary property of orthogonality of a projection. 
+
+The simple equation of a circle is known as $x^{2}+y^{2}=r^{2}$,
+.... 
+
+The two-circle intersection problem as shown in Figure~\ref{figure:two_circle_intersection}
+may be expressed with the following system of equations. 
+
+\begin{eqnarray*}
+\ce_{1,2}^{2}+d_{\perp}^{2}(\sv,\nonsve_{2}) & = & \Vert\nonsve_{2}\Vert^{2}\\
+(\ce_{1,2}-\ce_{1,1})^{2}+d_{\perp}^{2}(\sv,\nonsve_{2}) & = & d^{2}(\nonsve_{1},\nonsve_{2})\end{eqnarray*}
+The system of equations consists of two equations with two unknowns,
+coordinate $\ce_{1,2}$ and perpendicular distance of vector $\nonsve_{2}$
+to the basis defined by $\sv$, $d_{\perp}(\sv,\nonsve_{2})$, and
+they can be solved rather straightforwardly. The solution is given
+below. \begin{eqnarray*}
+\ce_{1,2} & = & \frac{\ce_{1,1}^{2}+\Vert\nonsve_{2}\Vert^{2}-d^{2}(\nonsve_{1},\nonsve_{2})}{2\ce_{1,1}}=\frac{\nonsve_{1}^{T}\nonsve_{2}}{\ce_{1,1}}\\
+d_{\perp}(\sv,\nonsve_{2}) & = & \sqrt{\Vert\nonsve_{2}\Vert^{2}-\ce_{1,2}^{2}}\end{eqnarray*}
+the upper equation .. may be simplified to .. 
+
+Actually, there is a second solution to $d_{\perp}(\sv,\nonsve_{2})$,
+one having a negative square root. Let us ignore that solution, thereby
+obeying the axiom of positiveness of distances. The resulting projection
+of $\nonsve_{2}$ on $\sve_{1}$ in terms of $\sve_{1}$ may be obtained
+using the solution above, \[
+\hat{\nonsve}_{2}=\ce_{1,2}\sve_{1}.\]
+Remarkably, we have obtained more information than the projection
+of $\nonsve_{i}$ only: the perpendicular distance $d_{\perp}(\sv,\nonsve_{2})$
+of basis $\sv$ to vector $\nonsve_{2}$. We will come back to this
+issue later on.
+
+\begin{eqnarray*}
+\ce_{2,2} & = & d_{\perp}(\sv,\nonsve_{2})\\
+\sve_{2} & = & (\nonsve_{2}-\hat{\nonsve}_{2})/\ce_{2,2}\end{eqnarray*}
+
+
+
+\subsection{The Three-Sphere Intersection\label{subsection:three_sphere_intersection}}
+
+Before discussing the arbitrary-dimensional case, let us first consider
+a projection of a vector $\nonsve_{i}$ onto a two-dimensional plane.
+Assume we already have two top-notch orthonormal basis vectors 
+
+Let the current basis vectors be defined by $\sv=(\sve_{1},\sve_{2})$,
+.... 
+
+\begin{eqnarray*}
+\sve_{1} & : & \nonsve_{1}/\ce_{1,1}\\
+\sve_{2} & : & (\nonsve_{2}-\ce_{1,2}\sve_{1})/\ce_{2,2}\end{eqnarray*}
+Basis vector $\sve_{2}$ is orthogonal to basis vector $\sve_{1}$,
+possibly determined by a two-circle intersection presented in the
+preceding subsection. 
+
+Figure~\ref{figure:three_sphere_intersection} illustrates the problem.
+It may be solved by the solution to a three-sphere intersection problem.
+%
+\begin{figure}
+\begin{center}\figwithmath{three_sphere_intersection}\end{center}
+
+
+\caption{The projection of $\nonsve_{i}$ on plane $\sv$ may be tackled by
+a three-sphere intersection problem.\label{figure:three_sphere_intersection}}
+\end{figure}
+ Let the spheres be situated in a three-dimensional space defined
+by the span of $\sve_{1}$, $\sve_{2}$ and $\nonsve_{3}$, and let
+the centre of the first sphere be located at $\origin\in\mathcal{H}$,
+and that of the other two at the heads of vectors $\nonsve_{1}$ and
+$\nonsve_{2}$. Let the spheres be scaled in such way that they go
+through the head of vector $\nonsve_{3}$, having radii $\Vert\nonsve_{3}\Vert$,
+$d(\nonsve_{1},\nonsve_{3})$ and $d(\nonsve_{2},\nonsve_{3})$. 
+
+The system of equations of a two-circle intersection problem may be
+extended to match a three-sphere intersection problem. \begin{eqnarray*}
+\ce_{1,3}^{2}+\ce_{2,3}^{2}+d_{\perp}^{2}(\sv,\nonsve_{3}) & = & \Vert\nonsve_{3}\Vert^{2}\\
+(\ce_{1,3}-\ce_{1,1})^{2}+\ce_{2,3}^{2}+d_{\perp}^{2}(\sv,\nonsve_{3}) & = & d^{2}(\nonsve_{1},\nonsve_{3})\\
+(\ce_{1,3}-\ce_{1,2})^{2}+(\ce_{2,3}-\ce_{2,2})^{2}+d_{\perp}^{2}(\sv,\nonsve_{3}) & = & d^{2}(\nonsve_{2},\nonsve_{3})\end{eqnarray*}
+ In this case we have three equations with three unknowns, being $\ce_{1,3}^{2}$,
+$\ce_{2,3}^{2}$, and $d_{\perp}(\sv,\nonsve_{3})$. Although the
+solution is less trivial than that for the two-circle intersection
+problem, it remains rather straightforward. It is given below.\begin{eqnarray*}
+\ce_{1,3} & = & \frac{\nonsve_{1}^{T}\nonsve_{3}}{\ce_{1,1}}\\
+\ce_{2,3} & = & \frac{\nonsve_{2}^{T}\nonsve_{3}-\ce_{1,2}\ce_{1,3}}{\ce_{2,2}}\\
+d_{\perp}(\sv,\nonsve_{3}) & = & \sqrt{\Vert\nonsve_{3}\Vert^{2}-\ce_{1,3}^{2}-\ce_{2,3}^{2}}\end{eqnarray*}
+In comparison to the solution to a two-circle intersection problem,
+we make the observation that the solution to $\ce_{\nonsve_{i},1}$
+has not changed shape. We have deliberately expressed the solution
+to $d_{\perp}(\sv,\nonsve_{i})$ in terms of $\ce_{1,3}$ and $\ce_{2,3}$
+to improve clarity.
+
+Finally, the projection of vector $\nonsve_{i}$ on the plane brought
+forth by $\sv$ is expressed with \[
+\hat{\nonsve}_{3}=\ce_{1,3}\sve_{1}+\ce_{2,3}\sve_{2}.\]
+And one could create a basis vector by simply substituting \begin{eqnarray*}
+\ce_{3,3} & = & d_{\perp}(\sv,\nonsve_{3})\\
+\sve_{3} & = & (\nonsve_{3}-\hat{\nonsve}_{3})/\ce_{3,3}\end{eqnarray*}
+.
+
+
+\subsection{The $n$-Hypersphere Intersection\label{subsection:hypersphere_intersection}}
+
+Let us consider generic case of the projection of a vector $\nonsve_{i}$
+on a hyperplane spanned by $\sv$. We are given $(n-1)$ ordered orthogonal
+basis vectors \begin{eqnarray*}
+\sve_{1} & : & \nonsve_{1}/\ce_{1,1}\\
+\sve_{2} & : & \left(\nonsve_{2}-\ce_{1,2}\sve_{1}\right)/\ce_{2,2}\\
+\sve_{3} & : & \left(\nonsve_{3}-\ce_{1,3}\sve_{1}-\ce_{2,3}\sve_{2}\right)/\ce_{3,3}\\
+\vdots &  & \vdots\\
+\sve_{n-1} & : & \left(\nonsve_{n-1}-\sum_{j=1}^{j=n-2}\ce_{j,n-1}\sve_{j}\right)/\ce_{n-1,n-1}\end{eqnarray*}
+that span the hyperplane in which patterns the origin $\origin\in\mathcal{H}$
+and vectors $\sve_{1},\ldots,\sve_{n-1}$ are positioned. Generally,
+this projection may be determined by an $n$-hypersphere intersection.
+The generic system of equations is given by \begin{eqnarray*}
+\ce_{1,n}^{2}+\ce_{2,n}^{2}+\ldots+d_{\perp}^{2}(\sv,\nonsve_{n}) & = & \Vert\nonsve_{i}\Vert^{2}\\
+(\ce_{1,n}-\ce_{1,1})^{2}+\ce_{2,n}^{2}+\ldots+d_{\perp}^{2}(\sv,\nonsve_{n}) & = & d^{2}(\nonsve_{1},\nonsve_{n})\\
+ & \vdots\\
+(\ce_{1,n}-\ce_{1,n-1})^{2}+\ldots+(\ce_{n-1,n}-\ce_{n-1,n-1})^{2}+d_{\perp}^{2}(\sv,\nonsve_{n}) & = & d^{2}(\nonsve_{n-1},\nonsve_{n})\end{eqnarray*}
+for any $n$. We can solve this system of $n$ equations with the
+following solutions
+
+\begin{eqnarray}
+\ce_{j,n} & = & \frac{\nonsve_{j}^{T}\nonsve_{n}-\sum_{p=1}^{p=j-1}\ce_{p,j}\ce_{p,n}}{\ce_{j,j}}\label{equation:coord_update}\\
+d_{\perp}(\sv,\nonsve_{n}) & = & \sqrt{\Vert\nonsve_{n}\Vert^{2}-\sum_{j=1}^{j=n-1}\ce_{j,n}^{2}}\label{equation:perp_distance}\end{eqnarray}
+The way the solution is written down, requires that the computations
+need to be executed consecutively in the order of the basis vectors,
+i.e., $\ce_{\nonsve_{i},j-1}$ needs to be computed before $\ce_{\nonsve_{i},j}$
+for each $j>1$. The projection of $\nonsve_{i}$ on the hyperplane
+defined by basis $\sv$ may be obtained by evaluating\[
+\hat{\nonsve}_{i}=\sum_{j=1}^{j=n-1}\ce_{j,i}\sve_{j}.\]
+
+
+\subsection{The Algorithm\label{subsection:max_perp_algorithm}}
+
+In this section, we will introduce an orthogonalisation process that
+utilises the projection operator introduced in the preceding
+section. This is the pseudo code for the incomplete cholesky factorisation.
+%
+\begin{algorithm}
+\begin{algorithmic}
+
+\FOR{$i=1:n$}
+
+\STATE $c(i)=a_i^T a_i$
+
+\ENDFOR
+
+\STATE $k = \mathrm{max~element} \{c(1),\ldots,c(n)\}$
+
+\STATE $\tau=c(k)$; $r=0$
+
+\WHILE{$\tau>0$ \textbf{and} $r<n$}
+
+\STATE $r=r+1$
+
+\STATE $c(r) \leftrightarrow c(k)$; $R(1$:$r$-$1,r) \leftrightarrow R(1$:$r$-$1,k)$
+
+\STATE $R(r,r) = \sqrt{\tau}$
+
+\STATE $R(r,r$+$1$:$n) = R(1$:$r$-$1,r$+$1$:$n)^T R(1$:$r$-$1,r) $
+
+\FOR{$i$ in $r$+$1$:$n$}
+
+\STATE $R(r,i) = ( a_k^T a_i - R(r,i) ) / \sqrt{\tau} $
+
+\STATE $c(i) = c(i) - R(r,i)^2$
+
+\ENDFOR
+
+\IF{compute Q}
+
+\STATE $Q(1$:$m,r) = ( A(1$:$m,k) - Q(1$:$m,1$:$r$-$1)R( 1$:$r$-$1,r) )$
+
+\ENDIF
+
+\STATE $c(r)= 0 $
+
+\STATE $k = \mathrm{max~element} \{c(r+1),\ldots,c(n)\}$
+
+\STATE $\tau=c(k)$
+
+\ENDWHILE
+
+\end{algorithmic}
+
+\caption{Pseudo code of the incomplete Cholesky factorisation process.}%
+\label{algorithm:incomplete_cholesky}
+\end{algorithm}
+
+
+Basically, the algorithm performs an incremental solution to a $n$-hypersphere
+intersection problem. The algorithm uses indices to address the data,
+i.e., index $i$ is associated with pattern $\x_{i}$ from data set
+$\mathcal{D}$. Two sets are introduced, being remaining set $\mathcal{R}$
+and basis set $\mathcal{S}$. Coordinate matrix $\coordm$ is initially
+empty. The algorithm bootstraps by computing the initial squared perpendicular
+distances $d_{\perp}^{2}[i]=k(\x_{i},\x_{i})$. 
+
+In the main loop the algorithm updates the squared perpendicular distances
+according to Equation~\ref{equation:perp_distance}. By means of
+these perpendicular distances, the farthest vector is chosen which
+will be added to basis set $\mathcal{S}$. Coordinate matrix $\coordm$
+is expanded with one column, which is updated according to 
+Equation~\ref{equation:coord_update},
+and set to zero at rows associated with patterns from the basis set.
+Finally, the entry in the coordinate matrix associated with the latest
+added basis vector is set to the last known perpendicular distance,
+which is equal to the length of the last basis vector. This loop continues
+until no vector is available that is farther than $\varepsilon$ from
+the basis. The orthogonalisation is complete if all perpendicular
+distances are zero $d_{\perp}(\sv,\nonsve_{i})=0$. 
+
+
+The Incomplete Cholesky Factorisation solves a system ... such that ... . 
+
+
+\section*{Refinement of}
+
+
+\section*{Associated types}
+
+\section*{Preconditions}
+
+
+\section*{Complexity}
+
+\section*{Example}
+
+
+\section*{See also}
+
+
+
+
+\bibliographystyle{unsrtnat}
+\bibliography{/home/rutger/documents/bibliography/references}
+\end{document}
+
+
+

@@ -1,0 +1,65 @@
+
+\documentclass{article}
+\input{myinclude}
+\usepackage[numbers]{natbib}
+
+\begin{document}
+
+\title{View Matrix}
+\maketitle
+
+
+\section*{Description}
+
+The view matrix class has been implemented to cover recurring operations
+found in a large number of active-set type of algorithms. In algorithms
+of kernel machines, the design matrix or kernel matrix is often extended
+when a new support vector is added, or is shrunk when a support vector
+is deleted from the active set. The standard matrix resize operation
+as implemented in the uBLAS library supports a resize, but will reallocate
+an entire matrix if requested. Figure~\ref{figure:view_matrix}
+(right) illustrates the memory structure used by a view matrix: the
+larger, static matrix will be reallocated infrequently, whereas the
+view matrix may be resized in constant time $\mathcal{O}(1)$.
+
+\begin{figure}
+\fignomath{view_matrix}
+\caption{An illustration of the view matrix.}
+\label{figure:view_matrix}
+\end{figure}
+
+
+\section*{Refinement of}
+
+
+\section*{Associated types}
+
+\section*{Preconditions}
+
+
+\section*{Complexity}
+
+
+\section*{Example}
+
+\highlightcpp{}
+\begin{verbatim}
+// our samples are input-output pairs
+view_matrix< ublas::matrix<double> > my_view;
+
+my_view.grow_row();
+
+\end{verbatim}
+
+
+\section*{See also}
+
+
+
+
+\bibliographystyle{unsrtnat}
+\bibliography{/home/rutger/documents/bibliography/references}
+\end{document}
+
+
+

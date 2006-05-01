@@ -1,0 +1,94 @@
+\documentclass{article}
+\input{myinclude}
+\usepackage[numbers]{natbib}
+
+\newcommand{\half}{\tfrac{1}{2}}
+
+\begin{document}
+
+\title{hermitian<T,N>}
+\maketitle
+
+\section*{Description}
+
+\texttt{Hermitian<T,N>} is a family of Kernel Functions. Specifically, it is a family of Mercer Kernels. 
+The N-th Hermitian kernel is equal to the N-th order derivative of the Gaussian kernel. 
+They are named after Hermite polynomials, which may be used to identify the derivatives of the Gaussian kernels. 
+
+If k is an object of class \texttt{hermite<T,N>}, u and v are objects of class T, and N is a integral constant, then k(u,v) returns
+%
+\begin{equation}
+D^{n}k(u,v)=(-\sqrt{2}\sigma)^{-n}H_{n}((\sqrt{2}\sigma)^{-1}(u-v))\exp(-\half\sigma^{-2}\left\Vert u-v\right\Vert^{2}).
+\end{equation}
+%
+where $H_n$ is Rodrigues' formula for Hermite polynomials
+\begin{equation}
+H_{n}(x)=(-1)^{n}\exp(x^{2})D^{n}\exp(-x^{2}).
+\end{equation}
+%
+Figure~\ref{figure:hermitian_kernel} shows the Hermitian kernel for N=0 through N=5 for a scalar input type.
+
+\begin{figure}
+\fullRplot{hermitian_kernel}
+\caption{Hermitian kernels, parametrised by $\sigma=1$, with N=0 at the top left through N=5 at the bottom right.}
+\label{figure:hermitian_kernel}
+\end{figure}
+
+
+\section*{Example}
+
+
+\highlightcpp{}
+\begin{verbatim}
+vector< double > x(10);
+vector< double > v(10);
+hermitian< vector< double > > kernel(1.0);
+cout << kernel( x, v ) << endl;
+\end{verbatim}
+
+
+\section*{Definition}
+
+Defined in the KML header \href{hermitian.hpp}{hermitian.hpp}.
+
+
+\section*{Template Parameters}
+
+\begin{tabular}{lll}
+\textbf{Parameter} & \textbf{Description} & \textbf{Default} \\ 
+T & The hermitian argument type \\ 
+\end{tabular}
+
+
+\section*{Model of}
+
+Mercer Kernel, Default Constructable, Copy Constructable
+
+
+\section*{Type requirements}
+
+T must be a vector type or a numeric type; distance_squared<T> should evaluate.
+
+
+\section*{Members}
+
+\begin{tabular}{lll}
+\textbf{Member} & \textbf{Where defined} & \textbf{Description} \\ 
+\texttt{hermitian()} & \href{http://www.sgi.com/tech/stl/DefaultConstructible.html}{Default Constructable} & The default constructor \\
+\texttt{result_type} & Input valxe & The type of the result: \texttt{input_value<T>} \\
+\end{tabular}
+
+\section*{Notes}
+
+\section*{See also}
+
+The Mercel Kernel overview, Adaptable Binary function, linear, sigmoid, polynomial
+
+\noindent \href{research/kml/documentation/}{Table of Contents}
+
+\bibliographystyle{unsrtnat}
+\bibliography{/home/rutger/documents/bibliography/references}
+\end{document}
+
+
+

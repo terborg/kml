@@ -1,0 +1,79 @@
+
+\documentclass{article}
+\input{myinclude}
+\usepackage[numbers]{natbib}
+
+\newcommand{\half}{\tfrac{1}{2}}
+
+\begin{document}
+
+\title{gaussian<T>}
+\maketitle
+
+\section*{Description}
+
+\texttt{Gaussian<T>} is a kernel function. Specifically, it is a Mercer Kernel. If k is an object of class \texttt{gaussian<T>}, and u and v are objects of class T, then k(u,v) returns
+%
+$$k(u,v) = \textrm{exp}( \half \sigma^{-2} \Vert u-v \Vert^2 ) $$
+%
+where $\sigma$ is the width of the kernel. 
+
+
+\section*{Example}
+
+
+\highlightcpp{}
+\begin{verbatim}
+vector< double > u(10);
+vector< double > v(10);
+gaussian< vector< double > > kernel(1.0);
+cout << kernel( u, v ) << endl;
+\end{verbatim}
+
+
+\section*{Definition}
+
+Defined in the KML header \href{gaussian.hpp}{gaussian.hpp}.
+
+
+\section*{Template Parameters}
+
+\begin{tabular}{lll}
+\textbf{Parameter} & \textbf{Description} & \textbf{Default} \\ 
+T & The gaussian argument type \\ 
+\end{tabular}
+
+
+\section*{Model of}
+
+Mercer Kernel, Default Constructable, Copy Constructable
+
+
+\section*{Type requirements}
+
+T must be a vector type or a numeric type; distance_squared<T> should evaluate.
+
+
+\section*{Members}
+
+\begin{tabular}{lll}
+\textbf{Member} & \textbf{Where defined} & \textbf{Description} \\ 
+\texttt{gaussian()} & \href{http://www.sgi.com/tech/stl/DefaultConstructible.html}{Default Constructable} & The default constructor \\
+\texttt{result_type} & Input value & The type of the result: \texttt{input_value<T>} \\
+\end{tabular}
+
+\section*{Notes}
+
+\section*{See also}
+
+The Mercel Kernel overview, Adaptable Binary Function, linear, sigmoid, polynomial
+
+
+\noindent \href{research/kml/documentation/}{Table of Contents}
+
+\bibliographystyle{unsrtnat}
+\bibliography{/home/rutger/documents/bibliography/references}
+\end{document}
+
+
+

@@ -1,0 +1,85 @@
+
+\documentclass{article}
+\input{myinclude}
+\usepackage[numbers]{natbib}
+
+\begin{document}
+
+\title{Design of the KML}
+\maketitle
+%
+The exact design of software may depend on the capabilities of the language
+it is written in. The C++ language is a \emph{multi-paradigm} language,
+in other words, the language supports procedural, object-oriented,
+and even functional program structures. Recently, one of C++'s features
+achieved much attention: its template typing system is extremely powerful,
+as it allows for Turing-complete programming during compile-time:
+the time when the program is being compiled by a compiler. Run-time
+is when the program is under execution, i.e., running. 
+
+This has been an important issue in the design of the KML: selecting 
+the actions to be taken in compile-time, and what actions will be executed in
+run-time. The following may exemplify this distinction,
+
+\highlightcpp{}
+\begin{verbatim}
+template<int N>
+struct factorial{
+  static const int value = N*factorial< N-1 >::value;
+};
+
+template< >
+struct factorial< 0 >{
+  static const int value = 1;
+};
+\end{verbatim}
+and its run-time counterpart would look like as follows
+
+\highlightcpp{}
+\begin{verbatim}
+int factorial_rt(int n){
+  return ( n==0 ? 1 : n*factorial_rt(n-1) );
+}
+\end{verbatim}
+%
+Now, if a factorial needs to be computed from a known number N, this
+can be done by the compiler at compile-time, reducing the number of
+computations needed at run-time to zero. 
+%
+This idea may be taken much further, to arrive at the area of 
+\emph{template meta-programming}.
+
+
+Figure~\ref{figure:design_kml} shows an entity-relation diagram
+used in the library. %
+\begin{figure}
+\fignomath{design}%
+\caption{Entity-relation diagram used in the kernel-machine library.}
+\label{figure:design_kml}
+\end{figure}
+A kernel machine is a term for a combination of several concepts:
+a problem type, a kernel function and an algorithm. The problem type is the
+type of problem to be solved, e.g. classification, regression, or
+single class. Given a problem type, a kernel-machine states how the
+problem is solved and by what mechanisms. For instance, for a regression
+problem, an SVM has a mathematical optimisation problem different
+from that for a classification problem. A kernel machine \emph{contains}
+a kernel; it \emph{is} not a kernel. However, algorithms have been
+devised that are specialised towards a kernel machine in combination
+with a specific kernel. Therefore, a kernel can be responsible for
+the selection of the algorithm used by the kernel machine.
+
+Kernel machines sometimes solve identical problems in different ways:
+here, trade-offs and guarantees of pre-learning and post-learning
+come into play.
+
+
+... and more
+
+
+\bibliographystyle{unsrtnat}
+\bibliography{/home/rutger/documents/bibliography/references}
+\end{document}
+
+
+

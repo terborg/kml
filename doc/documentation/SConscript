@@ -1,0 +1,25 @@
+
+Import('env')
+Import('install_dir')
+
+kml_path = 'research/kml/'
+
+obj = []
+
+# introduction pages
+obj += env.XHTML( 'index.html_fase4' )
+obj += env.HTML( 'design.tex' )
+
+# kernel functions
+obj += env.HTML( 'linear.tex' )
+obj += env.HTML( 'gaussian.tex' )
+obj += env.HTML( 'hermitian.tex' )
+
+# utilities
+obj += env.HTML( 'view_matrix.tex' )
+obj += env.HTML( 'incomplete_cholesky.tex' )
+obj += env.PDF( 'incomplete_cholesky.tex' )
+
+
+Return( 'obj' )
+

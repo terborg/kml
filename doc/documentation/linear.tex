@@ -1,0 +1,80 @@
+
+\documentclass{article}
+\input{myinclude}
+\usepackage[numbers]{natbib}
+
+\newcommand{\half}{\tfrac{1}{2}}
+
+\begin{document}
+
+\title{linear<T>}
+\maketitle
+
+\section*{Description}
+
+\texttt{Linear<T>} is a kernel function. Specifically, it is a Mercer Kernel. If k is an object of class \texttt{linear<T>}, and u and v are objects of class T, then k(u,v) returns the inner product 
+%
+$$k(u,v) = u^T v $$
+%
+or, if T is a scalar type,
+%
+$$k(u,v) = u * v.$$
+
+
+\section*{Example}
+
+\highlightcpp{}
+\begin{verbatim}
+vector< double > u(10);
+vector< double > v(10);
+linear< vector< double > > kernel;
+cout << kernel( u, v ) << endl;
+\end{verbatim}
+
+
+\section*{Definition}
+
+Defined in the KML header \href{linear.hpp}{linear.hpp}.
+
+
+\section*{Template Parameters}
+
+\begin{tabular}{lll}
+\textbf{Parameter} & \textbf{Description} & \textbf{Default} \\ 
+T & The linear argument type \\ 
+\end{tabular}
+
+
+\section*{Model of}
+
+Mercer Kernel, Default Constructable, Copy Constructable
+
+
+\section*{Type requirements}
+
+T must be a vector type or a numeric type; distance_squared<T> should evaluate.
+
+
+\section*{Members}
+
+\begin{tabular}{lll}
+\textbf{Member} & \textbf{Where defined} & \textbf{Description} \\ 
+\texttt{linear()} & \href{http://www.sgi.com/tech/stl/DefaultConstructible.html}{Default Constructable} & The default constructor \\
+\texttt{result_type} & Input value & The type of the result: \texttt{input_value<T>} \\
+\end{tabular}
+
+\section*{Notes}
+
+\section*{See also}
+
+The Mercel Kernel overview, Adaptable Binary Function, sigmoid, polynomial
+
+
+\noindent \href{research/kml/documentation/}{Table of Contents}
+
+\bibliographystyle{unsrtnat}
+\bibliography{/home/rutger/documents/bibliography/references}
+\end{document}
+
+
+
