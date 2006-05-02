@@ -2,7 +2,7 @@
 Import('env')
 Import('install_dir')
 
-kml_path = 'research/kml/'
+kmlroot = '/research/kml/'
 
 obj = []
 
@@ -30,6 +30,9 @@ obj += env.HTML( 'sigmoid.tex' )
 obj += env.HTML( 'view_matrix.tex' )
 obj += env.HTML( 'incomplete_cholesky.tex' )
 obj += env.PDF( 'incomplete_cholesky.tex' )
+
+# headers to be installed together with the documentation
+# headers = [ 'linear.hpp', 'gaussian.hpp', 'hermitian.hpp', 'polynomial.hpp', 'sigmoid.hpp' ]
 
 
 Return( 'obj' )
