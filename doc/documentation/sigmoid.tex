@@ -10,11 +10,11 @@
 
 \section*{Description}
 
-\texttt{Sigmoid<T>} is a kernel function. Specifically, it is a Similarity Function. If k is an object of class \texttt{sigmoid<T>}, and u and v are objects of class T, then k(u,v) returns
+\texttt{Sigmoid<T>} is a \href{research/kml/documentation/kernel.html}{Kernel}. If k is an object of class \texttt{sigmoid<T>}, and u and v are objects of class T, then k(u,v) returns
 %
-$$k(u,v) =  $$
+$$k(u,v) = \tanh( \gamma * u^T v + \lambda)$$
 %
-where $\sigma$ is the width of the kernel. 
+where $\gamma$ and $\lambda$ are the kernel parameters. 
 
 
 \section*{Example}
@@ -24,7 +24,7 @@ where $\sigma$ is the width of the kernel.
 \begin{verbatim}
 vector< double > u(10);
 vector< double > v(10);
-sigmoid< vector< double > > kernel(1.0);
+sigmoid< vector< double > > kernel(1.0,0.1);
 cout << kernel( u, v ) << endl;
 \end{verbatim}
 
@@ -44,8 +44,8 @@ T & The sigmoid argument type \\
 
 \section*{Model of}
 
-Similarity Function,
-Default Constructable, Copy Constructable
+\href{research/kml/documentation/kernel.html}{Kernel},
+Default Constructible, Copy Constructible
 
 
 \section*{Type requirements}
@@ -57,7 +57,7 @@ T must be a vector type or a numeric type; linear<T> should evaluate.
 
 \begin{tabular}{lll}
 \textbf{Member} & \textbf{Where defined} & \textbf{Description} \\ 
-\texttt{sigmoid()} & \href{http://www.sgi.com/tech/stl/DefaultConstructible.html}{Default Constructable} & The default constructor \\
+\texttt{sigmoid()} & \href{http://www.sgi.com/tech/stl/DefaultConstructible.html}{Default Constructible} & The default constructor \\
 \texttt{result_type} & Input value & The type of the result: \texttt{input_value<T>} \\
 \end{tabular}
 
@@ -65,7 +65,7 @@ T must be a vector type or a numeric type; linear<T> should evaluate.
 
 \section*{See also}
 
-The Mercel Kernel overview, Adaptable Binary Function,
+\href{research/kml/documentation/kernel.html}{Kernel},
 \href{research/kml/documentation/linear.html}{linear}, 
 \href{research/kml/documentation/polynomial.html}{polynomial}, 
 \href{research/kml/documentation/gaussian.html}{gaussian}

@@ -28,9 +28,9 @@ of specialised algorithms.</p>
           <ul class="toc2">
             <li>Problem Types
               <ul class="toc3">
-                <li>Regression</li>
-                <li>Classification</li>
-                <li>Ranking</li>
+                <li><a href="research/kml/documentation/regression.html">Regression</a></li>
+                <li><a href="research/kml/documentation/classification.html">Classification</a></li>
+                <li><a href="research/kml/documentation/ranking.html">Ranking</a></li>
               </ul>
             </li>
             <li>Algorithm Concepts
@@ -48,7 +48,7 @@ of specialised algorithms.</p>
           <ul class="toc2">
             <li>Concepts
               <ul class="toc3">
-                <li>Similarity Function</li>
+                <li><a href="research/kml/documentation/kernel.html">Kernel</a></li>
                 <li><a href="research/kml/documentation/mercer_kernel.html">Mercer Kernel</a></li>
               </ul>
             </li>

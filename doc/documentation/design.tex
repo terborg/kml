@@ -7,6 +7,35 @@
 
 \title{Design of the KML}
 \maketitle
+
+\section{Requirements}
+
+Here the initial requirements for the kernel-machine library are formalised.
+
+\begin{itemize}
+\item \textbf{It should be efficient.} Because kernel machines are all about
+numerical computations, one of the most important topics will be to
+achieve efficiency. Efficiency can be expressed in the big-O notation.
+\item \textbf{It should have a clean API.}
+Because it is a development library, one of the more difficult things
+of the development of a software library compared with the development
+of an end-user software tool is the quality of code: co-developers
+have to be able to read the source code. Good documentation, good
+use of comments, and sensible names of parameters can help. 
+\item \textbf{It should be cross-platform.} With a dominance of more than
+90\% of the desktop market, Microsoft Windows systems do contain many
+potential users and should be well supported. It should be tested
+on different operating systems. 
+\item \textbf{It should be flexible.} It should be able to accommodate all
+kinds of kernel machines, and therefore be able to process data set
+formats used by other packages.
+\item \textbf{It should be extensible.} In case an unforeseen situation
+comes into play, it should be possible to adjust the library in line
+with new ideas with minimal effort without altering the validity of
+its contents.
+\end{itemize}
+
+\section{Design}
 %
 The exact design of software may depend on the capabilities of the language
 it is written in. The C++ language is a \emph{multi-paradigm} language,

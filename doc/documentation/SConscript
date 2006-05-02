@@ -10,8 +10,16 @@ obj = []
 obj += env.XHTML( 'index.html_fase4' )
 obj += env.HTML( 'design.tex' )
 
-# kernel functions
+# generic concepts
+obj += env.HTML( 'regression.tex' )
+obj += env.HTML( 'classification.tex' )
+obj += env.HTML( 'ranking.tex' )
+
+# kernel concepts
+obj += env.HTML( 'kernel.tex' )
 obj += env.HTML( 'mercer_kernel.tex' )
+
+# kernel models
 obj += env.HTML( 'linear.tex' )
 obj += env.HTML( 'gaussian.tex' )
 obj += env.HTML( 'hermitian.tex' )

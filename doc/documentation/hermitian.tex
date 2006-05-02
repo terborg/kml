@@ -43,7 +43,7 @@ Figure~\ref{figure:hermitian_kernel} shows the Hermitian kernel for N=0 through 
 \begin{verbatim}
 vector< double > x(10);
 vector< double > v(10);
-hermitian< vector< double > > kernel(1.0);
+hermitian< vector< double >, 2 > kernel(1.0);
 cout << kernel( x, v ) << endl;
 \end{verbatim}
 
@@ -75,7 +75,7 @@ T must be a vector type or a numeric type; distance_squared<T> should evaluate.
 
 \begin{tabular}{lll}
 \textbf{Member} & \textbf{Where defined} & \textbf{Description} \\ 
-\texttt{hermitian()} & \href{http://www.sgi.com/tech/stl/DefaultConstructible.html}{Default Constructable} & The default constructor \\
+\texttt{hermitian()} & \href{http://www.sgi.com/tech/stl/DefaultConstructible.html}{Default Constructible} & The default constructor \\
 \texttt{result_type} & Input valxe & The type of the result: \texttt{input_value<T>} \\
 \end{tabular}
 
