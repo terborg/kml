@@ -15,9 +15,9 @@
 \texttt{polynomial<T>} is a kernel function. Specifically, it is a \href{research/kml/documentation/mercer_kernel.html}{Mercer Kernel}.
  If k is an object of class \texttt{polynomial<T>}, and u and v are objects of class T, then k(u,v) returns
 %
-$$k(u,v) = \textrm{exp}( \half \sigma^{-2} \Vert u-v \Vert^2 ) $$
+$$k(u,v) = (\gamma u^T v + \lambda)^d$$
 %
-where $\sigma$ is the width of the kernel. 
+where $\gamma$ is the scale of the used inner product, $\lambda$ the bias of the used inner product, and d the order of the polynomial kernel.
 
 
 \section*{Example}
@@ -27,7 +27,7 @@ where $\sigma$ is the width of the kernel.
 \begin{verbatim}
 vector< double > u(10);
 vector< double > v(10);
-polynomial< vector< double > > kernel(1.0);
+polynomial< vector< double > > kernel(1.0,0.0,3.0);
 cout << kernel( u, v ) << endl;
 \end{verbatim}
 
@@ -69,7 +69,7 @@ T must be a vector type or a numeric type; linear<T> should evaluate.
 
 The Mercel Kernel overview, Adaptable Binary Function,
 \href{research/kml/documentation/linear.html}{linear}, 
-\href{research/kml/documentation/gaussian.html}{gaussian}
+\href{research/kml/documentation/gaussian.html}{gaussian}, 
 \href{research/kml/documentation/sigmoid.html}{sigmoid}
 
 

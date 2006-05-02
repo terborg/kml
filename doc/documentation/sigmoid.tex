@@ -12,9 +12,9 @@
 
 \texttt{Sigmoid<T>} is a \href{research/kml/documentation/kernel.html}{Kernel}. If k is an object of class \texttt{sigmoid<T>}, and u and v are objects of class T, then k(u,v) returns
 %
-$$k(u,v) = \tanh( \gamma * u^T v + \lambda)$$
+$$k(u,v) = \tanh( \gamma u^T v + \lambda)$$
 %
-where $\gamma$ and $\lambda$ are the kernel parameters. 
+where $\gamma$ is the scale of the used inner product, $\lambda$ the bias of the used inner product. 
 
 
 \section*{Example}
