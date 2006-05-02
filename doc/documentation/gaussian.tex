@@ -14,7 +14,7 @@
 
 \texttt{Gaussian<T>} is a kernel function. Specifically, it is a \href{\kmlroot/mercer_kernel.html}{Mercer Kernel}. If k is an object of class \texttt{gaussian<T>}, and u and v are objects of class T, then k(u,v) returns
 %
-$$k(u,v) = \textrm{exp}( \half \sigma^{-2} \Vert u-v \Vert^2 ) $$
+$$k(u,v) = \textrm{exp}( - \half \sigma^{-2} \Vert u-v \Vert^2 ) $$
 %
 where $\sigma$ is the width of the kernel. 
 
