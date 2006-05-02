@@ -50,12 +50,19 @@ Complexity: O(d+c), i.e., a little more time than needed for computing the dot p
 template<typename T>
 class gaussian: public std::binary_function<T, T, typename input_value<T>::type> {
 public:
+    /*! Refinement of AdaptableBinaryFunction */
+    typedef T first_argument_type;
+    typedef T second_argument_type;
+    typedef typename input_value<T>::type result_type;
+
+    /*! Refinement of Kernel */
     typedef gaussian<T> type;
+
+    // scalar type ... 
     typedef typename input_value<T>::type scalar_type;
-    typedef typename input_value<T>::type return_type;
     friend class boost::serialization::access;
 
-    /*! Construct an uninitialised Gaussian kernel */
+    /*! Refinement of DefaultConstructable */
     gaussian() {}
 
     /*! Refinement of CopyConstructable */
