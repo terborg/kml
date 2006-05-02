@@ -12,7 +12,7 @@
 \section*{Description}
 
 \texttt{Hermitian<T,N>} is a family of Kernel Functions. Specifically, it is a family of 
-\href{research/kml/documentation/mercer_kernel.html}{Mercer Kernels}. 
+\href{\kmlroot/mercer_kernel.html}{Mercer Kernels}. 
 The N-th Hermitian kernel is equal to the N-th order derivative of the Gaussian kernel. 
 They are named after Hermite polynomials, which may be used to identify the derivatives of the Gaussian kernels. 
 
@@ -50,13 +50,14 @@ cout << kernel( x, v ) << endl;
 
 \section*{Definition}
 
-Defined in the KML header \href{hermitian.hpp}{hermitian.hpp}.
+Defined in the KML header \href{\kmlroot/hermitian.hpp}{kml/hermitian.hpp}.
 
 
 \section*{Template Parameters}
 
 \begin{tabular}{lll}
 \textbf{Parameter} & \textbf{Description} & \textbf{Default} \\ 
+\hline
 T & The hermitian argument type \\ 
 N & The order of the hermitian \\ 
 \end{tabular}
@@ -64,7 +65,7 @@ N & The order of the hermitian \\
 
 \section*{Model of}
 
-\href{research/kml/documentation/mercer_kernel.html}{Mercer Kernel}
+\href{\kmlroot/mercer_kernel.html}{Mercer Kernel}
 
 \section*{Type requirements}
 
@@ -75,6 +76,7 @@ T must be a vector type or a numeric type; distance_squared<T> should evaluate.
 
 \begin{tabular}{lll}
 \textbf{Member} & \textbf{Where defined} & \textbf{Description} \\ 
+\hline
 \texttt{hermitian()} & \href{http://www.sgi.com/tech/stl/DefaultConstructible.html}{Default Constructible} & The default constructor \\
 \texttt{result_type} & Input valxe & The type of the result: \texttt{input_value<T>} \\
 \end{tabular}
@@ -83,9 +85,11 @@ T must be a vector type or a numeric type; distance_squared<T> should evaluate.
 
 \section*{See also}
 
-The Mercel Kernel overview, Adaptable Binary function, linear, sigmoid, polynomial
-
-\noindent \href{research/kml/documentation/}{Table of Contents}
+\href{\kmlroot/mercer_kernel.html}{Mercer Kernel},
+\href{\kmlroot/linear.html}{linear},
+\href{\kmlroot/linear.html}{gaussian},
+\href{\kmlroot/linear.html}{polynomial},
+\href{\kmlroot/linear.html}{sigmoid}
 
 \bibliographystyle{unsrtnat}
 \bibliography{/home/rutger/documents/bibliography/references}

@@ -12,7 +12,7 @@
 
 \section*{Description}
 
-\texttt{polynomial<T>} is a kernel function. Specifically, it is a \href{research/kml/documentation/mercer_kernel.html}{Mercer Kernel}.
+\texttt{polynomial<T>} is a kernel function. Specifically, it is a \href{\kmlroot/mercer_kernel.html}{Mercer Kernel}.
  If k is an object of class \texttt{polynomial<T>}, and u and v are objects of class T, then k(u,v) returns
 %
 $$k(u,v) = (\gamma u^T v + \lambda)^d$$
@@ -34,20 +34,21 @@ cout << kernel( u, v ) << endl;
 
 \section*{Definition}
 
-Defined in the KML header \href{polynomial.hpp}{polynomial.hpp}.
+Defined in the KML header \href{\kmlroot/polynomial.hpp}{kml/polynomial.hpp}.
 
 
 \section*{Template Parameters}
 
 \begin{tabular}{lll}
 \textbf{Parameter} & \textbf{Description} & \textbf{Default} \\ 
+\hline
 T & The polynomial argument type \\ 
 \end{tabular}
 
 
 \section*{Model of}
 
-\href{research/kml/documentation/mercer_kernel.html}{Mercer Kernel}, 
+\href{\kmlroot/mercer_kernel.html}{Mercer Kernel}, 
 Default Constructible, Copy Constructible
 
 \section*{Type requirements}
@@ -59,6 +60,7 @@ T must be a vector type or a numeric type; linear<T> should evaluate.
 
 \begin{tabular}{lll}
 \textbf{Member} & \textbf{Where defined} & \textbf{Description} \\ 
+\hline
 \texttt{polynomial()} & \href{http://www.sgi.com/tech/stl/DefaultConstructible.html}{Default Constructible} & The default constructor \\
 \texttt{result_type} & Input value & The type of the result: \texttt{input_value<T>} \\
 \end{tabular}
@@ -68,9 +70,9 @@ T must be a vector type or a numeric type; linear<T> should evaluate.
 \section*{See also}
 
 The Mercel Kernel overview, Adaptable Binary Function,
-\href{research/kml/documentation/linear.html}{linear}, 
-\href{research/kml/documentation/gaussian.html}{gaussian}, 
-\href{research/kml/documentation/sigmoid.html}{sigmoid}
+\href{\kmlroot/linear.html}{linear}, 
+\href{\kmlroot/gaussian.html}{gaussian}, 
+\href{\kmlroot/sigmoid.html}{sigmoid}
 
 
 \bibliographystyle{unsrtnat}

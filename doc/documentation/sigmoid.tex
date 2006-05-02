@@ -10,7 +10,7 @@
 
 \section*{Description}
 
-\texttt{Sigmoid<T>} is a \href{research/kml/documentation/kernel.html}{Kernel}. If k is an object of class \texttt{sigmoid<T>}, and u and v are objects of class T, then k(u,v) returns
+\texttt{Sigmoid<T>} is a \href{\kmlroot/kernel.html}{Kernel}. If k is an object of class \texttt{sigmoid<T>}, and u and v are objects of class T, then k(u,v) returns
 %
 $$k(u,v) = \tanh( \gamma u^T v + \lambda)$$
 %
@@ -31,7 +31,7 @@ cout << kernel( u, v ) << endl;
 
 \section*{Definition}
 
-Defined in the KML header \href{sigmoid.hpp}{sigmoid.hpp}.
+Defined in the KML header \href{\kmlroot/sigmoid.hpp}{kml/sigmoid.hpp}.
 
 
 \section*{Template Parameters}
@@ -44,7 +44,7 @@ T & The sigmoid argument type \\
 
 \section*{Model of}
 
-\href{research/kml/documentation/kernel.html}{Kernel},
+\href{\kmlroot/kernel.html}{Kernel},
 Default Constructible, Copy Constructible
 
 
@@ -65,10 +65,10 @@ T must be a vector type or a numeric type; linear<T> should evaluate.
 
 \section*{See also}
 
-\href{research/kml/documentation/kernel.html}{Kernel},
-\href{research/kml/documentation/linear.html}{linear}, 
-\href{research/kml/documentation/polynomial.html}{polynomial}, 
-\href{research/kml/documentation/gaussian.html}{gaussian}
+\href{\kmlroot/kernel.html}{Kernel},
+\href{\kmlroot/linear.html}{linear}, 
+\href{\kmlroot/polynomial.html}{polynomial}, 
+\href{\kmlroot/gaussian.html}{gaussian}
 
 \bibliographystyle{unsrtnat}
 \bibliography{/home/rutger/documents/bibliography/references}

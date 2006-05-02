@@ -12,7 +12,7 @@
 
 \section*{Description}
 
-\texttt{Gaussian<T>} is a kernel function. Specifically, it is a \href{research/kml/documentation/mercer_kernel.html}{Mercer Kernel}. If k is an object of class \texttt{gaussian<T>}, and u and v are objects of class T, then k(u,v) returns
+\texttt{Gaussian<T>} is a kernel function. Specifically, it is a \href{\kmlroot/mercer_kernel.html}{Mercer Kernel}. If k is an object of class \texttt{gaussian<T>}, and u and v are objects of class T, then k(u,v) returns
 %
 $$k(u,v) = \textrm{exp}( \half \sigma^{-2} \Vert u-v \Vert^2 ) $$
 %
@@ -33,20 +33,21 @@ cout << kernel( u, v ) << endl;
 
 \section*{Definition}
 
-Defined in the KML header \href{gaussian.hpp}{gaussian.hpp}.
+Defined in the KML header \href{\kmlroot/gaussian.hpp}{kml/gaussian.hpp}.
 
 
 \section*{Template Parameters}
 
 \begin{tabular}{lll}
 \textbf{Parameter} & \textbf{Description} & \textbf{Default} \\ 
+\hline
 T & The gaussian argument type \\ 
 \end{tabular}
 
 
 \section*{Model of}
 
-\href{research/kml/documentation/mercer_kernel.html}{Mercer Kernel}, 
+\href{\kmlroot/mercer_kernel.html}{Mercer Kernel}, 
 Default Constructible, Copy Constructible
 
 
@@ -69,9 +70,9 @@ T must be a vector type or a numeric type; distance_squared<T> should evaluate.
 \section*{See also}
 
 The Mercel Kernel overview, Adaptable Binary Function, 
-\href{research/kml/documentation/linear.html}{linear}, 
-\href{research/kml/documentation/polynomial.html}{polynomial}, 
-\href{research/kml/documentation/sigmoid.html}{sigmoid}
+\href{\kmlroot/linear.html}{linear}, 
+\href{\kmlroot/polynomial.html}{polynomial}, 
+\href{\kmlroot/sigmoid.html}{sigmoid}
 
 \bibliographystyle{unsrtnat}
 \bibliography{/home/rutger/documents/bibliography/references}
