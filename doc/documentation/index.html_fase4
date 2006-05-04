@@ -24,25 +24,31 @@ of specialised algorithms.</p>
         <li><a href="research/kml/documentation/design.html">Design of the KML</a></li>
         <li>Installation</li>
 
-        <li>Supervised Learning
+        <li>Learning Concepts
           <ul class="toc2">
-            <li>Problem Types
+            <li>Supervised Learning
               <ul class="toc3">
                 <li><a href="research/kml/documentation/regression.html">Regression</a></li>
                 <li><a href="research/kml/documentation/classification.html">Classification</a></li>
                 <li><a href="research/kml/documentation/ranking.html">Ranking</a></li>
               </ul>
             </li>
-            <li>Algorithm Concepts
+            <li>Unsupervised Learning
+              <ul class="toc3">
+                <li>Single-class</li>
+              </ul>
+            </li>
+            <li><a href="research/kml/documentation/data_model.html">Data Model</a></li>
+<!--            <li>Algorithm Concepts
               <ul class="toc3">
                 <li>Learner</li>
                 <li>Batch Learner</li>
                 <li>Incremental Learner</li>
                 <li>Decremental Learner</li>
               </ul>
-            </li>
+            </li>-->
           </ul>
-        </li><!-- supervised learning -->
+        </li><!-- problem concepts -->
 
         <li>Kernel Functions
           <ul class="toc2">
