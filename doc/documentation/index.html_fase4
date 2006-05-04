@@ -28,9 +28,9 @@ of specialised algorithms.</p>
           <ul class="toc2">
             <li>Supervised Learning
               <ul class="toc3">
-                <li><a href="research/kml/documentation/regression.html">Regression</a></li>
                 <li><a href="research/kml/documentation/classification.html">Classification</a></li>
                 <li><a href="research/kml/documentation/ranking.html">Ranking</a></li>
+                <li><a href="research/kml/documentation/regression.html">Regression</a></li>
               </ul>
             </li>
             <li>Unsupervised Learning
