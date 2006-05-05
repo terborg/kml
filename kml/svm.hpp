@@ -87,7 +87,8 @@ namespace kml {
       C = s.C; weight = s.weight; tol = .0001; bias = s.bias; 
       std::cout << "In copy constructor" << std::endl;
       std::cout << "data's location: " << s.data << std::endl;
-      base_type::data = new PropertyMap(*(s.data));
+      base_type::data = shared_ptr<PropertyMap const>(s.data);
+      // base_type::set_data(s.data);
       std::cout << "Leaving copy constructor" << std::endl;
     }
 

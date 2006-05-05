@@ -27,7 +27,7 @@
 #include <kml/classification.hpp>
 #include <kml/ranking.hpp>
 #include <vector>
-
+#include <tr1/memory>
 
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/tracking.hpp>
@@ -36,6 +36,7 @@
 // for the property traits
 #include <boost/property_map.hpp>
 
+using std::tr1::shared_ptr;
 
 namespace lambda = boost::lambda;
 
@@ -246,19 +247,18 @@ public:
                     typename boost::call_traits<PropertyMap>::param_type map ):
     kernel_function(k), data(&map) {}
 
-    kernel_machine(kernel_machine &k): kernel_function(k.kernel_function) {
-      data = new PropertyMap(*(k.data));
-    }
+    kernel_machine(kernel_machine &k): kernel_function(k.kernel_function),
+				       data(k.data) { }
 
-    typename kernel_type::return_type kernel( key_type const i, key_type const j ) {
+    typename kernel_type::result_type kernel( key_type const i, key_type const j ) {
                                     return kernel_function( (*data)[i].get<0>(), (*data)[j].get<0>() );
                                 }
 
-                                typename kernel_type::return_type kernel( input_type const &x, key_type const j ) {
+                                typename kernel_type::result_type kernel( input_type const &x, key_type const j ) {
                                                                 return kernel_function( x, (*data)[j].get<0>() );
                                                             }
       
-  typename kernel_type::return_type kernel(key_type const i, input_type const &x) {
+  typename kernel_type::result_type kernel(key_type const i, input_type const &x) {
     return kernel_function((*data)[i].get<0>(), x);
   }
 
@@ -318,11 +318,15 @@ public:
     //     }
 
     void set_data( PropertyMap const &map ) {
-      data = &map;
+	data = shared_ptr<PropertyMap const>(&map);
     }
 
     void set_data(PropertyMap const *map) {
-      data = map;
+	data = shared_ptr<PropertyMap const>(map);
+    }
+
+    void set_data(shared_ptr<PropertyMap const> map) {
+	data = map;
     }
 
     void set_kernel( kernel_type const &k ) {
@@ -351,7 +355,7 @@ public:
     kernel_type kernel_function;
 
     /// pointer to data container used by the machine
-    PropertyMap const *data;
+    shared_ptr<PropertyMap const> data;
 
     /// to translate to a sequential view
     //     std::map< key_type, std::size_t > key_mapping;
@@ -395,15 +399,15 @@ public:
     kernel_function(k), data(&map) {}
 
 
-    typename kernel_type::return_type kernel( key_type const i, key_type const j ) {
+    typename kernel_type::result_type kernel( key_type const i, key_type const j ) {
                                     return kernel_function( (*data)[i].get<0>(), (*data)[j].get<0>() );
                                 }
 
-                                typename kernel_type::return_type kernel( input_type const &x, key_type const j ) {
+                                typename kernel_type::result_type kernel( input_type const &x, key_type const j ) {
                                                                 return kernel_function( x, (*data)[j].get<0>() );
                                                             }
       
-  typename kernel_type::return_type kernel(key_type const i, input_type const &x) {
+  typename kernel_type::result_type kernel(key_type const i, input_type const &x) {
     return kernel_function((*data)[i].get<0>(), x);
   }
 
@@ -449,7 +453,7 @@ public:
     }
 
     void set_data( PropertyMap const &map ) {
-        data = &map;
+	data = shared_ptr<PropertyMap const>(&map);
     }
 
 
@@ -467,7 +471,7 @@ public:
     kernel_type kernel_function;
 
     /// pointer to data container used by the machine
-    PropertyMap const *data;
+    shared_ptr<PropertyMap const> data;
 
 
     /// to translate to a sequential view
