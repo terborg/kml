@@ -115,26 +115,30 @@ public:
 
 /*!
 \brief Linear kernel
-\param T defines the underlying data type
+\param T defines the argument type
  
 The linear kernel is the basic Eucledian inner product.
- 
-\todo Remove the second template parameter
  
 */
 
 
 template<typename T>
 struct linear: public std::binary_function<T,T,typename input_value<T>::type> {
+
+    /*! Refinement of AdaptableBinaryFunction */
+    typedef T first_argument_type;
+    typedef T second_argument_type;
+    typedef typename input_value<T>::type result_type;
+
+    /*! Refinement of Kernel ? */
     typedef linear<T> type;
     typedef typename input_value<T>::type scalar_type;
-    typedef typename input_value<T>::type return_type;
     friend class boost::serialization::access;
 
-    /*! Construct an uninitialised linear kernel */
+    /*! Refinement of DefaultConstructible */
     linear() {}
 
-    /*! Refinement of CopyConstructable */
+    /*! Refinement of CopyConstructible */
     linear( type const &other ) {}
 
     /*! Refinement of Assignable */

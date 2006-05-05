@@ -32,20 +32,42 @@
 
 namespace kml {
 
+/*!
+\brief Sigmoid kernel
+ 
+\ingroup kernels
+*/
+
 template<typename T>
 class sigmoid: public std::binary_function<T, T, typename input_value<T>::type> {
 public:
+    /*! Refinement of AdaptableBinaryFunction */
+    typedef T first_argument_type;
+    typedef T second_argument_type;
+    typedef typename input_value<T>::type result_type;
+
+    /*! Refinement of Kernel? */
     typedef sigmoid<T> type;
+
+    // scalar type..
     typedef typename input_value<T>::type scalar_type;
-    typedef typename input_value<T>::type return_type;
     friend class boost::serialization::access;
 
-    /*! Construct an uninitialised sigmoid kernel */
-    sigmoid() {}
+    /*! Refinement of DefaultConstructible */
+    sigmoid(): scale(1.0), bias(0.0) {}
 
-    /*! Refinement of CopyConstructable */
+    /*! Refinement of CopyConstructible */
     sigmoid( type const &other ) {
         copy( other );
+    }
+
+    /*! Refinement of Assignable */
+    type &operator=( type const &other ) {
+        if (this != &other) {
+            destroy();
+            copy(other);
+        }
+        return *this;
     }
 
     /*! Construct a sigmoid kernel by providing a values for gamma and lambda
@@ -67,20 +89,11 @@ public:
             bias = boost::lexical_cast<scalar_type>( *iter );
     }
 
-    /*! Refinement of Assignable */
-    type &operator=( type const &other ) {
-        if (this != &other) {
-            destroy();
-            copy(other);
-        }
-        return *this;
-    }
-
-    /*! Returns the result of the evaluation of the sigmoid kernel for these points
+    /*! Returns the result of the evaluation of the sigmoid kernel for its arguments
     	\param u input pattern u
         \param v input pattern v
     	\return \f$ tanh( \gamma * u^T v + \lambda) \f$
-       */
+    */
     scalar_type operator()( T const &u, T const &v ) const {
         return std::tanh( scale * linear<T>()(u,v) + bias );
     }
@@ -103,7 +116,6 @@ private:
         scale = other.scale;
         bias = other.bias;
     }
-    void destroy() {}
 
     scalar_type scale;
     scalar_type bias;

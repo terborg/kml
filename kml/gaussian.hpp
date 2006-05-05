@@ -62,10 +62,12 @@ public:
     typedef typename input_value<T>::type scalar_type;
     friend class boost::serialization::access;
 
-    /*! Refinement of DefaultConstructable */
-    gaussian() {}
+    /*! Refinement of DefaultConstructible */
+    gaussian() {
+        set_width(1.0);
+    }
 
-    /*! Refinement of CopyConstructable */
+    /*! Refinement of CopyConstructible */
     gaussian( type const &other ) {
         copy( other );
     }
@@ -73,13 +75,13 @@ public:
     /*! Refinement of Assignable */
     type &operator=( type const &other ) {
         if (this != &other) {
-            destroy();
             copy(other);
         }
         return *this;
     }
 
-    /*! Construct a Gaussian kernel by providing a value for \f$ \sigma \f$ */
+    /*! Construct a Gaussian kernel by providing a value for sigma
+        \param sigma  the width of the gaussian kernel */
     gaussian( typename boost::call_traits<scalar_type>::param_type sigma ) {
         set_width(sigma);
     }
@@ -95,11 +97,11 @@ public:
         }
     }
 
-    /*! Returns the result of the evaluation of the Gaussian kernel for these points
+    /*! Returns the result of the evaluation of the Gaussian kernel for its arguments
     	\param u input pattern u
-           \param v input pattern v
+        \param v input pattern v
     	\return \f$ e^{-\gamma\|u - v\|} \f$
-       */
+    */
     scalar_type operator()( T const &u, T const &v ) const {
         return std::exp( exp_factor * distance_square( u, v ) );
     }
@@ -143,7 +145,7 @@ public:
         return std::numeric_limits<scalar_type>::infinity();
     }
 
-    // loading and saving capabilities
+    /*! loading and saving capabilities */
     template<class Archive>
     void serialize( Archive &archive, unsigned int const version ) {
         archive & width;
@@ -161,7 +163,6 @@ private:
         width = other.width;
         exp_factor = other.exp_factor;
     }
-    void destroy() {}
 
     scalar_type width;
     scalar_type exp_factor;
