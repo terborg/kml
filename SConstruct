@@ -42,6 +42,7 @@ elif env['PLATFORM'] == 'darwin':
    atlas_search_path = ['/sw/include/atlas']
    atlas_link_libs = ['cblas','atlas']
    lib_path = ['/sw/lib']
+   c_link_libs = ['kml']
 
 # Search path dictionaries for dependent libraries
 path = env.FindFile( 'version.hpp', boost_search_path )

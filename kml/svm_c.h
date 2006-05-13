@@ -15,7 +15,7 @@ extern "C" {
   void* kml_new_rank_double_gaussian(double k, double s);
   void* kml_copy_rank_double_gaussian(void *v);
   void kml_delete_rank_double_gaussian(void *v);
-  void kml_learn_rank_double_gaussian(void *v, double **p, int *t, int *g,
+  void kml_learn_rank_double_gaussian(void *v, double **p, int *g, int *t,
 					 int sz_row, int sz_col);
   double kml_rank_double_gaussian(void *v, double *i, int sz);
 

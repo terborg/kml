@@ -52,11 +52,14 @@
 #include <iostream>
 #include <utility>
 #include <iterator>
+#include <tr1/memory>
 
 #include <kml/kernel_machine.hpp>
 #include <kml/classification.hpp>
 #include <kml/ranking.hpp>
 #include <kml/regression.hpp>
+
+using std::tr1::shared_ptr;
 
 namespace lambda = boost::lambda;
 namespace ublas = boost::numeric::ublas;
@@ -83,30 +86,23 @@ namespace kml {
 	 typename boost::call_traits<PropertyMap>::param_type map ): 
       base_type(k, map), C(max_weight), tol(.001), bias(0), startpt(randomness) { }
 
-    svm(svm &s): base_type(s.kernel_function, *(s.data)), startpt(randomness) { 
+    svm( typename boost::call_traits<kernel_type>::param_type k,
+	 typename boost::call_traits<scalar_type>::param_type max_weight,
+	 typename boost::call_traits<shared_ptr<PropertyMap> >::param_type map ):
+      base_type(k, map), C(max_weight), tol(.001), bias(0), startpt(randomness) { }
+
+    svm(svm &s): base_type(s.kernel_function, *(s.data)), startpt(randomness) {
       C = s.C; weight = s.weight; tol = .0001; bias = s.bias; 
-      std::cout << "In copy constructor" << std::endl;
-      std::cout << "data's location: " << s.data << std::endl;
-      base_type::data = shared_ptr<PropertyMap const>(s.data);
-      // base_type::set_data(s.data);
-      std::cout << "Leaving copy constructor" << std::endl;
     }
 
-    ~svm() {
-      std::cout << "Destructor got called" << std::endl;
-    }
+    ~svm() {  }
 
     output_type operator() (input_type const &x) {
       scalar_type ret=0;
-      std::cerr << "weight vector has " << weight.size() << " elements" << std::endl;
       for (size_t i=0; i<weight.size(); ++i) 
-	if (weight[i] > 0) {
-	  /* so, what's happening here is the data isn't getting copy-constructed right. */
-	  //	  std::cerr << (*base_type::data)[i].get<1>() << std::endl;
+	if (weight[i] > 0) 
 	  ret += weight[i] * (*base_type::data)[i].get<1>() * base_type::kernel(i, x);
-	}
       ret -= bias;
-      std::cerr << "returning " << ret << std::endl;
       return (output_type)ret;
     }
     
@@ -342,7 +338,12 @@ namespace kml {
     svm( typename boost::call_traits<kernel_type>::param_type k,
 	 typename boost::call_traits<double>::param_type max_weight,
 	 typename boost::call_traits<PropertyMap>::param_type map): 
-      base_type(k, map), C(max_weight), inner_machine(k, max_weight, inner_data) { }
+      base_type(k, map), C(max_weight), inner_data(new InnerPropertyMap), inner_machine(k, max_weight, inner_data) { }
+
+    svm( typename boost::call_traits<kernel_type>::param_type k,
+	 typename boost::call_traits<double>::param_type max_weight,
+	 typename boost::call_traits<shared_ptr<PropertyMap> >::param_type map):
+      base_type(k, map), C(max_weight), inner_data(new InnerPropertyMap()), inner_machine(k, max_weight, inner_data) {  }
 
     output_type operator()(input_type const &x) {
       return inner_machine(x);
@@ -362,7 +363,7 @@ namespace kml {
 			     (*base_type::data)[j].get<0>().begin(), 
 			     std::back_inserter(diff_vec),
 			     std::minus<typename boost::range_value<input_type>::type>());
-	      inner_data[count] = boost::make_tuple(diff_vec, sgn((*base_type::data)[i].get<2>() - (*base_type::data)[j].get<2>()));
+	      (*inner_data)[count] = boost::make_tuple(diff_vec, sgn((*base_type::data)[i].get<2>() - (*base_type::data)[j].get<2>()));
 	      ++count;
 	    }
 
@@ -370,25 +371,25 @@ namespace kml {
 
       bool one_class = true;
       for (unsigned int i=1; i<count; ++i) 
-	if (inner_data[i].get<1>() != inner_data[0].get<1>()) {
+	if ((*inner_data)[i].get<1>() != (*inner_data)[0].get<1>()) {
 	  one_class = false;
 	  break;
 	}
 
       if (one_class) 
 	for (unsigned int i=0; i<count; i=i+2) 
-	  inner_data[i] = boost::make_tuple(std::vector<scalar_type>(std::transform(inner_data[i].get<0>().begin(), inner_data[i].get<0>().end(), inner_data[i].get<0>().begin(), std::negate<scalar_type>()), inner_data[i].get<0>().end()), -inner_data[i].get<1>());
+	  (*inner_data)[i] = boost::make_tuple(std::vector<scalar_type>(std::transform((*inner_data)[i].get<0>().begin(), (*inner_data)[i].get<0>().end(), (*inner_data)[i].get<0>().begin(), std::negate<scalar_type>()), (*inner_data)[i].get<0>().end()), -(*inner_data)[i].get<1>());
 
       inner_machine.set_data(inner_data);
-      inner_machine.learn(inner_data.storage_begin(), inner_data.storage_end());
+      inner_machine.learn(inner_data->storage_begin(), inner_data->storage_end());
     }
 
     unsigned int size;
     scalar_type epsilon;
     scalar_type C;
 
+    shared_ptr<InnerPropertyMap> inner_data;
     inner_svm_type inner_machine;
-    InnerPropertyMap inner_data;
   };
 
 } // namespace kml

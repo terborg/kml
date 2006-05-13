@@ -34,7 +34,7 @@
 
 typedef std::vector<double> input_type;
 
-typedef boost::tuple<input_type, int> class_type;
+typedef boost::tuple<input_type, double> class_type;
 typedef boost::tuple<input_type, int, double> rank_type;
 
 typedef boost::vector_property_map<class_type> class_property_map;
@@ -50,20 +50,15 @@ typedef kml::linear<input_type> linear_k;
 extern "C" {  
 
   void* kml_new_class_double_gaussian(double k, double s) { 
-    class_property_map m;
+    shared_ptr<class_property_map> m(new class_property_map);
     kml::svm<class_prob, gaussian_k, class_property_map> *v = new kml::svm<class_prob, gaussian_k, class_property_map>(k, s, m);
-    std::cerr << "data's location from new: " << v->data << std::endl;
     return (void *) v;
     //    return (void *) new kml::svm<class_prob, gaussian_k, class_property_map>(k, s, m);
   }
 
   void* kml_copy_class_double_gaussian(void *v) {
-    std::cout << "Casting" << std::endl;
     kml::svm<class_prob, gaussian_k, class_property_map>* m = (kml::svm<class_prob, gaussian_k, class_property_map> *) v;
-    std::cerr << "data's location before copying: " << m->data << std::endl;
-    //    std::cout << "data's size after casting: " << std::distance(m->data->storage_begin(), m->data->storage_end()) << std::endl;
     kml::svm<class_prob, gaussian_k, class_property_map>* m1 = new kml::svm<class_prob, gaussian_k, class_property_map>(*m);
-    std::cerr << "data's location after copying: " << m1->data << std::endl;
     return (void *) m1;
       //    return (void *) new kml::svm<class_prob, gaussian_k, class_property_map>(*m);
   }
@@ -75,29 +70,26 @@ extern "C" {
   void kml_learn_class_double_gaussian(void *v, double **p, int *t,
 						int sz_row, int sz_col) {
     kml::svm<class_prob, gaussian_k, class_property_map>* m = (kml::svm<class_prob, gaussian_k, class_property_map> *) v;
-    class_property_map data;
+    shared_ptr<class_property_map> data(new class_property_map);
     for (int j = 0; j < sz_row; ++j) {
-      data[j] = boost::make_tuple(std::vector<double>(*p, (*p) + sz_col), *t);
+      (*data)[j] = boost::make_tuple(std::vector<double>(*p, (*p) + sz_col), *t);
       ++p; ++t;
     }
-    std::cerr << "data's location before learning: " << m->data << std::endl;
     m->set_data(data);
-    m->learn(data.storage_begin(), data.storage_end()); 
-    std::cerr << "data's location after learning: " << m->data << std::endl;
-    std::cout << "data's size after learning: " << std::distance(m->data->storage_begin(), m->data->storage_end()) << std::endl;
+    m->learn(data->storage_begin(), data->storage_end()); 
   }
 
   double kml_classify_double_gaussian(void *v, double *i, int sz) {
     kml::svm<class_prob, gaussian_k, class_property_map>* m = (kml::svm<class_prob, gaussian_k, class_property_map> *) v;
-    std::cerr << "data's location when classifying: " << m->data << std::endl;
     if (m->operator()(std::vector<double>(i, i+sz)) > 0)
       return 1;
-    else
-      return 0; // This way we can coerce to boolean trivially. Should try return (m->operator()(std::vector<double>(i, i+sz)) > 0) though.
+    else 
+      return 0;
+ // This way we can coerce to boolean trivially. Should try return (m->operator()(std::vector<double>(i, i+sz)) > 0) though.
   }
 
   void* kml_new_rank_double_gaussian(double k, double s) {
-    rank_property_map m;
+    shared_ptr<rank_property_map> m(new rank_property_map);
     return (void *) new kml::svm<rank_prob, gaussian_k, rank_property_map>(k, s, m);
   }
 
@@ -110,13 +102,13 @@ extern "C" {
   void kml_learn_rank_double_gaussian(void *v, double **p, int *g, int *t, 
 					 int sz_row, int sz_col) {
     kml::svm<rank_prob, gaussian_k, rank_property_map>* m = (kml::svm<rank_prob, gaussian_k, rank_property_map> *) v;
-    rank_property_map data;
+    shared_ptr<rank_property_map> data(new rank_property_map);
     for (int j = 0; j < sz_row; ++j) {
-      data[j] = boost::make_tuple(std::vector<double>(*p, (*p) + sz_col), *g, *t);
+      (*data)[j] = boost::make_tuple(std::vector<double>(*p, (*p) + sz_col), *g, *t);
       ++p; ++g; ++t;
     }
     m->set_data(data);
-    m->learn(data.storage_begin(), data.storage_end());
+    m->learn(data->storage_begin(), data->storage_end());
   }
 
   double kml_rank_double_gaussian(void* v, double *i, int sz) {

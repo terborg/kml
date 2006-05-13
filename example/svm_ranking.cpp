@@ -22,6 +22,7 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <tr1/memory>
 
 using std::string; using std::cout; using std::endl; 
 using std::ifstream; using std::stringstream;
@@ -36,50 +37,52 @@ typedef boost::vector_property_map<example_type> PropertyMap;
 
 int main(int argc, char *argv[]) {
 
-  PropertyMap data;
+  shared_ptr<PropertyMap> data(new PropertyMap);
   problem_type::input_type point;
 
   point.push_back(1); point.push_back(1); point.push_back(0); point.push_back(0.2); point.push_back(0);
-  data[0] = boost::make_tuple(point, 1, 3);
+  (*data)[0] = boost::make_tuple(point, 1, 3);
   point.resize(0);
   point.push_back(0); point.push_back(0); point.push_back(1); point.push_back(0.1); point.push_back(1);
-  data[1] = boost::make_tuple(point, 1, 2);
+  (*data)[1] = boost::make_tuple(point, 1, 2);
   point.resize(0);
   point.push_back(0); point.push_back(1); point.push_back(0); point.push_back(0.4); point.push_back(0);
-  data[2] = boost::make_tuple(point, 1, 1);
+  (*data)[2] = boost::make_tuple(point, 1, 1);
   point.resize(0);
   point.push_back(0); point.push_back(0); point.push_back(1); point.push_back(0.3); point.push_back(0);
-  data[3] = boost::make_tuple(point, 1, 1);
+  (*data)[3] = boost::make_tuple(point, 1, 1);
   point.resize(0);
 
   point.push_back(0); point.push_back(0); point.push_back(1); point.push_back(0.2); point.push_back(0);
-  data[4] = boost::make_tuple(point, 2, 1);
+  (*data)[4] = boost::make_tuple(point, 2, 1);
   point.resize(0);
   point.push_back(1); point.push_back(0); point.push_back(1); point.push_back(0.4); point.push_back(0);
-  data[5] = boost::make_tuple(point, 2, 2);
+  (*data)[5] = boost::make_tuple(point, 2, 2);
   point.resize(0);
   point.push_back(0); point.push_back(0); point.push_back(1); point.push_back(0.1); point.push_back(0);
-  data[6] = boost::make_tuple(point, 2, 1);
+  (*data)[6] = boost::make_tuple(point, 2, 1);
   point.resize(0);
   point.push_back(0); point.push_back(0); point.push_back(1); point.push_back(0.2); point.push_back(0);
-  data[7] = boost::make_tuple(point, 2, 1);
+  (*data)[7] = boost::make_tuple(point, 2, 1);
   point.resize(0);
 
   point.push_back(0); point.push_back(0); point.push_back(1); point.push_back(0.1); point.push_back(1);
-  data[8] = boost::make_tuple(point, 3, 2);
+  (*data)[8] = boost::make_tuple(point, 3, 2);
   point.resize(0);
   point.push_back(1); point.push_back(1); point.push_back(0); point.push_back(0.3); point.push_back(0);
-  data[9] = boost::make_tuple(point, 3, 3);
+  (*data)[9] = boost::make_tuple(point, 3, 3);
   point.resize(0);
   point.push_back(1); point.push_back(0); point.push_back(0); point.push_back(0.4); point.push_back(1);
-  data[10] = boost::make_tuple(point, 3, 4);
+  (*data)[10] = boost::make_tuple(point, 3, 4);
   point.resize(0);
   point.push_back(0); point.push_back(1); point.push_back(1); point.push_back(0.5); point.push_back(0);
-  data[11] = boost::make_tuple(point, 3, 1);
+  (*data)[11] = boost::make_tuple(point, 3, 1);
   point.resize(0);
 
+  std::cerr << "All created, about to create SVM" << std::endl;
   kml::svm<problem_type, kernel_type, PropertyMap> my_machine(3.162277, 1.0, data);
-  my_machine.learn(data.storage_begin(), data.storage_end());
+  std::cerr << "About to learn" << std::endl;
+  my_machine.learn(data->storage_begin(), data->storage_end());
 
   /*
   std::cerr << "Weight vector (size " << my_machine.weight.size() << "): ";
