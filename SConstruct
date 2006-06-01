@@ -25,6 +25,7 @@ if env['PLATFORM'] == 'posix':
    if env.FindFile( 'libatlas.so.3', lib_path ): atlas_link_libs.append( 'atlas' )
    if env.FindFile( 'libcblas.so.3', lib_path ): atlas_link_libs.append( 'cblas' )
    if env.FindFile( 'liblapack_atlas.so.3', lib_path ): atlas_link_libs.append( 'lapack_atlas' )
+   if env.FindFile( 'libg2c.so.0', lib_path ): atlas_link_libs.append( 'g2c' )
    if env.FindFile( 'liblapack.so.3', lib_path ): lapack_link_libs.append( 'lapack' )
 
 elif env['PLATFORM'] == 'win32':
@@ -171,7 +172,6 @@ Export( 'arch_ext' )
 # Deligate to build scripts
 env.Replace( CXXFLAGS = cc_flags + ' ' + optimise_flags + debug_flags)
 SConscript( dirs=['lib', 'example','test'] )
-
 
 
 
