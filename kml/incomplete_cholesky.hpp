@@ -27,6 +27,8 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 
+#include <boost/tuple/tuple.hpp>
+
 #include <boost/numeric/bindings/atlas/cblas.hpp>
 #include <boost/property_map.hpp>
 
@@ -56,13 +58,14 @@ Section 2.1
 namespace ublas = boost::numeric::ublas;
 namespace atlas = boost::numeric::bindings::atlas;
 
+using boost::tuples::get;
 
 namespace kml {
 
 
 
 
-template<typename Kernel, typename PropertyMap>
+template< typename Kernel, typename PropertyMap >
 class incomplete_cholesky {
 public:
 
@@ -73,7 +76,7 @@ public:
 
     incomplete_cholesky( typename boost::call_traits<Kernel>::param_type k,
                          typename boost::call_traits<PropertyMap>::param_type map ):
-    kernel_function(k), data(&map) {}
+    kernel_function(k), data(map) {}
 
 
 
@@ -85,18 +88,18 @@ public:
         // an householder-based QR decomposition
         //
 
-        Q.resize( (*data)[pivot[0]].get<0>().size(), RT.size2() );
+        Q.resize( get<0>(data[pivot[0]]).size(), RT.size2() );
         Q.clear();
 
         // data model: column n of A is equal to data[n], A(1:m,i) = data[i]
         // A has n columns, vectors of length m
         // Q is m by n, with m the length of the vectos in A
 
-        ublas::column( Q, 0 ) = (*data)[pivot[0]].get<0>() / RT.matrix(0,0);
+        ublas::column( Q, 0 ) = get<0>(data[pivot[0]]) / RT.matrix(0,0);
         for( int i=1; i < basis_size; ++i ) {
             typedef ublas::matrix_vector_slice< ublas::matrix<double> > range_type;
             range_type mvr( RT.matrix, ublas::slice( i, 0, i ), ublas::slice( 0, 1, i ) );
-            ublas::column( Q, i ) = ( (*data)[pivot[i]].get<0>() -
+            ublas::column( Q, i ) = ( get<0>(data[pivot[i]]) -
                                       ublas::prod( ublas::subrange( Q, 0, Q.size1(), 0, i ), mvr ) ) / RT.matrix(i,i);
         }
     }
@@ -125,7 +128,7 @@ public:
         RT.matrix( basis_size, basis_size ) = perpendicular_distance;
         if ( basis_size == 0 ) {
             for( std::size_t row = basis_size+1; row < pivot.size(); ++row ) {
-                RT.matrix( row, basis_size ) = kernel_function((*data)[current_key].get<0>(),(*data)[pivot[row]].get<0>())
+                RT.matrix( row, basis_size ) = kernel_function( get<0>(data[current_key]), get<0>(data[pivot[row]]) )
                                                / perpendicular_distance;
                 squared_distance[ row ] -= RT.matrix( row, basis_size ) * RT.matrix( row, basis_size );
             }
@@ -141,7 +144,7 @@ public:
             atlas::gemv( RT_range, basis_range, target );
 
             for( std::size_t row = basis_size+1; row < pivot.size(); ++row ) {
-                RT.matrix( row, basis_size ) = ( kernel_function((*data)[current_key].get<0>(),(*data)[pivot[row]].get<0>())
+                RT.matrix( row, basis_size ) = ( kernel_function( get<0>(data[current_key]), get<0>(data[pivot[row]]) )
                                                  - target[row-basis_size-1] )
                                                / perpendicular_distance;
                 squared_distance[ row ] -= RT.matrix( row, basis_size ) * RT.matrix( row, basis_size );
@@ -166,7 +169,7 @@ public:
 
         // the order of our data should not have changed since the std::copy, three statements ago
         for( typename std::vector<key_type>::iterator i = pivot.begin(); i != pivot.end(); ++i ) {
-            squared_distance.push_back( kernel_function((*data)[*i].get<0>(),(*data)[*i].get<0>()) );
+            squared_distance.push_back( kernel_function(get<0>(data[*i]),get<0>(data[*i])) );
         }
 
         double max_distance = 1.0;
@@ -215,11 +218,10 @@ public:
 
     // data and the kernel
     kernel_type kernel_function;
-    PropertyMap const *data;
+    PropertyMap const data;
 
 }
 ; // class incomplete cholesky
-
 
 
 } // namespace kml
