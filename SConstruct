@@ -171,7 +171,7 @@ Export( 'arch_ext' )
 
 # Deligate to build scripts
 env.Replace( CXXFLAGS = cc_flags + ' ' + optimise_flags + debug_flags)
-SConscript( dirs=['lib', 'example','test'] )
+SConscript( dirs=['lib', 'example'] )
 
 
 
