@@ -21,9 +21,9 @@ of specialised algorithms.</p>
 
       <h3>Contents</h3>
       <ul class="toc">
-        <li><a href="research/kml/documentation/design.html">Design of the KML</a></li>
+        <li>Motivation</li>
         <li>Installation</li>
-
+        <li>Tutorial</li>
         <li>Learning Concepts
           <ul class="toc2">
             <li>Supervised Learning
@@ -96,6 +96,11 @@ of specialised algorithms.</p>
             <li><a href="research/kml/documentation/incomplete_cholesky.html">incomplete cholesky</a></li>
           </ul>
         </li>
+
+
+      <li><li><a href="research/kml/documentation/design.html">Design Rationale</a></li>
+
+
       </ul>
 
       <h3>Supported Platforms</h3>

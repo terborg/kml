@@ -8,12 +8,8 @@ obj = []
 obj += env.HTML( 'index.tex' )
 obj += env.HTML( 'installation.tex' )
 
-#for loc in ['subdir']:
-	#o = SConscript( dirs= loc )
-	#obj += o
 
 env.Install( install_dir + '/research/kml/', 'install_WinNT_VC.html' )
-
 
 env.Install( install_dir + '/' + kml_path, [ 
 	'boost_bindings.tar.gz', 
@@ -25,6 +21,9 @@ env.Install( install_dir + '/' + kml_path, [
 	'kml_win_dll.sh'
 	] )
 
+for loc in ['documentation']:
+	o = SConscript( dirs= loc )
+	obj += o
 
 
 Return( 'obj' )
