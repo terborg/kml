@@ -94,11 +94,11 @@ public:
     }
 
 
-    typename kernel_type::return_type kernel( key_type const i, key_type const j ) {
+    typename kernel_type::result_type kernel( key_type const i, key_type const j ) {
                                     return kernel_function( (*data)[i].get<0>(), (*data)[j].get<0>() );
                                 }
 
-                                typename kernel_type::return_type kernel( input_type const &x, key_type const j ) {
+                                typename kernel_type::result_type kernel( input_type const &x, key_type const j ) {
                                                                 return kernel_function( x, (*data)[j].get<0>() );
                                                             }
   

@@ -103,7 +103,7 @@ public:
 
 
 
-    void add_to_basis( int index ) {
+    void add_to_basis( std::size_t index ) {
 
         // move some stuff around
         std::swap( pivot[ basis_size ], pivot[ index ] );
@@ -124,7 +124,7 @@ public:
         }
         RT.matrix( basis_size, basis_size ) = perpendicular_distance;
         if ( basis_size == 0 ) {
-            for( int row = basis_size+1; row < pivot.size(); ++row ) {
+            for( std::size_t row = basis_size+1; row < pivot.size(); ++row ) {
                 RT.matrix( row, basis_size ) = kernel_function((*data)[current_key].get<0>(),(*data)[pivot[row]].get<0>())
                                                / perpendicular_distance;
                 squared_distance[ row ] -= RT.matrix( row, basis_size ) * RT.matrix( row, basis_size );
@@ -140,7 +140,7 @@ public:
 
             atlas::gemv( RT_range, basis_range, target );
 
-            for( int row = basis_size+1; row < pivot.size(); ++row ) {
+            for( std::size_t row = basis_size+1; row < pivot.size(); ++row ) {
                 RT.matrix( row, basis_size ) = ( kernel_function((*data)[current_key].get<0>(),(*data)[pivot[row]].get<0>())
                                                  - target[row-basis_size-1] )
                                                / perpendicular_distance;
@@ -182,7 +182,7 @@ public:
             max_distance = 0.0;
             int migrate_index = 0;
 
-            for( int i = basis_size; i < squared_distance.size(); ++i ) {
+            for( std::size_t i = basis_size; i < squared_distance.size(); ++i ) {
                 if ( squared_distance[i] > max_distance ) {
                     max_distance = squared_distance[i];
                     migrate_index = i;
