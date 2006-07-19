@@ -2,29 +2,34 @@
 Import('env')
 Import('install_dir')
 
-kml_path = 'research/kml/'
+kmlroot = '/research/kml/documentation'
 
 obj = []
-obj += env.HTML( 'index.tex' )
-obj += env.HTML( 'installation.tex' )
 
+# introduction pages
+obj += env.XHTML( 'index.html_fase4' )
+obj += env.HTML( 'design.tex' )
 
-env.Install( install_dir + '/research/kml/', 'install_WinNT_VC.html' )
+# generic concepts
+obj += env.HTML( 'regression.tex' )
+obj += env.HTML( 'classification.tex' )
+obj += env.HTML( 'ranking.tex' )
 
-env.Install( install_dir + '/' + kml_path, [ 
-	'boost_bindings.tar.gz', 
-	'boost_bindings.zip', 
-	'kml-0.1.tar.gz', 
-	'kml-0.1.zip',
-	'WinNT_PIIISSE1.zip',
-	'WinNT_ATHLONSSE1.zip',
-	'kml_win_dll.sh'
-	] )
+# kernel concepts
+obj += env.HTML( 'kernel.tex' )
+obj += env.HTML( 'mercer_kernel.tex' )
 
-for loc in ['documentation']:
-	o = SConscript( dirs= loc )
-	obj += o
+# kernel models
+obj += env.HTML( 'linear.tex' )
+obj += env.HTML( 'gaussian.tex' )
+obj += env.HTML( 'hermitian.tex' )
+obj += env.HTML( 'polynomial.tex' )
+obj += env.HTML( 'sigmoid.tex' )
 
+# utilities
+obj += env.HTML( 'view_matrix.tex' )
+obj += env.HTML( 'incomplete_cholesky.tex' )
+obj += env.PDF( 'incomplete_cholesky.tex' )
 
 Return( 'obj' )
 
