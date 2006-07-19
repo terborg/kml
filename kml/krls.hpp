@@ -17,8 +17,8 @@
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  *
  ***************************************************************************/
 
-#ifndef KRLS_HPP
-#define KRLS_HPP
+#ifndef KML_KRLS_HPP
+#define KML_KRLS_HPP
 
 #include <boost/numeric/bindings/traits/ublas_matrix.hpp>
 #include <boost/numeric/bindings/traits/ublas_symmetric.hpp>
@@ -48,6 +48,8 @@ A preprocessing step is taken to absorb the bias term into the weight vector w, 
 redefining w as (w^T, b)^T and \f$\phi\f$ as (phi^T,1)^T. For details, see Engel et al,
 Sparse Online Greedy Support Vector Regression, below on page 3:
 \f$k(x,x')=k(x,x') + \lambda^2\f$, where \f$\lambda\f$ is a small, positive constant.
+
+Kernel matrix K is actually not needed by the algorithm and is therefore dropped.
  
 \section bibliography References
 -# Engel et al., 2003. Kernel Recursive Least Squares. 
@@ -83,21 +85,21 @@ class krls< Problem, Kernel, PropertyMap, typename boost::enable_if< is_regressi
     friend class boost::serialization::access;
 
 public:
-    krls( scalar_type n, scalar_type l,
+    krls( scalar_type tol, scalar_type l,
           typename boost::call_traits<kernel_type>::param_type k,
           typename boost::call_traits<PropertyMap>::param_type map ):
-    base_type(k,map), nu(n), lambda_squared(l*l) {}
+    base_type(k,map), tolerance(tol), lambda_squared(l*l) {}
 
     template< typename TokenIterator >
     krls( TokenIterator const begin, TokenIterator const end,
           typename boost::call_traits<kernel_type>::param_type k,
           typename boost::call_traits<PropertyMap>::param_type map ):
     base_type(k,map) {
-        nu = 1e-1;				// default value
+        tolerance = 1e-1;			// default value
         scalar_type lambda=1e-3;		// default value
         TokenIterator token(begin);
         if ( token != end ) {
-            nu = boost::lexical_cast<double>( *token++ );
+            tolerance = boost::lexical_cast<double>( *token++ );
             if ( token != end )
                 lambda = boost::lexical_cast<double>( *token );
         }
@@ -130,8 +132,6 @@ public:
     /*! \param key key of example in data */
     void increment( key_type const &key ) {
 
-        //std::cout << "running key " << key << " through KRLS... " << std::endl;
-
         // calculate the base_type::kernel function on (x_t,x_t), needed later on
         scalar_type k_tt = kernel( key, key ) + lambda_squared;
 
@@ -139,18 +139,16 @@ public:
         if ( basis_key.empty() ) {
 
             // there is no dictionary yet, so initialise all variables
-            // resize the matrix K, its inverse R and matrix P to 1 x 1
-            K.grow_row_column();
+            // resize the inverse matrix R, and matrix P to 1 x 1
             R.grow_row_column();
             P.grow_row_column();
 
             // and use values as stated in the paper
-            K.matrix(0,0) = k_tt;
             R.matrix(0,0) = 1.0 / k_tt;
             P.matrix(0,0) = 1.0;
 
             // add to weight vector
-            weight.push_back( (*base_type::data)[key].get<1>() / k_tt );
+            weight.push_back( output(key) / k_tt );
 
             // add to support vector set
             basis_key.push_back( key );
@@ -158,8 +156,8 @@ public:
         } else {
 
             // KRLS already initialised, continue
-            vector_type a_t( K.size1() );
-            vector_type k_t( K.size1() );
+            vector_type a_t( basis_key.size() );
+            vector_type k_t( basis_key.size() );
 
             // fill vector k_t
             fill_kernel( key, basis_key.begin(), basis_key.end(), k_t.begin() );
@@ -173,19 +171,14 @@ public:
             scalar_type delta_t = k_tt - atlas::dot( k_t, a_t );
 
             // Perform Approximate Linear Dependency (ALD) test
-            if (delta_t > nu) {
+            // If the ALD is larger than some previously set tolerance, add the input to 
+            // the dictionary (or basis vector set)
+            if (delta_t > tolerance) {
 
                 // add x_t to support vector set, adjust all needed variables
-                unsigned int old_size = basis_key.size();
+                std::size_t old_size = basis_key.size();
 
-                // update K (equation 14)
-                // fetch a view into the last row of the matrix of the _old_ size
-                K.grow_row_column();
-                ublas::matrix_vector_slice< ublas::matrix<double> > K_row_part( K.shrinked_row(old_size) );
-                atlas::copy( k_t, K_row_part );
-                K.matrix( old_size, old_size ) = k_tt;
-
-                // update R (equation 14)
+                // update inverse matrix R (equation 14)
                 scalar_type factor = static_cast<scalar_type>(1) / delta_t;
                 atlas::syr( factor, a_t, R_view );
                 R.grow_row_column();
@@ -194,16 +187,15 @@ public:
                 R_row_part.assign( a_t );
                 R.matrix( old_size, old_size ) = factor;
 
-                // update P (equation 15)
+                // update permutation matrix P (equation 15)
                 // assign unit vector with 1 on last element.
                 P.grow_row_column();
                 ublas::matrix_vector_slice< ublas::matrix<double> > P_row_part( P.shrinked_row(old_size) );
-                atlas::set
-                    (  0.0, P_row_part );
+                atlas::set(  0.0, P_row_part );
                 P.matrix( old_size, old_size ) = 1.0;
 
                 // adjust weight vector alpha (equation 16)
-                factor = (*base_type::data)[key].get<1>() - atlas::dot(k_t,weight);
+                factor = output(key) - atlas::dot(k_t,weight);
                 atlas::axpy( factor, a_t, weight );
 
                 // add new weight to the weight vector
@@ -223,11 +215,11 @@ public:
                 ublas::symmetric_adaptor< ublas::matrix_range< ublas::matrix<double> > > P_view( P_range );
                 atlas::symv( P_view, a_t, P_a );
 
-                // 1 / (1 + a_t %*% P_(t-1) %*% a)
+                // 1 / (1 + a_t %*% P_(t-1) %*% a_t)
                 scalar_type factor = 1.0 / (1.0 + atlas::dot( a_t, P_a ));
 
                 // update weights (equation 13)
-                atlas::symv( factor* (*base_type::data)[key].get<1>() - atlas::dot(k_t,weight),
+                atlas::symv( factor* output(key) - atlas::dot(k_t,weight),
                              R_view, P_a, static_cast<scalar_type>(1), weight );
 
                 // update permutation matrix (equation 14)
@@ -240,21 +232,19 @@ public:
     template<class Archive>
     void serialize( Archive &archive, unsigned int const version ) {
         archive & boost::serialization::base_object<base_type>(*this);
-        archive & nu;
+        archive & tolerance;
         archive & lambda_squared;
         archive & basis_key;
         archive & weight;
-        archive & K;
         archive & R;
         archive & P;
     }
 
 private:
-    scalar_type nu;                      // ALD parameter
+    scalar_type tolerance;               // ALD tolerance parameter
     scalar_type lambda_squared;          // kernel function addition
     std::vector< key_type > basis_key;   // a vector containing basis vector keys
     std::vector< scalar_type > weight;   // weights associated with the basis vectors
-    symmetric_type K;                    // kernel matrix K
     symmetric_type R;                    // inverse of kernel matrix K
     symmetric_type P;                    // permutation matrix P
 };

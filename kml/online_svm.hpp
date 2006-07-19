@@ -227,7 +227,7 @@ public:
         }
 
         // important: the sign of the residual is used below
-        residual.push_back( (*base_type::data)[key].get<1>() - operator()( (*base_type::data)[key].get<0>() ) );
+        residual.push_back( output( key ) - operator()( input( key ) ) );
 
         // add to support vector buffer
         //     preserved_resize( all_vectors, index+1, x_t.size() );
@@ -241,7 +241,7 @@ public:
             if (debug)
                 std::cout << "Initialising the Accurate Online Support Vector Regression machine" << std::endl;
             residual.back() = 0.0;
-            bias = (*base_type::data)[key].get<1>();
+            bias = output(key);
 
             // put this first point (with index 0) in the remaining set
             remaining_set.push_back( index );
@@ -1006,7 +1006,7 @@ public:
             scalar_type temp_K(0);
             for( unsigned int i=0; i < error_set.size(); ++i ) {
                 key_type key = every_key[error_set[i]];
-                if ( (*base_type::data)[key].get<1>() )
+                if ( output(key) )
                     temp_K += kernel( x, key );
                 else
                     temp_K -= kernel( x, key );
@@ -1064,10 +1064,10 @@ public:
         //if (debug)
 
         // record condition figure
-        if ( (*base_type::data)[key].get<1>() )
-            condition.push_back( evaluate_f((*base_type::data)[key].get<0>()) - 1.0 );
+        if ( output(key) )
+            condition.push_back( evaluate_f( input(key) ) - 1.0 );
         else
-            condition.push_back( -evaluate_f((*base_type::data)[key].get<0>()) - 1.0 );
+            condition.push_back( -evaluate_f( input(key) ) - 1.0 );
 
         // store the input and output
         //base_type::support_vector.push_back( input );
@@ -1095,7 +1095,7 @@ public:
                 std::cout << "Initialising the Accurate Online Support Vector Machine" << std::endl;
 
             // set f(x_i) to y_i
-            bias = bool_to_float( (*base_type::data)[key].get<1>() );
+            bias = bool_to_float( output(key) );
             condition.back() = 0.0;
 
             // put this first point (with index 0) in the remaining set
@@ -1107,7 +1107,7 @@ public:
 
             // initialise "design" matrix with the value associated with the output
             H.grow_row_column();
-            H.matrix(0,0) = bool_to_float( (*base_type::data)[key].get<1>() );
+            H.matrix(0,0) = bool_to_float( output(key) );
 
             if (debug)
                 std::cout << std::endl;
@@ -1130,7 +1130,7 @@ public:
             //H.matrix( index, 0 ) = ( output ? 1.0 : -1.0 );
 
             ublas::matrix_row<ublas::matrix<double> >::iterator j = ublas::row( H.matrix, index ).begin();
-            *j++ = bool_to_float( (*base_type::data)[key].get<1>() );
+            *j++ = bool_to_float( output(key) );
             fill_kernel( key, margin_key.begin(), margin_key.end(), j );
 
             // 	    std::cout << "Filled H to ";
@@ -1505,7 +1505,7 @@ public:
             // this is correct: Q_ii == K(x_i,x_i)
             R.matrix(0,0) = kernel( every_key[idx], every_key[idx] );
             // NEGATED bool_to_float (!!)
-            R.matrix(1,0) = -bool_to_float( (*base_type::data)[every_key[idx]].get<1>() );
+            R.matrix(1,0) = -bool_to_float( output( every_key[idx] ) );
             R.matrix(1,1) = 0.0;
 
         } else {

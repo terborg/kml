@@ -38,6 +38,8 @@
 
 using std::tr1::shared_ptr;
 
+using boost::tuples::get;
+
 namespace lambda = boost::lambda;
 
 
@@ -72,6 +74,8 @@ public:
 
     friend class boost::serialization::access;
 
+    typedef typename std::vector< key_type >::size_type index_type;
+
 
     // FIXME make this something else...
     typedef double scalar_type;
@@ -82,34 +86,47 @@ public:
     */
     kernel_machine( typename boost::call_traits<kernel_type>::param_type k,
                     typename boost::call_traits<PropertyMap>::param_type map ):
-    kernel_function(k), data(&map) {}
+    kernel_function(k), data(map) {}
 
-
-    void set_data( PropertyMap const &map ) {
-        data = &map;
+    void set_data( PropertyMap const& map ) {
+        data = map;
     }
 
     void set_kernel( kernel_type const &k ) {
         kernel_function = k;
     }
 
+    inline
+    input_type const& input( key_type const key ) const {
+	return get<0>(data[key]);
+    }
+
+    inline
+    output_type const& output( key_type const key ) const {
+	return get<1>(data[key]);
+    }
+
 
     typename kernel_type::result_type kernel( key_type const i, key_type const j ) {
-                                    return kernel_function( (*data)[i].get<0>(), (*data)[j].get<0>() );
-                                }
+        return kernel_function( input(i), input(j) );
+    }
 
-                                typename kernel_type::result_type kernel( input_type const &x, key_type const j ) {
-                                                                return kernel_function( x, (*data)[j].get<0>() );
-                                                            }
-  
+    typename kernel_type::result_type kernel( input_type const &x1, key_type const j ) {
+        return kernel_function( x1, input(j) );
+    }
 
-                                                            template<typename KeyIterator, typename OutputIterator>
+    typename kernel_type::result_type kernel( input_type const &x1, input_type const &x2 ) {
+        return kernel_function( x1, x2 );
+    }
+ 
+
+    template<typename KeyIterator, typename OutputIterator>
     void fill_kernel( input_type const &x,
                       KeyIterator const begin, KeyIterator const end, OutputIterator out ) {
         KeyIterator i(begin);
         OutputIterator j(out);
         while (i!=end) {
-            *j = kernel_function( x, (*data)[*i].get<0>() );
+            *j = kernel_function( x, input(*i) );
             ++i;
             ++j;
         }
@@ -121,15 +138,11 @@ public:
         KeyIterator i(begin);
         OutputIterator j(out);
         while (i!=end) {
-            *j = kernel_function( (*data)[key].get<0>(), (*data)[*i].get<0>() );
+            *j = kernel_function( input(key), input(*i) );
             ++i;
             ++j;
         }
     }
-
-
-
-
 
     template<typename KeyIterator, typename Matrix>
     void kernel_matrix( KeyIterator const begin, KeyIterator const end, Matrix &out ) {
@@ -140,7 +153,7 @@ public:
             std::size_t col = 0;
             KeyIterator j(begin);
             while( j != end ) {
-                out( row, col ) = kernel_function( (*data)[*i].get<0>(), (*data)[*j].get<0>() );
+                out( row, col ) = kernel_function( input(*i), input(*j) );
 		++col;
                 ++j;
             }
@@ -149,19 +162,13 @@ public:
         }
     }
 
-
-
-
-
-
-    // to fill e.g. a column of H, use fill_kernel
+    // to fill, e.g., a column of H, use the fill_kernel method
     // from boost documentation:
     // An algorithm that iterates through the range [m.begin1 (), m.end1 ()) will
     // pass through every row of m , an algorithm that iterates through the range [m.begin2 (), m.end2 ())
     // will pass through every column of m .
     template<typename KeyIterator, typename Matrix>
     void design_matrix( KeyIterator const begin, KeyIterator const end, Matrix &out ) {
-
         // row by row filling
         KeyIterator i(begin);
         std::size_t row = 0;
@@ -170,13 +177,14 @@ public:
             std::size_t col = 0;
             KeyIterator j(begin);
             while( j != end ) {
-                out( row, ++col ) = kernel_function( (*data)[*i].get<0>(), (*data)[*j].get<0>() );
+                out( row, ++col ) = kernel_function( input(*i), input(*j) );
                 ++j;
             }
             ++row;
             ++i;
         }
     }
+
 
     // loading and saving capabilities
     template<class Archive>
@@ -189,29 +197,13 @@ public:
     }
 
 
-    /// Clears the machine (operator() it will always returns 0).
-    //     void clear() {
-    //         bias = 0.0;
-    //         weight.clear();
-    //     }
 
+private:
     /// kernel_function used by the machine
     kernel_type kernel_function;
 
     /// pointer to data container used by the machine
-      PropertyMap const *data;
-
-    /// to translate to a sequential view
-    //     std::map< key_type, std::size_t > key_mapping;
-
-    typedef typename std::vector< key_type >::size_type index_type;
-    //std::vector< key_type > key_lookup;
-
-    /// bias of the machine
-    //double bias;
-    /// weights of the support vectors
-    /// weight[i] is associated with key_lookup[i]
-    //std::vector<double> weight;
+    PropertyMap const data;
 
 };
 
@@ -254,6 +246,16 @@ public:
     kernel_machine(kernel_machine &k): kernel_function(k.kernel_function),
 				       data(k.data) { }
 
+
+    input_type const& input( key_type const key ) const {
+	return get<0>((*data)[key]);
+    }
+
+    output_type const& output( key_type const key ) const {
+	return get<1>((*data)[key]);
+    }
+
+
     typename kernel_type::result_type kernel( key_type const i, key_type const j ) {
                                     return kernel_function( (*data)[i].get<0>(), (*data)[j].get<0>() );
                                 }
@@ -265,6 +267,10 @@ public:
   typename kernel_type::result_type kernel(key_type const i, input_type const &x) {
     return kernel_function((*data)[i].get<0>(), x);
   }
+
+
+
+
 
                                                             template<typename KeyIterator, typename OutputIterator>
     void fill_kernel( input_type const &x,
