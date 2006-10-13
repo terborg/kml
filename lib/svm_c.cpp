@@ -50,7 +50,7 @@ typedef kml::linear<input_type> linear_k;
 extern "C" {  
 
   void* kml_new_class_double_gaussian(double k, double s) { 
-    shared_ptr<class_property_map> m(new class_property_map);
+    boost::shared_ptr<class_property_map> m(new class_property_map);
     kml::svm<class_prob, gaussian_k, class_property_map> *v = new kml::svm<class_prob, gaussian_k, class_property_map>(k, s, m);
     return (void *) v;
     //    return (void *) new kml::svm<class_prob, gaussian_k, class_property_map>(k, s, m);
@@ -70,7 +70,7 @@ extern "C" {
   void kml_learn_class_double_gaussian(void *v, double **p, int *t,
 						int sz_row, int sz_col) {
     kml::svm<class_prob, gaussian_k, class_property_map>* m = (kml::svm<class_prob, gaussian_k, class_property_map> *) v;
-    shared_ptr<class_property_map> data(new class_property_map);
+    boost::shared_ptr<class_property_map> data(new class_property_map);
     for (int j = 0; j < sz_row; ++j) {
       (*data)[j] = boost::make_tuple(std::vector<double>(*p, (*p) + sz_col), *t);
       ++p; ++t;
@@ -89,7 +89,7 @@ extern "C" {
   }
 
   void* kml_new_rank_double_gaussian(double k, double s) {
-    shared_ptr<rank_property_map> m(new rank_property_map);
+    boost::shared_ptr<rank_property_map> m(new rank_property_map);
     return (void *) new kml::svm<rank_prob, gaussian_k, rank_property_map>(k, s, m);
   }
 
@@ -102,7 +102,7 @@ extern "C" {
   void kml_learn_rank_double_gaussian(void *v, double **p, int *g, int *t, 
 					 int sz_row, int sz_col) {
     kml::svm<rank_prob, gaussian_k, rank_property_map>* m = (kml::svm<rank_prob, gaussian_k, rank_property_map> *) v;
-    shared_ptr<rank_property_map> data(new rank_property_map);
+    boost::shared_ptr<rank_property_map> data(new rank_property_map);
     for (int j = 0; j < sz_row; ++j) {
       (*data)[j] = boost::make_tuple(std::vector<double>(*p, (*p) + sz_col), *g, *t);
       ++p; ++g; ++t;
