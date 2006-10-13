@@ -1,21 +1,21 @@
-/*****************************************************************************
- *  The Kernel-Machine Library                                               *
- *  Copyright (C) 2004, 2005 by Rutger W. ter Borg and Meredith L. Patterson *
- *                                                                           *
- *  This program is free software; you can redistribute it and/or            *
- *  modify it under the terms of the GNU General Public License              *
- *  as published by the Free Software Foundation; either version 2           *
- *  of the License, or (at your option) any later version.                   *
- *                                                                           *
- *  This program is distributed in the hope that it will be useful,          *
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            *
- *  GNU General Public License for more details.                             *
- *                                                                           *
- *  You should have received a copy of the GNU General Public License        *
- *  along with this program; if not, write to the Free Software              *
- *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307    *
- *****************************************************************************/
+/***************************************************************************
+ *  The Kernel-Machine Library                                             *
+ *  SMO Implementation copyright (C) 2005--2006 by Meredith L. Patterson   *
+ *                                                                         *
+ *  This library is free software; you can redistribute it and/or          *
+ *  modify it under the terms of the GNU Lesser General Public             *
+ *  License as published by the Free Software Foundation; either           *
+ *  version 2.1 of the License, or (at your option) any later version.     *
+ *                                                                         *
+ *  This library is distributed in the hope that it will be useful,        *
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of         *
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU      *
+ *  Lesser General Public License for more details.                        *
+ *                                                                         *
+ *  You should have received a copy of the GNU Lesser General Public       *
+ *  License along with this library; if not, write to the Free Software    *
+ *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  *
+ ***************************************************************************/
 
 /*****************************************************************************
  * Department of Credit Where Credit is Due:                                 *
@@ -46,20 +46,18 @@
 #include <boost/vector_property_map.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/call_traits.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include <algorithm>
 #include <vector>
 #include <iostream>
 #include <utility>
 #include <iterator>
-#include <tr1/memory>
 
 #include <kml/kernel_machine.hpp>
 #include <kml/classification.hpp>
 #include <kml/ranking.hpp>
 #include <kml/regression.hpp>
-
-using std::tr1::shared_ptr;
 
 namespace lambda = boost::lambda;
 namespace ublas = boost::numeric::ublas;
@@ -88,7 +86,7 @@ namespace kml {
 
     svm( typename boost::call_traits<kernel_type>::param_type k,
 	 typename boost::call_traits<scalar_type>::param_type max_weight,
-	 typename boost::call_traits<shared_ptr<PropertyMap> >::param_type map ):
+	 typename boost::call_traits<boost::shared_ptr<PropertyMap> >::param_type map ):
       base_type(k, map), C(max_weight), tol(.001), bias(0), startpt(randomness) { }
 
     svm(svm &s): base_type(s.kernel_function, *(s.data)), startpt(randomness) {
@@ -342,7 +340,7 @@ namespace kml {
 
     svm( typename boost::call_traits<kernel_type>::param_type k,
 	 typename boost::call_traits<double>::param_type max_weight,
-	 typename boost::call_traits<shared_ptr<PropertyMap> >::param_type map):
+	 typename boost::call_traits<boost::shared_ptr<PropertyMap> >::param_type map):
       base_type(k, map), C(max_weight), inner_data(new InnerPropertyMap()), inner_machine(k, max_weight, inner_data) {  }
 
     output_type operator()(input_type const &x) {
@@ -388,7 +386,7 @@ namespace kml {
     scalar_type epsilon;
     scalar_type C;
 
-    shared_ptr<InnerPropertyMap> inner_data;
+    boost::shared_ptr<InnerPropertyMap> inner_data;
     inner_svm_type inner_machine;
   };
 

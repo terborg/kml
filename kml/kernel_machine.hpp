@@ -23,25 +23,21 @@
 #include <boost/lambda/bind.hpp>
 #include <boost/utility/enable_if.hpp>
 #include <boost/call_traits.hpp>
+#include <boost/shared_ptr.hpp>
 #include <kml/regression.hpp>
 #include <kml/classification.hpp>
 #include <kml/ranking.hpp>
 #include <vector>
-#include <tr1/memory>
 
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/tracking.hpp>
-//#include <boost/shared_ptr.hpp>
 
 // for the property traits
 #include <boost/property_map.hpp>
 
-using std::tr1::shared_ptr;
-
 using boost::tuples::get;
 
 namespace lambda = boost::lambda;
-
 
 namespace kml {
 
@@ -240,7 +236,7 @@ public:
     kernel_function(k), data(&map) {}
 
     kernel_machine( typename boost::call_traits<kernel_type>::param_type k,
-		    typename boost::call_traits<shared_ptr<PropertyMap> >::param_type map ):
+		    typename boost::call_traits<boost::shared_ptr<PropertyMap> >::param_type map ):
 	kernel_function(k), data(map) { }
 
     kernel_machine(kernel_machine &k): kernel_function(k.kernel_function),
@@ -328,14 +324,14 @@ public:
     //     }
 
     void set_data( PropertyMap const &map ) {
-	data = shared_ptr<PropertyMap const>(&map);
+	data = boost::shared_ptr<PropertyMap const>(&map);
     }
 
     void set_data(PropertyMap const *map) {
-	data = shared_ptr<PropertyMap const>(map);
+	data = boost::shared_ptr<PropertyMap const>(map);
     }
 
-    void set_data(shared_ptr<PropertyMap const> map) {
+    void set_data(boost::shared_ptr<PropertyMap const> map) {
 	data = map;
     }
 
@@ -365,7 +361,7 @@ public:
     kernel_type kernel_function;
 
     /// pointer to data container used by the machine
-    shared_ptr<PropertyMap const> data;
+    boost::shared_ptr<PropertyMap const> data;
 
     /// to translate to a sequential view
     //     std::map< key_type, std::size_t > key_mapping;
@@ -409,7 +405,7 @@ public:
     kernel_function(k), data(&map) {}
 
     kernel_machine( typename boost::call_traits<kernel_type>::param_type k,
-		    typename boost::call_traits<shared_ptr<PropertyMap> >::param_type map) :
+		    typename boost::call_traits<boost::shared_ptr<PropertyMap> >::param_type map) :
 	kernel_function(k), data(map) { }
 
     typename kernel_type::result_type kernel( key_type const i, key_type const j ) {
@@ -466,14 +462,14 @@ public:
     }
 
     void set_data( PropertyMap const &map ) {
-	data = shared_ptr<PropertyMap const>(&map);
+	data = boost::shared_ptr<PropertyMap const>(&map);
     }
 
     void set_data( PropertyMap const *map) {
-	data = shared_ptr<PropertyMap const>(map);
+	data = boost::shared_ptr<PropertyMap const>(map);
     }
 
-    void set_data( shared_ptr<PropertyMap const> map) {
+    void set_data( boost::shared_ptr<PropertyMap const> map) {
 	data = map;
     }
 
@@ -491,7 +487,7 @@ public:
     kernel_type kernel_function;
 
     /// pointer to data container used by the machine
-    shared_ptr<PropertyMap const> data;
+    boost::shared_ptr<PropertyMap const> data;
 
 
     /// to translate to a sequential view
