@@ -113,10 +113,18 @@ public:
         ++view_cols;
     }
 
+    void shrink_column() {
+	--view_cols;
+    }
+
     void grow_row() {
         if ( view_rows == matrix.size1() )
             matrix.resize( matrix.size1() << 1, matrix.size2() );
         ++view_rows;
+    }
+
+    void shrink_row() {
+	--view_rows;
     }
 
     void grow_row_column() {
