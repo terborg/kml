@@ -88,12 +88,10 @@ public:
 
     friend class boost::serialization::access;
 
-
     /*!	\param k a construction parameter for the kernel type */
     rvm( typename boost::call_traits<scalar_type>::param_type var,
          typename boost::call_traits<kernel_type>::param_type k,
          typename boost::call_traits<PropertyMap>::param_type map ): base_type(k,map), variance_estimate(var) {}
-
 
     /*! Construct a RVM using TokenIterators */
     template< typename TokenIterator >
@@ -109,6 +107,11 @@ public:
     }
 
 
+
+    result_type operator()( input_type const &x ) {
+    }
+
+
     /*! learn the entire range of keys indicated by this range */
     template<typename KeyIterator>
     void learn( KeyIterator begin, KeyIterator end ) {
@@ -118,7 +121,8 @@ public:
         if (debug)
             std::cout << "Computing H..." << std::flush;
         std::size_t problem_size( end-begin );
-        matrix_type H( problem_size, problem_size + 1 );
+
+	H.resize( problem_size, problem_size + 1 );
         base_type::design_matrix( begin, end, H );
         if (debug)
             std::cout << "done." << std::endl;
@@ -128,7 +132,7 @@ public:
         vector_type output( problem_size );
         KeyIterator key_iter( begin );
         for( std::size_t i = 0; i<problem_size; ++i ) {
-            output[i] = (*base_type::data)[*key_iter++].get<1>();
+            output[i] = output(*key_iter++);
         }
         vector_type Hty( problem_size + 1 );
         atlas::gemv( static_cast<matrix_type>(ublas::trans(H)), output, Hty );
@@ -629,6 +633,31 @@ public:
 
 
 
+
+    void add_to_basis( std::size_t index ) {
+    }
+
+
+    void remove_from_basis( std::size_t index ) {
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     // loading and saving capabilities
     template<class Archive>
     void serialize( Archive &archive, unsigned int const version ) {
@@ -650,6 +679,12 @@ public:
     // RVM variables
     scalar_type bias;
     scalar_type variance_estimate;
+
+
+
+
+    // the design matrix
+    matrix_type H;
 
 
 }
