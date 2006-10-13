@@ -9,6 +9,7 @@
 #include <boost/random/variate_generator.hpp>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/normal_distribution.hpp>
+#include <boost/shared_ptr.hpp>
 #include <kml/gaussian.hpp>
 #include <kml/ranking.hpp>
 #include <kml/svm.hpp>
@@ -22,7 +23,6 @@
 #include <fstream>
 #include <string>
 #include <sstream>
-#include <tr1/memory>
 
 using std::string; using std::cout; using std::endl; 
 using std::ifstream; using std::stringstream;
@@ -37,7 +37,7 @@ typedef boost::vector_property_map<example_type> PropertyMap;
 
 int main(int argc, char *argv[]) {
 
-  shared_ptr<PropertyMap> data(new PropertyMap);
+  boost::shared_ptr<PropertyMap> data(new PropertyMap);
   problem_type::input_type point;
 
   point.push_back(1); point.push_back(1); point.push_back(0); point.push_back(0.2); point.push_back(0);
