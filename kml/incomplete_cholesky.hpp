@@ -98,7 +98,10 @@ public:
     }
 
 
-
+    //
+    // TODO: add an overloaded increment method in which you can provide precomputed kernel values 
+    //       e.g., providing vectors such candidate_column as used in the online_svm.hpp
+    //
     void add_to_basis( std::size_t index ) {
 
         // move some stuff around
@@ -160,6 +163,14 @@ public:
     }
 
 
+    // remove a vector from the basis, update the matrix RT
+    void remove_from_basis( std::size_t index ) {
+
+        // WARNING do not move this statement!
+        --basis_size;
+    }
+
+
     // adds the key to the data under consideration; 
     // will compute its distance information, and update matrix RT
     //
@@ -207,7 +218,7 @@ public:
 
     // rank could leave in the future
     template<typename KeyIterator>
-    void compute_R( KeyIterator begin, KeyIterator end, int rank ) {
+    void compute_R( KeyIterator begin, KeyIterator end, std::size_t rank ) {
 
         // make sure we have a pivot table
         std::copy( begin, end, back_inserter( pivot ) );
