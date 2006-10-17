@@ -80,6 +80,7 @@ int main(int argc, char *argv[]) {
     typedef kml::gaussian< problem_type::input_type > kernel_type;
 
     // create the actual kernel machine, an online SVM in this case
+    // with C=10.0, epsilon=0.1, gaussian kernel width=1.6
     kml::online_svm< problem_type, kernel_type, data_type > my_machine( 10.0, 0.1, kernel_type(1.6), data );
 
     // train the kernel machine. A kernel machine can be instructed to learn a series of examples 
