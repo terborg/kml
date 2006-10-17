@@ -129,13 +129,13 @@ public:
 
         if (debug)
             std::cout << "computing Hty..." << std::flush;
-        vector_type output( problem_size );
+        vector_type m_output( problem_size );
         KeyIterator key_iter( begin );
         for( std::size_t i = 0; i<problem_size; ++i ) {
-            output[i] = output(*key_iter++);
+            m_output[i] = output(*key_iter++);
         }
         vector_type Hty( problem_size + 1 );
-        atlas::gemv( static_cast<matrix_type>(ublas::trans(H)), output, Hty );
+        atlas::gemv( static_cast<matrix_type>(ublas::trans(H)), m_output, Hty );
         if (debug)
             std::cout << "done." << std::endl;
 
@@ -536,17 +536,17 @@ public:
             }
 
             if (debug)
-                std::cout << "div: " << (static_cast<scalar_type>(output.size()) - trace_Sigma_HtH ) << std::endl;
+                std::cout << "div: " << (static_cast<scalar_type>(m_output.size()) - trace_Sigma_HtH ) << std::endl;
 
             //scalar_type heuh2 = residual_sum_of_squares_2( H, mu, active_set, output ) / (static_cast<scalar_type>(output.size()) - trace_Sigma_HtH );
 
 
             atlas::gemv( H_cache, mu, residuals );
-            atlas::axpy( -1.0, output, residuals );
+            atlas::axpy( -1.0, m_output, residuals );
             if (debug)
                 std::cout << "rss: " << atlas::dot( residuals, residuals ) << std::endl;
 
-            scalar_type heuh2 = atlas::dot( residuals, residuals) / (static_cast<scalar_type>(output.size()) - trace_Sigma_HtH );
+            scalar_type heuh2 = atlas::dot( residuals, residuals) / (static_cast<scalar_type>(m_output.size()) - trace_Sigma_HtH );
 
 
             //             std::cout << "variance could be: " << heuh2 << std::endl;
