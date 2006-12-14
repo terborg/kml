@@ -21,6 +21,7 @@ for( i in 1:N ) {
 
 #par("mfcol"=c(1,2))
 # 3d version Gaussian kernel
+halfplot()
 persp(x,x,y, col="lightblue", phi=40, theta=120, shade=0.3 )
 
 

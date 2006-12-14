@@ -35,6 +35,7 @@ gaussianD5 <- function(x,s) {
 }
 
 
+fullplot()
 par("mfcol"=c(2,3))
 x <- seq(-3,3,length=100)
 plot( x, gaussian(x,1), type="l", ylab=expression(k(bold(x),bold(x)[i])) )

@@ -10,6 +10,6 @@ gaussian <- function(u, v) {
 N <- 50
 x <- seq(-3,3,length=N)
 
-
+halfplot()
 plot( x, gaussian(x,0), type="l", xlab="u", ylab="k(u,0)" )
 

@@ -1,48 +1,139 @@
 
 \documentclass{article}
 \input{myinclude}
-\usepackage[numbers]{natbib}
 
 \begin{document}
 
 \title{Tutorial}
 \maketitle
+%\tableofcontents
 
-\section*{Description}
+\section*{Sinc regression}
 
-Generally, a regression problem is to find a relation between variables. 
-In machine learning, it is considered a supervised learning problem, where we 
-learn from instances from a data set 
-$\mathcal{D}=\{ (x_1,y_1), (x_2,y_2), \ldots, (x_n, y_n ) \}$ 
-containing input-output pairs $(x_i,y_i)\in \mathcal{X}\times \mathbb{R}$. 
+A common benchmark used in the kernel-machine literature is that of a toy sinc function. 
+Here we show how to reproduce these examples with a kernel machine of your choice. 
+First, let us define our data structure.
+%
+\highlightcpp{}
+\begin{verbatim}
+#include <boost/vector_property_map.hpp>
+typedef std::pair< double, double > example_type;
+typedef boost::vector_property_map< example_type > container_type;
+\end{verbatim}
+%
+The \texttt{example_type} is an input-output pair $(x_i,y_i)$ with both inputs and outputs being
+of type \texttt{double}.
+The \texttt{container_type} provides a type definition for the data container to
+be used by the kernel machine of choice 
+(this could also very well be, e.g., a custom class that 
+accesses a database on-the-fly to retrieve examples of example_type).
 
-\begin{figure}
-\fignomath{regression_problem}
-\end{figure}
+We let the data for one experiment consist of 50 examples $(x_1,y_1),\ldots,(x_{50},y_{50})$,
+with inputs $x_{i}$ uniformly distributed over [-10,10],
+and outputs corrupted with Gaussian noise, $y_{i}\sim N(\mathrm{sinc}(x_{i}),0.1)$.
+%
+\highlightcpp{}
+\begin{verbatim}
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/normal_distribution.hpp>
+#include <boost/random/variate_generator.hpp>
+#include <boost/math/special_functions/sinc.hpp>
+
+boost::mt19937 randomness;
+typedef boost::normal_distribution<double> dist_type;
+dist_type norm_dist( 0.0, 0.1 );
+boost::variate_generator< boost::mt19937, dist_type > noise( randomness, 
+                                                             norm_dist );
+\end{verbatim}
+%
+To generate the outputs, we have pulled in parts from the 
+\href{http://www.boost.org/libs/random/index.html}{Boost Random Number Library}, and the
+sinc function from the
+\href{http://www.boost.org/libs/math/special_functions/index.html}{Boost Math Special Functions Library}. 
+
+\textbf{... TODO}
+
+% 
+% \section*{Writing your own kernel}
+% 
+% In this part of the tutorial we will create a novel type of kernel: a string kernel. To do so, 
+% simply create a fresh source-file, called, e.g., string_kernel.hpp. 
+% 
+% \highlightcpp{}
+% \begin{verbatim}
+% class string_kernel: public kml::kernel< std::string, double, 
+%                                          string_kernel, kml::mercer_tag > {
+% };
+% \end{verbatim}
+% 
+% The first template parameter indicates that the inputs we are accepting are of type std::string. The second
+% template parameter says that our kernel function will return doubles, the third uses a C++ pattern called
+% the \emph{Curiously Recurring Template Pattern}, which enables some tricks, and the fourth parameter indicates
+% that we are constructing a string kernel.
+% 
+% \highlightcpp{}
+% \begin{verbatim}
+% // evaluate the "closeness" of strings u and v
+% double dot( std::string const &u, std::string const &v ) const {
+% ...
+% }
+% \end{verbatim}
+% 
+% If your kernel provides parameters, it should encode that in some way such that the kernel-machine 
+% libary may use those. ... 
+% 
+% Now, let's see what we have gained with this new kernel.
+% 
+% \highlightcpp{}
+% \begin{verbatim}
+% string_kernel my_kernel( sigma=2.0 );
+% kml::svm< ..., string_kernel, > my_machine;
+% my_machine.learn( keys.begin(), keys.end() );
+% \end{verbatim}
+% 
+% This will deliver a SVM with your new kernel compiled in. 
+% 
+% 
+% \section*{Data I/O}
+% 
+% Kernel machines are used a lot for data mining, and given that data mining involves data, the IO functionaly
+% of the kernel-machine library is very convenient. It allows for the storage of all types that have serialization 
+% support. 
+% 
+% \highlightcpp{}
+% \begin{verbatim}
+% std::vector< std::size_t > my_keys;
+% boost::property_map< ... > my_data;
+% kml::file my_file( "somedata.txt" );
+% // read file which is in text form
+% my_file.read( my_data );
+% // try to convert to binary first, then read the file
+% my_file.read( my_data, kml::io::convert_to_binary );
+% my_file.close();
+% \end{verbatim}
+% 
+% All kernel machines available in the KML have serialization support, which means that you can load and save them 
+% accordingly.
+% 
+% \highlightcpp{}
+% \begin{verbatim}
+% std::ofstream my_file( "outputfile.txt" | std::ios::binary );
+% boost::binary_ofstream ofs( my_model );
+% ofs << my_machine;
+% my_file.close();
+% \end{verbatim}
+% 
+% \section*{Writing your own kernel machine}
+% 
+% 
+% \section*{Reinforcement Learning}
+% 
+% For something different, let us implement the reinforcement learning as done by REF...  
+% We will implement a SARSA algorithm using kernel machines to make things interesting.
 
 
-\section*{Refinement of}
-
-(is this part of this concept?)
-\href{http://www.boost.org/libs/property_map/LvaluePropertyMap.html}{LvaluePropertyMap}
-
-\section*{Associated types}
-\section*{Notation}
-\section*{Definitions}
-\section*{Valid Expressions}
-\section*{Expression Semantics}
-\section*{Complexity Guarantees}
-\section*{Invariants}
-\section*{Models}
-\section*{Notes}
-\section*{See also}
-
-\href{\kmlroot/classification.html}{Classification},
-\href{\kmlroot/ranking.html}{Ranking}
 
 \bibliographystyle{unsrtnat}
 \bibliography{/home/rutger/documents/bibliography/references}
 \end{document}
-
-
 

@@ -10,31 +10,39 @@
 
 \section*{Description}
 
-A Mercer Kernel is a \href{\kmlroot/kernel.html}{Kernel} that is positive definite.
+A Mercer Kernel is a \href{\kmlroot/kernel.html}{Kernel} that is positive semi-definite.
+When a kernel is positive semi-definite, 
+one may exploit the \emph{kernel trick} \cite{aizerman64theoretical}, 
+the idea of mapping data to a high-dimensional feature space where some linear algorithm is applied that works exclusively with inner products. Assume we have some mapping $\Phi$ from an input space $\mathcal{X}$ to a feature space $\mathcal{H}$, then a kernel function (or kernel)
+%
+$$ k(u,v)=\left\langle \Phi( u ), \Phi( v ) \right\rangle$$
+%
+may be used to define the inner product in feature space $\mathcal{H}$.
+Figure~\ref{figure:feature_space} shows that the application of a linear algorithm in feature 
+space $\mathcal{H}$ could correspond to a nonlinear estimate in input space $\mathcal{X}$.
 
-Positive definiteness in the context of kernel machines implies that a kernel matrix created using 
-a particular kernel is positive definite. A matrix is positive definite if its associated eigenvalues
-$\lambda_1,\lambda_2,\ldots,\lambda_N$ are positive.
+\begin{figure}
+\includegraphics{feature_space}
+\caption{A mapping $\Phi$ from input space $\mathcal{X}$ to feature space $\mathcal{H}$.}
+\label{figure:feature_space}
+\end{figure}
 
+Positive definiteness in the context of kernel functions also implies that a 
+kernel matrix created using 
+a particular kernel is positive semi-definite. A matrix is positive semi-definite if its associated eigenvalues
+$\lambda_1,\lambda_2,\ldots,\lambda_N$ are nonnegative.
 
 \section*{Refinement of}
 
-\href{http://www.sgi.com/tech/stl/AdaptableBinaryFunction.html}{Adaptable Binary Function}, 
-\href{http://www.sgi.com/tech/stl/DefaultConstructible.html}{Default Constructible}, 
-\href{http://www.boost.org/doc/html/CopyConstructible.html}{Copy Constructible},
-\href{http://www.sgi.com/tech/stl/Assignable.html}{Assignable}
+\href{\kmlroot/kernel.html}{Kernel}
 
 \section*{Associated types}
-
 \section*{Notation}
 \section*{Definitions}
 \section*{Valid Expressions}
 \section*{Expression Semantics}
-
 \section*{Complexity Guarantees}
-
 \section*{Invariants}
-
 \section*{Models}
 
 \begin{itemize}
@@ -45,8 +53,6 @@ $\lambda_1,\lambda_2,\ldots,\lambda_N$ are positive.
 \end{itemize}
 
 \section*{Notes}
-
-
 \section*{See also}
 
 

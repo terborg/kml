@@ -16,11 +16,17 @@
 %
 $$k(u,v) = \textrm{exp}( - \half \sigma^{-2} \Vert u-v \Vert^2 ) $$
 %
-where $\sigma$ is the width of the kernel. Figure~ shows a 3 dimensional Gaussian kernel. 
+where $\sigma$ is the width of the kernel. 
+Figure~\ref{figure:gaussian_kernel} shows a Gaussian kernel.
+
+The Gaussian kernel is a good choice for a great deal of applications, although sometimes it is remarked as being
+overused \cite{scholkopf02learning}.
 
 \begin{figure}
-\halfRplot{gaussian_kernel}
-\halfRplot{gaussian_kernel_3d}
+\includegraphics{gaussian_kernel}
+\includegraphics{gaussian_kernel_3d}
+\caption{A two dimensional (left) and three-dimensional (right) plot of a single Gaussian kernel located at the origin.}
+\label{figure:gaussian_kernel}
 \end{figure}
 
 
@@ -58,9 +64,7 @@ Default Constructible, Copy Constructible
 
 
 \section*{Type requirements}
-
 T must be a vector type or a numeric type; distance_squared<T> should evaluate.
-
 
 \section*{Members}
 
@@ -75,14 +79,12 @@ T must be a vector type or a numeric type; distance_squared<T> should evaluate.
 
 \section*{See also}
 
-The Mercel Kernel overview, Adaptable Binary Function, 
-\href{\kmlroot/linear.html}{linear}, 
-\href{\kmlroot/polynomial.html}{polynomial}, 
+\href{\kmlroot/mercer_kernel.html}{Mercer Kernel},
+\href{\kmlroot/linear.html}{linear},
+\href{\kmlroot/polynomial.html}{polynomial},
 \href{\kmlroot/sigmoid.html}{sigmoid}
 
 \bibliographystyle{unsrtnat}
 \bibliography{/home/rutger/documents/bibliography/references}
 \end{document}
-
-
 
