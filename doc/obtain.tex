@@ -1,0 +1,69 @@
+
+\documentclass{article}
+\input{myinclude}
+
+\begin{document}
+
+\title{Obtaining KML}
+\maketitle
+
+\textbf{2006-12-15: Please note: documentation is undergoing a rewrite at the moment.}
+
+\section*{Dependencies}
+
+The Kernel-Machine Library builds on top of the libraries below.
+
+\begin{itemize}
+\item \textbf{Boost.} Functionality of several \href{http://www.boost.org}{Boost libraries} is 
+in use throughout the Kernel-Machine Library. Boost provides
+an excellent set of C++ libraries which reduces the amount of code and boosts the quality of the overall implementation.
+The Kernel-Machine Library is built and tested against version 1.32.0.
+
+\item \textbf{Boost Numeric Bindings.} A part of Boost's sandbox CVS repository is required, namely the numeric bindings. 
+This is a software package that combines the flexibility of the C++ data types (such as that of 
+\texttt{std::vector<>} or \texttt{ublas::matrix<>}) with the computational 
+efficiency of a BLAS and LAPACK.  
+
+\item \textbf{ATLAS.} This is a very efficient basic linear algebra system (BLAS) \citep{whaley01automated}, located at
+\href{http://math-atlas.sourceforge.net}{Sourceforge}. ATLAS can empirically finetune its code to make optimal use of your CPU 
+including its extensions such as SSE, 3DNow! and AltiVec. It also contains several LAPACK routines. 
+
+\end{itemize}
+
+\section*{Download}
+\label{section:download}
+
+The latest release of the Kernel-Machine Library is 0.1. However, this is not the recommended version; you are encouraged to
+download the latest developer version through  
+\href{http://www.terborg.net/cgi-bin/viewcvs.cgi/trunk/kml/}{viewCVS} until 0.2 is released. 
+Version 0.1 can still be downloaded, either as a tarball 
+from \href{research/kml/kml-0.1.tar.gz}{kml-0.1.tar.gz} or as a zipped archive
+from \href{research/kml/kml-0.1.zip}{kml-0.1.zip}.
+
+I have created a tarball of 
+\href{research/kml/boost\_bindings.tar.gz}{boost\_bindings.tar.gz}
+ and a zipfile 
+\href{research/kml/boost\_bindings.zip}{boost\_bindings.zip}%
+, which are on basis of Boost's sandbox CVS of April 3rd, 2005.
+
+
+The development version of the Kernel-Machine Library can be checked out anonymously from 
+the trunk directory of the subversion repository located at 
+\href{http://www.terborg.net/svn/trunk/kml/}{http://www.terborg.net/svn/trunk/kml/}. By using the following command
+\begin{verbatim}
+svn checkout http://www.terborg.net/svn/trunk/kml
+\end{verbatim}
+a fresh up-to-date KML directory will be obtained. 
+
+
+\bibliographystyle{unsrtnat}
+\bibliography{/home/rutger/documents/bibliography/references}
+\end{document}
+
+
+
+
+
+
+
+
