@@ -6,150 +6,57 @@
   </head>
   <body>
     <div id="c">
-     <h1>Kernel-Machine Library</h1>
 
-      <b>2006-12-12: Please note: documentation is undergoing a rewrite at the moment, please check back regularly.</b>
-
-
-      <h3>Contents</h3>
-      <ul class="toc">
-        <li>Introduction</li>
-
-        <!--<li><a href="research/kml/introduction.html">Introduction</a></li>-->
-        <li><a href="research/kml/installation.html">Installation</a></li>
-        <li><a href="research/kml/tutorial.html">Tutorial</a></li>
-
-        <li>Kernels
-          <ul class="toc2">
-            <li>Concepts
-              <ul class="toc3">
-                <li><a href="research/kml/kernel.html">Kernel</a></li>
-                <li><a href="research/kml/mercer_kernel.html">Mercer Kernel</a></li>
-              </ul>
-            </li>
-            <li>Kernel Classes
-              <ul class="toc3">
-                <li><a href="research/kml/linear.html">linear</a></li>
-                <li><a href="research/kml/gaussian.html">gaussian</a></li>
-                <li><a href="research/kml/hermitian.html">hermitian</a></li>
-                <li><a href="research/kml/polynomial.html">polynomial</a></li>
-                <li><a href="research/kml/sigmoid.html">sigmoid</a></li>
-              </ul>
-            </li>
-          </ul>
-        </li><!-- kernel functions -->
-
-<!--        <li><a href="research/kml/data_model.html">Data Model</a></li>-->
-
-        <li>Kernel Machines
-          <ul class="toc2">
-<!--            <li>Concepts
-              <ul class="toc3">
-                <li><a href="research/kml/classification.html">Classification Machine</a></li>
-                <li><a href="research/kml/regression.html">Regression Machine</a></li>
-                <li><a href="research/kml/ranking.html">Ranking Machine</a></li>
-              </ul>
-            </li>-->
-          </ul>
-        </li>
-
-            <!--<li><a href="research/kml/data_model.html">Data Model</a></li>-->
-<!--            <li>Machine Concepts
-              <ul class="toc3">
-                <li>Batch Learner</li>
-                <li>Incremental Learner</li>
-                <li>Bidirectional Learner</li>
-                <li><a href="research/kml/svm.html">Support Vector Machine</a></li>
-                <li><a href="research/kml/rvm.html">Relevance Vector Machine</a></li>
-                <li><a href="research/kml/krls.html">Kernel Recursive Least Squares</a></li>
-                <li><a href="research/kml/figueiredo.html">Jeffreys Prior</a></li>
-                <li><a href="research/kml/srvm.html">Smoothness Inducing Prior</a></li>
-              </ul>
-            </li>
-            <li>Algorithms
-              <ul class="toc3">
-                <li><a href="research/kml/smo.html">smo</a></li>
-                <li><a href="research/kml/iterative_rvm.html">iterative_rvm</a></li>
-                <li><a href="research/kml/fast_rvm.html">fast_rvm</a></li>
-                <li><a href="research/kml/krls.html">krls</a></li>
-                <li><a href="research/kml/figueiredo.html">figueiredo</a></li>
-              </ul>
-            </li>-->
-        <!-- kernel machines -->
-
-<!--
-        <li>Learning Concepts
-          <ul class="toc2">
-            <li>Supervised Learning
-              <ul class="toc3">
-                <li><a href="research/kml/classification.html">Classification</a></li>
-                <li><a href="research/kml/ranking.html">Ranking</a></li>
-                <li><a href="research/kml/regression.html">Regression</a></li>
-              </ul>
-            </li>
-            <li>Unsupervised Learning
-              <ul class="toc3">
-                <li>Single-class</li>
-              </ul>
-            </li>
-            <li>Reinforcement Learning
-              <ul class="toc3">
-                <li><a href="research/kml/temporal_difference.html">Temporal-difference</a></li>
-              </ul>
-            </li>
-            <li>Algorithm Concepts
-              <ul class="toc3">
-                <li>Learner</li>
-                <li>Batch Learner</li>
-                <li>Incremental Learner</li>
-                <li>Decremental Learner</li>
-              </ul>
-            </li>
-          </ul>
-        </li>-->
-        <!-- problem concepts -->
-
-
-<!--        <li>Utilities (to be categorised?)
-          <ul class="toc2">
-            <li><a href="research/kml/view_matrix.html">view matrix</a></li>
-            <li><a href="research/kml/incomplete_cholesky.html">incomplete cholesky</a></li>
-          </ul>
-        </li>-->
-
-<!--      <li><a href="research/kml/rationale.html">Rationale</a></li>
-      <li><a href="research/kml/faq.html">FAQ</a></li>-->
-
-      </ul>
-      <!--Table of contents-->
-
-      <h3>Introduction</h3>
-
+<!--<h1>Kernel-Machine Library</h1>-->
 <p class="noindent">
-The Kernel-Machine Library is a freely available (released under the 
+The Kernel-Machine Library is a free (released under the 
 <a href="http://www.gnu.org/copyleft/lesser.html">LGPL</a>) C++ library to
-promote the use and progress of kernel machines.</p>
+promote the use of and progress of kernel machines.
+It is intended for use in research as well as in practice.
+The library is known to work with a recent C++ compiler on GNU/Linux, on Mac OS, and on several flavours of Windows.</p>
 
-<p>It is both for academic use and for developing real world applications. 
-The Kernel-Machine Library draws heavily from features of modern C++ such 
-as template meta-programming to achieve high performance while at the 
-same time offering a comfortable interface. It enables compile-time selection 
-of specialised algorithms.</p>
+<p>Below, we would like to give you the choice to either install, use, or improve the library.</p>
 
+     <!--This is the selection container, 550 pixels wide. See the .css file for the id=sc -->
+     <div id="sca"><div id="scb">
+     <div class="three" style="float:left;">
 
-      <h3>Supported Platforms</h3>
-The Kernel-Machine Library works with a recent C++ compiler. Compilers that are known to work correctly, are:
-   <ul>
-     <li>GCC 3.3.x, 4.x</li>
-     <li>MSVC 7.1, 8.0</li>
-   </ul>
+<!--	 onmouseover="set_image('c_thumb','images/commerce_thumb2.png');" onmouseout="set_image('c_thumb','images/commerce_thumb1.png');"></a>-->
+	<img src="images/icons/ark.png" style="width:128px;height:128px;" alt="obtain"/>
+	<div class="main"><a href="research/kml/installation.html">install</a></div>
+	<div><a href="research/kml/installation.html">download</a></div>
+	<div><a href="research/kml/installation.html">dependencies</a></div>
 
+<!--	<div><a href="commerce/curricula_vitae.html">curricula vitae</a></div>
+	<div><a href="commerce/artibit.html">artibit</a></div>-->
+     </div>
 
+	<!--	550-180*3 gives 10, 10/2=5px
+	        or, in case the border is added, it gives 10-2=8 8/2=4px;-->
+      <div class="three" style="float:left;margin-left:4px;border-left:1px solid #c0c0c0;border-right:1px solid #c0c0c0;">
+<!--	<a href="research/" onmouseover="set_image('r_thumb','images/research_thumb2.png');" onmouseout="set_image('r_thumb','images/research_thumb1.png');"><img id="r_thumb" src="images/research_thumb1.png"/></a>-->
 
+	<img src="images/icons/folder_uml.png" style="width:128px;height:128px;" alt="use"/>
+	<div class="main"><a href="research/kml/contents.html">use</a></div>
+	<div><a href="research/kml/tutorial.html">tutorial</a>|<a href="research/kml/contents.html">reference</a></div>
+      </div>
 
+      <div class="three" style="float:right;">
+
+<!--	<a href="leisure/" onmouseover="set_image('l_thumb','images/leisure_thumb2.png');" onmouseout="set_image('l_thumb','images/leisure_thumb1.png');"><img id="l_thumb" src="images/leisure_thumb1.png"/></a>-->
+
+	<img src="images/icons/ksirc.png" style="width:128px;height:128px;" alt="improve"/>
+	<div class="main"><a href="research/kml/improve.html">improve</a></div>
+	<div><a href="research/kml/">questions</a>|<a href="research/kml/">feedback</a></div>
+<!--        <div><a href="leisure/">historic car rallies</a></div>-->
+      </div>
+
+      <div style="clear:both;"></div>
     </div>
+
+    </div></div>  <!-- end of text align div and width making div (sca and scb)-->
+
   </body>
 </html>
-
 
 

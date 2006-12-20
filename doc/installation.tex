@@ -1,126 +1,244 @@
 
 \documentclass{article}
 \input{myinclude}
+\usepackage[numbers]{natbib}
+
 
 \begin{document}
 
-
-\title{Microsoft Visual C++ Howto}
+\title{Installation Guide}
 \maketitle
 
-This page describes the necessary steps to start using 
-the Kernel-Machine Library with Microsoft Visual C++.
-A fully featured free version of Microsoft Visual
-C++ can be downloaded from the
-\href{http://msdn.microsoft.com/visualc/vctoolkit2003/}{Visual
-C++ Toolkit 2003 homepage}.\\
+\textbf{2006-12-20: Please note: documentation is undergoing a rewrite at the moment.}
+
+\tableofcontents
 
 
-\section{Install the Kernel-Machine Library}
+\section{Dependencies}
 
-This step is relatively simple: download
-\href{research/kml/kml-0.1.zip}{kml-0.1.zip}
-and unzip it to a directory of your choice.
+The Kernel-Machine Library builds on top of the libraries below.
+
+\begin{itemize}
+\item \textbf{Boost.} Functionality of several \href{http://www.boost.org/}{Boost libraries} is 
+in use throughout the Kernel-Machine Library. 
+Boost provides
+an excellent set of C++ libraries which reduces the amount of code and boosts 
+the quality of the overall implementation.
+The Kernel-Machine Library was originally built and tested against version 1.32.0, and also works 
+with the current version of 1.33.1. 
+
+\item \textbf{ATLAS.} This is a very efficient basic linear algebra system 
+(\href{http://www.netlib.org/blas/faq.html}{BLAS}) \cite{whaley01automated}, located at
+\href{http://math-atlas.sourceforge.net}{Sourceforge}. 
+ATLAS can empirically finetune 
+its code to make optimal use of your CPU 
+including its numerical extensions such as SSE, 3DNow! and AltiVec. 
+It also contains several LAPACK routines. 
+
+\item \textbf{Boost Numeric Bindings.} A part of Boost's sandbox CVS repository is 
+included in the KML distribution, 
+namely the numeric bindings. 
+This is a software package that combines the flexibility of the C++ data types (such as that of 
+\texttt{std::vector<>} or \texttt{ublas::matrix<>}) with the computational 
+efficiency of a BLAS and LAPACK. The numeric bindings are .
+
+\end{itemize}
 
 
-\section{Install the Boost Libraries}
+\section{Debian GNU/Linux}
+
+This section describes how to start developing with
+the Kernel-Machine library on a Debian GNU/Linux-based operating system.
+
+Using root privileges, please run \texttt{apt-get} to install the following packages.
+\begin{verbatim}
+$ apt-get install atlas3-base-dev g++ scons subversion libboost-dev \ 
+libboost-serialization-dev libboost-program-options*
+\end{verbatim}
+%
+Using your local user account, execute the following commands.
+\begin{verbatim}
+$ cd ~/my/development/dir/
+$ svn checkout http://www.terborg.net/svn/trunk/kml
+$ cd kml
+$ scons
+\end{verbatim}
+%
+By executing the \texttt{scons} command, some examples will be built the in the directory \texttt{kml/examples/}.
+If this is your first install, perhaps you are interested in continuing 
+by reading the \href{\kmlroot/tutorial.html}{tutorial}, or browsing through 
+the \href{\kmlroot/contents.html}{user's guide}.
+
+If for some reason these instructions did not work out as advertised here,
+please drop us a message at kml-devel@terborg.net, and/or take a look
+at the \href{\kmlroot/improve.html}{improvement guide}.
+
+% Suppose you would like to check for updates of the software,
+% basically performing a   
+% %
+% \begin{verbatim}
+% /kml$ svn update
+% \end{verbatim}
+% %
+% will update your local repository.
+
+% \section{Download}
+% \label{section:download}
+% 
+% The latest release of the Kernel-Machine Library is 0.1. However, this is not the recommended version; you are encouraged to
+% download the latest developer version through  
+% \href{http://www.terborg.net/cgi-bin/viewcvs.cgi/trunk/kml/}{viewCVS} until 0.2 is released. 
+% Version 0.1 can still be downloaded, either as a tarball 
+% from \href{research/kml/kml-0.1.tar.gz}{kml-0.1.tar.gz} or as a zipped archive
+% from \href{research/kml/kml-0.1.zip}{kml-0.1.zip}.
+% 
+% I have created a tarball of 
+% \href{research/kml/boost\_bindings.tar.gz}{boost\_bindings.tar.gz}
+%  and a zipfile 
+% \href{research/kml/boost\_bindings.zip}{boost\_bindings.zip}%
+% , which are on basis of Boost's sandbox CVS of April 3rd, 2005.
+% 
+% 
+% The development version of the Kernel-Machine Library can be checked out anonymously from 
+% the trunk directory of the subversion repository located at 
+% \href{http://www.terborg.net/svn/trunk/kml/}{http://www.terborg.net/svn/trunk/kml/}. By using the following command
+% \begin{verbatim}
+% svn checkout http://www.terborg.net/svn/trunk/kml
+% \end{verbatim}
+% a fresh up-to-date KML directory will be obtained. 
+
+
+\section{Microsoft Windows}
+
+This section describes the necessary steps to start using 
+the Kernel-Machine Library on a Microsoft Windows System, 
+using free software only. To be able to perform these
+steps, you will need Administrator privileges.
+
+\subsection{Install Visual C++}
+
+To develop applications comfortably under Microsoft Windows, you will need
+to have installed both a \href{http://msdn.microsoft.com/vstudio/express/visualc/}{C++ compiler},
+and the 
+\href{http://msdn.microsoft.com/vstudio/express/visualc/usingpsdk/}{Windows Platform SDK} (the latter is
+already included in the non-free version of Visual C++).
+
+Some additional installation instructions and hints are also available the notes
+on the page about Boost's
+\href{http://www.boost.org/tools/build/v1/vc-8_0-tools.html}{vc-8_0 toolset}.
+
+To check whether the compiler is installed, please run the Visual C++ Command Window (should be 
+available in your menu), and try to execute \texttt{cl}. Check whether 
+a file \texttt{vcvars32.bat} exists in the \texttt{bin} subdirectory of the Visual
+C++ compiler, as it is needed to build the Boost Libraries in the next step.
+
+\subsection{Install the Boost Libraries}
 
 On Windows x86 platforms, the Boost Libraries can most easily 
 be installed using self-extracting prebuilt executables.
-%
-\begin{itemize}
-\item First, download the 
-\href{http://prdownloads.sourceforge.net/boost/boost_1_32_0.exe?download}
-{self-extracting executable file} from Sourceforge. 
-After the download is complete, run the
-executable which will then extract the files to a directory of your
-choice.
+The authors of the Boost libraries provide installation instructions at 
+their \href{http://www.boost.org/more/getting_started.html}{getting started} page.
 
-\item Second, download the zip archive of the prebuilt
-\href{http://prdownloads.sourceforge.net/boost/boost-jam-3.1.10-1-ntx86.zip?download}
-{Boost.Jam tool}, also from Sourceforge. 
-Extract the \texttt{bjam.exe} file to the Boost directory created by the first step, 
-and execute it. Wait for the compilation process to finish.
-\end{itemize}
+For the impatient, we have provided the following steps.
+%
+\begin{enumerate}
+\item Download the self-extracting executable file
+\href{http://prdownloads.sourceforge.net/boost/boost_1_33_1.exe?download}
+{boost_1_33_1.exe} from Sourceforge. 
+After the download is complete, run the
+executable, and extract the files to \texttt{C:\textbackslash Boost}.
+
+\item Download the zip archive of 
+\href{http://prdownloads.sourceforge.net/boost/boost-jam-3.1.13-1-ntx86.zip?download}
+{boost-jam-3.1.13-1-ntx86.zip}, also from Sourceforge. 
+Extract the \texttt{bjam.exe} file to the directory \texttt{C:\textbackslash Boost} created in step 1.
+
+\item Open the Visual C++ Command Window, change directory to \texttt{C:\textbackslash boost}, 
+type
+\begin{verbatim}
+bjam "-sTOOLS=vc-8_0"
+\end{verbatim}
+and wait for the compilation process to finish.
+
+\end{enumerate}
 %
 The Boost libraries are now installed. If anything went wrong, then more detailed information about 
 Boost can be found at  \href{http://www.boost.org/}{Boost's homepage}.
 
+% \subsection{Install Boost Numeric Bindings}
+% 
+% Download \href{research/kml/boost\_bindings.zip}{boost\_bindings.zip}
+% and unzip it into the Boost directory. Make sure the subdirectories are aligned, 
+% i.e. the directory stucture 
+% \texttt{boost\textbackslash{}numeric\textbackslash{}bindings} should exist. 
 
 
-\section{Install Boost Numeric Bindings}
+\subsection{Install ATLAS}
 
-Download \href{research/kml/boost\_bindings.zip}{boost\_bindings.zip}
-and unzip it into the Boost directory. Make sure the subdirectories are aligned, 
-i.e. the directory stucture 
-\texttt{boost\textbackslash{}numeric\textbackslash{}bindings} should exist. 
+Obtaining working ATLAS binaries under Microsoft Windows could be one of the
+most annoying steps. 
 
+If you are lucky, you could use 
+convenient prebuilt libraries provided here (if available). Otherwise 
+you will have to create ATLAS DLLs
+manually. 
 
-\section{Install ATLAS Binaries}
+\subsubsection{Prebuilt ATLAS libraries}
 
-Dynamic loadable libraries of ATLAS can be obtained in two ways: by using 
-convenient prebuilt libraries provided here (if available), or by creating DLLs
-of ATLAS by hand. 
-
-\subsection{Prebuilt ATLAS libraries}
-
-The following files are available here: 
-\href{research/kml/WinNT\_ATHLONSSE1.zip}{WinNT\_ATHLONSSE1.zip}
-and
-\href{research/kml/WinNT\_PIIISSE1.zip}{WinNT\_PIIISSE1.zip}
-. If you use these, you can skip the next subsection and go ahead to 
-section \ref{section:using_kml}.
+The following files are available here:
+\begin{itemize}
+\item \href{research/kml/WinNT\_ATHLONSSE1.zip}{WinNT\_ATHLONSSE1.zip}
+\item \href{research/kml/WinNT\_PIIISSE1.zip}{WinNT\_PIIISSE1.zip}
+\end{itemize}
+If you use these, you can skip the next subsection and go ahead to 
+subsection \ref{section:install_scons}.
 
 If your architecture is not listed here, and if you have successfully 
 built an ATLAS dll and lib (as described below), please send us a copy of the dll and
-lib file. It will then be provided here as well.
+lib file at kml-devel@terborg.net. Your hard work will safe 
+other people's time, which we think is a good thing.
 
+\subsubsection{Build your own ATLAS binaries}
 
+\begin{enumerate}
+\item Download the platform-independent source package
+\href{http://prdownloads.sourceforge.net/math-atlas/atlas3.6.0.tar.gz?download}{atlas3.6.0.tar.gz}
+from Sourceforge, and unzip it to \texttt{C:\textbackslash Atlas}.
 
-
-\subsection{Build your own ATLAS binaries}
-
-
-
-
-\subsubsection{Obtain the Software}
-
-\begin{itemize}
-\item First, download and unzip the ATLAS 
-\href{http://prdownloads.sourceforge.net/math-atlas/atlas3.6.0.tar.gz?download}
-{platform-independent sources}
-from Sourceforge. 
 \item Apply the patches ``\href{http://math-atlas.sourceforge.net/errata.html#winsse}
-{Assembler renaming problem for Windows machine}'' and the ``
-\href{http://math-atlas.sourceforge.net/errata.html#longcomp}
-{String overrun in config for long compiler paths}'', 
+{Assembler renaming problem for Windows machine}'' and the 
+``\href{http://math-atlas.sourceforge.net/errata.html#longcomp}{String overrun in config for long compiler paths}'',
 described at the 
 \href{http://math-atlas.sourceforge.net/errata.html}
 {ATLAS errata page}. There patches need to be applied, otherwise the
 ATLAS build process will most probably fail.
 
-\item Download and install Cygwin from the
-\href{http://www.cygwin.com/}{Cygwin homepage}. Add the
-following additional packages to the default install:
-Devel->gcc-g++, Devel->gcc-g77 and Devel->make.
-
+\item Install Cygwin by running the 
+\href{http://www.cygwin.com/setup.exe}{setup.exe}. Make sure to have added the
+following packages to the default install:
+\begin{itemize}
+% 2006-12-18. The right-arrow issue.
+% first tried to use \usepackage{textcomp} in combination with \textrightarrow{}; which produces
+% the correct result: an utf-8 encoded rightarrow. Unfortunately, this character is not (yet) supported 
+% on enough browsers. Therefore, a math-symbol is inserted. :-(
+\item Devel $\rightarrow$ gcc-g++
+\item Devel $\rightarrow$ gcc-g77
+\item Devel $\rightarrow$ make
 \end{itemize}
 
-\subsubsection{Compile ATLAS}
-
-Open a Cywin console window, and change to the ATLAS root
-directory, and start the configuration of ATLAS.
-
-\begin{verbatim}
-cd C:/ATLAS
-make config
-\end{verbatim}
-%
-In this step ATLAS wants to figure out more about your CPU.
+\item Gather information about the cache size of your CPU.
 If you are not sure about the exact specifics of your processor, then
 you could try a hardware detection program, such as 
 \href{http://www.cpuid.org/cpuz.php}{CPU-Z}.
 
+\item Open a Cywin console window, and change to the ATLAS root
+directory, and start the configuration of ATLAS.
+%
+\begin{verbatim}
+cd C:\Atlas
+make config
+\end{verbatim}
+%
 You will be asked a series of questions, shown below. If you press enter 
 without answering, it will use the [default] value. 
 %
@@ -147,46 +265,96 @@ Use supplied default values for install? [y]:
 \end{verbatim}
 %
 After these questions have been answered, ATLAS will create makefiles on the basis of your
-configuration. It will give you a confirmation of success. You can now issue the next 
-command, which is something like 
+configuration. It will give you a confirmation of success. 
+
+\item Start the build process, which is initiated by something like 
 %
 \begin{verbatim}
 make install arch=WinNT_ATHLONSSE1
 \end{verbatim}
 %
-This will start the ATLAS compilation process. After compiling, 
+depending on the name of your processor. After compiling, 
 you will have a subdirectory called \texttt{lib/WinNT\_ATHLONSSE1} 
-in your ATLAS directory, which should contain the following files: 
-\texttt{libatlas.a}, \texttt{libcblas.a}, \texttt{libf77blas.a}, and 
-\texttt{liblapack.a}.
+in your ATLAS directory, which should contain the following files:
+\begin{itemize}
+\item \texttt{libatlas.a}
+\item \texttt{libcblas.a}
+\item \texttt{libf77blas.a}
+\item \texttt{liblapack.a}
+\end{itemize}
+These files are \emph{the} ATLAS binaries, 
+and they may be used to create a DLL containing these files.
 
-
-\subsubsection{Create the dll and lib}
-
+\item This step is optional: it is only needed if you are 
+\emph{not} installing the Kernel-Machine Library.
 Download 
 \href{research/kml/kml\_win\_dll.sh}{kml\_win\_dll.sh}
 to the directory that contains the \texttt{libatlas.a}, etc., files.  
 (Re-)Open a Cygwin console, and change to that directory. Run the command
+%
 \begin{verbatim}
 ./kml_win_dll.sh
 \end{verbatim}
 %
 You will get a message ``Generating
 the KML ATLAS DLL''. After this command is complete, you should be able to see new 
-files called \texttt{kml\_atlas.dll} and \texttt{kml\_atlas.lib} in that directory.
+files called
+\begin{itemize}
+\item \texttt{kml\_atlas.dll}
+\item \texttt{kml\_atlas.lib}
+\end{itemize}
+in that directory.
 
+\end{enumerate}
 
-\section{Link to the DLL and lib in Visual C++}
-\label{section:using_kml}
+\subsection{Install SCons}
+\label{section:install_scons}
 
-In order to link against the ATLAS routines, you need to do two things in 
-Visual Studio.
-First, put the \texttt{kml\_atlas.dll} file in one of your path
-directories: the directory the executable of your
-own program resides will do. Second, instruct the linker to link your 
-project against \texttt{kml\_atlas.lib}.
+Prior to installing SCons, install Python
+by downloading and running the installer \href{http://www.python.org/ftp/python/2.5/python-2.5.msi}{python-2.5.msi}.
+Make sure that Python is in your PATH, e.g., by adding by \texttt{C:\textbackslash Python25} 
+to your PATH environment variable, as
+described \href{http://www.python.org/doc/faq/windows.html#how-do-i-run-a-python-program-under-windows}{here}.
 
+Next, install Scons by running 
+\href{http://prdownloads.sourceforge.net/scons/scons-0.96.1.win32.exe?download}{scons-0.96.1.win32.exe}. 
+The installation process will find
+Python automatically.
 
+\subsection{Install the Kernel-Machine Library}
+Download the latest zipped archive of the Kernel-Machine Library, 
+\href{http://www.terborg.net/cgi-bin/viewcvs.cgi/trunk/kml.tar.gz?view=tar}{kml.tar.gz}, 
+and unzip it to a directory of your choice, e.g., \texttt{C:\textbackslash kml}.
+
+Open a Visual C++ Command Window, and execute the following steps.
+%
+\begin{verbatim}
+cd C:\kml
+scons
+\end{verbatim}
+%
+By executing the \texttt{scons} command, the ATLAS DLL will be built, 
+and some examples will be built in the directory \texttt{kml\textbackslash examples}.
+If this is your first install, perhaps you are interested in continuing 
+by reading the \href{\kmlroot/tutorial.html}{tutorial}, or browsing through 
+the \href{\kmlroot/contents.html}{user's guide}.
+
+If for some reason these instructions did not work out as advertised here,
+please drop us a message at kml-devel@terborg.net, and/or take a look
+at the \href{\kmlroot/improve.html}{improvement guide}.
+
+% \section{Link to the DLL and lib in Visual C++}
+% \label{section:using_kml}
+% 
+% In order to link against the ATLAS routines, you need to do two things in 
+% Visual Studio.
+% First, put the \texttt{kml\_atlas.dll} file in one of your path
+% directories: the directory the executable of your
+% own program resides will do. Second, instruct the linker to link your 
+% project against \texttt{kml\_atlas.lib}.
+
+\bibliographystyle{unsrtnat}
+\bibliography{/home/rutger/documents/bibliography/references}
 
 \end{document}
 
