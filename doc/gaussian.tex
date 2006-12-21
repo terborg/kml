@@ -19,9 +19,6 @@ $$k(u,v) = \textrm{exp}( - \half \sigma^{-2} \Vert u-v \Vert^2 ) $$
 where $\sigma$ is the width of the kernel. 
 Figure~\ref{figure:gaussian_kernel} shows a Gaussian kernel.
 
-The Gaussian kernel is a good choice for a great deal of applications, although sometimes it is remarked as being
-overused \cite{scholkopf02learning}.
-
 \begin{figure}
 \includegraphics{gaussian_kernel}
 \includegraphics{gaussian_kernel_3d}
@@ -29,6 +26,8 @@ overused \cite{scholkopf02learning}.
 \label{figure:gaussian_kernel}
 \end{figure}
 
+The Gaussian kernel is a good choice for a great deal of applications, although sometimes it is remarked as being
+overused \cite{scholkopf02learning}.
 
 
 \section*{Example}
@@ -36,10 +35,10 @@ overused \cite{scholkopf02learning}.
 
 \highlightcpp{}
 \begin{verbatim}
-vector< double > u(10);
-vector< double > v(10);
-gaussian< vector< double > > kernel(1.0);
-cout << kernel( u, v ) << endl;
+std::vector< double > u(10);
+std::vector< double > v(10);
+gaussian< std::vector< double > > kernel(1.0);
+std::cout << kernel( u, v ) << std::endl;
 \end{verbatim}
 
 

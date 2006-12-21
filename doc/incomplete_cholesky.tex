@@ -1,8 +1,6 @@
 
 \documentclass{article}
 \input{myinclude}
-\usepackage[numbers]{natbib}
-
 
 % algorithm display
 \usepackage{algorithm}
@@ -41,7 +39,7 @@
 \section*{Description}
 
 The incomplete Cholesky is used in conjunction with 
-Support Vector Machines in \citep{fine01efficient}, ...
+Support Vector Machines in \cite{fine01efficient}, ...
 
 
 In this section we will give a geometric interpretation to 
@@ -95,7 +93,7 @@ on a two-dimensional plane defined by the span of $\sve_{1}$ and
 $\nonsve_{2}$. %
 \begin{figure}
 \begin{center}
-\figwithmath{two_circle_intersection}
+\includegraphics{two_circle_intersection}
 \end{center}
 \caption{The projection of vector $\nonsve_{2}$ on vector $\sve_{1}$, and
 its associated two-circle intersection problem.%
@@ -167,7 +165,7 @@ Figure~\ref{figure:three_sphere_intersection} illustrates the problem.
 It may be solved by the solution to a three-sphere intersection problem.
 %
 \begin{figure}
-\begin{center}\figwithmath{three_sphere_intersection}\end{center}
+\begin{center}\includegraphics{three_sphere_intersection}\end{center}
 
 
 \caption{The projection of $\nonsve_{i}$ on plane $\sv$ may be tackled by
@@ -342,7 +340,7 @@ The Incomplete Cholesky Factorisation solves a system ... such that ... .
 
 
 
-\bibliographystyle{unsrtnat}
+\bibliographystyle{plain}
 \bibliography{/home/rutger/documents/bibliography/references}
 \end{document}
 
