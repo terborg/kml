@@ -21,20 +21,16 @@ The library is known to work with a recent C++ compiler on GNU/Linux, on Mac OS,
      <div id="sca"><div id="scb">
      <div class="three" style="float:left;">
 
-<!--	 onmouseover="set_image('c_thumb','images/commerce_thumb2.png');" onmouseout="set_image('c_thumb','images/commerce_thumb1.png');"></a>-->
 	<img src="images/icons/ark.png" style="width:128px;height:128px;" alt="obtain"/>
 	<div class="main"><a href="research/kml/installation.html">install</a></div>
 	<div><a href="research/kml/installation.html">download</a></div>
 	<div><a href="research/kml/installation.html">dependencies</a></div>
 
-<!--	<div><a href="commerce/curricula_vitae.html">curricula vitae</a></div>
-	<div><a href="commerce/artibit.html">artibit</a></div>-->
      </div>
 
 	<!--	550-180*3 gives 10, 10/2=5px
 	        or, in case the border is added, it gives 10-2=8 8/2=4px;-->
       <div class="three" style="float:left;margin-left:4px;border-left:1px solid #c0c0c0;border-right:1px solid #c0c0c0;">
-<!--	<a href="research/" onmouseover="set_image('r_thumb','images/research_thumb2.png');" onmouseout="set_image('r_thumb','images/research_thumb1.png');"><img id="r_thumb" src="images/research_thumb1.png"/></a>-->
 
 	<img src="images/icons/folder_uml.png" style="width:128px;height:128px;" alt="use"/>
 	<div class="main"><a href="research/kml/contents.html">use</a></div>
@@ -43,12 +39,9 @@ The library is known to work with a recent C++ compiler on GNU/Linux, on Mac OS,
 
       <div class="three" style="float:right;">
 
-<!--	<a href="leisure/" onmouseover="set_image('l_thumb','images/leisure_thumb2.png');" onmouseout="set_image('l_thumb','images/leisure_thumb1.png');"><img id="l_thumb" src="images/leisure_thumb1.png"/></a>-->
-
 	<img src="images/icons/ksirc.png" style="width:128px;height:128px;" alt="improve"/>
 	<div class="main"><a href="research/kml/improve.html">improve</a></div>
 	<div><a href="research/kml/">questions</a>|<a href="research/kml/">feedback</a></div>
-<!--        <div><a href="leisure/">historic car rallies</a></div>-->
       </div>
 
       <div style="clear:both;"></div>
