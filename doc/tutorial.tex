@@ -39,19 +39,35 @@ and outputs corrupted with Gaussian noise, $y_{i}\sim N(\mathrm{sinc}(x_{i}),0.1
 #include <boost/random/variate_generator.hpp>
 #include <boost/math/special_functions/sinc.hpp>
 
+// create the random number generator N(0,0.1)
 boost::mt19937 randomness;
 typedef boost::normal_distribution<double> dist_type;
 dist_type norm_dist( 0.0, 0.1 );
 boost::variate_generator< boost::mt19937, dist_type > noise( randomness, 
                                                              norm_dist );
+// instantiate the data container, and fill it with (x,y)-pairs
+container_type my_data;
+for( int i=0; i<50; ++i ) {
+  double x = static_cast<double>(i) / 49.0 * 20.0 - 10.0;
+  my_data[ i ] = std::make_pair( x, boost::sinc(x) + noise() );
+}
 \end{verbatim}
 %
 To generate the outputs, we have pulled in parts from the 
 \href{http://www.boost.org/libs/random/index.html}{Boost Random Number Library}, and the
 sinc function from the
 \href{http://www.boost.org/libs/math/special_functions/index.html}{Boost Math Special Functions Library}. 
+%
+%
+Figure~\ref{figure:sinc_regression} shows an example scatterplot of the data that we 
+just built the generator for. 
 
-\textbf{... TODO}
+\begin{figure}
+\includegraphics{sinc_data}
+\caption{Input data generated for our first tutorial example.}
+\label{figure:sinc_regression}
+\end{figure}
+
 
 % 
 % \section*{Writing your own kernel}
