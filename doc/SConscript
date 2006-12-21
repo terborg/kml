@@ -6,39 +6,16 @@ kmlroot = '/research/kml'
 
 obj = []
 
-# introduction pages
+# generic pages
 obj += env.XHTML( 'index.html_fase4' )
-obj += env.HTML( 'improve.tex' )
-obj += env.XHTML( 'contents.html_fase4' )
-obj += env.HTML( 'tutorial.tex' )
-obj += env.HTML( 'installation.tex' )
-obj += env.HTML( 'rationale.tex' )
-obj += env.HTML( 'data_model.tex' )
+obj += env.HTML(  'improve.tex' )
+obj += env.HTML(  'tutorial.tex' )
+obj += env.HTML(  'installation.tex' )
 
-# generic concepts
-obj += env.HTML( 'regression.tex' )
-obj += env.HTML( 'classification.tex' )
-obj += env.HTML( 'ranking.tex' )
-obj += env.HTML( 'temporal_difference.tex' )
-
-# kernel concepts
-obj += env.HTML( 'kernel.tex' )
-obj += env.HTML( 'mercer_kernel.tex' )
-
-# kernel models
-obj += env.HTML( 'linear.tex' )
-obj += env.HTML( 'gaussian.tex' )
-obj += env.HTML( 'hermitian.tex' )
-obj += env.HTML( 'polynomial.tex' )
-obj += env.HTML( 'sigmoid.tex' )
-
-# kernel machines
-obj += env.HTML( 'svm.tex' )
-
-# utilities
-#obj += env.HTML( 'view_matrix.tex' )
-obj += env.HTML( 'incomplete_cholesky.tex' )
-obj += env.PDF( 'incomplete_cholesky.tex' )
+# process subdirectories
+for loc in ['reference']:
+	o = SConscript( dirs= loc )
+	obj += o
 
 env.Install( install_dir + '/research/kml', 
 	['boost_bindings.tar.gz',
@@ -49,7 +26,6 @@ env.Install( install_dir + '/research/kml',
 	 'WinNT_ATHLONSSE1.zip',
 	 'WinNT_PIIISSE1.zip',
          'install_WinNT_VC.html'] )
-
 
 
 Return( 'obj' )
