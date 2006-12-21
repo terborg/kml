@@ -1,0 +1,23 @@
+
+Import('env')
+Import('install_dir')
+
+obj = []
+
+# index page
+obj += env.XHTML( 'index.html_fase4' )
+
+# kernel concepts
+obj += env.HTML( 'kernel.tex' )
+obj += env.HTML( 'mercer_kernel.tex' )
+
+# kernels
+obj += env.HTML( 'linear.tex' )
+obj += env.HTML( 'gaussian.tex' )
+obj += env.HTML( 'hermitian.tex' )
+obj += env.HTML( 'polynomial.tex' )
+obj += env.HTML( 'sigmoid.tex' )
+
+
+Return( 'obj' )
+
