@@ -12,7 +12,7 @@ In C++ nomenclature, a <em>Concept</em> defines a set of requirements for a cert
 they define what types are allowed when substituting template parameters.
 A template class (or function) may 
 be instantiated with parameters of types that adhere to such a set of requirements.
-These types are called a <em>Model</em> of a certain Concept.
+These adhering types are called a <em>Model</em> of a certain Concept.
 
 
       <h3>Contents</h3>
