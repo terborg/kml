@@ -8,10 +8,16 @@
     <div id="c">
      <h1>Reference</h1>
 
-      <b>2006-12-12: Please note: documentation is undergoing a rewrite at the moment, please check back regularly.</b>
+In C++ nomenclature, a <em>Concept</em> defines a set of requirements for a certain type: 
+they define what types are allowed when substituting template parameters.
+A template class (or function) may 
+be instantiated with parameters of types that adhere to such a set of requirements.
+These types are called a <em>Model</em> of a certain Concept.
 
 
       <h3>Contents</h3>
+      <b>2006-12-12: Please note: documentation is undergoing a rewrite at the moment, please check back regularly.</b>
+
       <ul class="toc">
 
         <li>Kernels
