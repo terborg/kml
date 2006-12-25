@@ -286,7 +286,8 @@ These files are \emph{the} ATLAS binaries,
 and they may be used to create a DLL containing these files.
 
 \item This step is optional: it is only needed if you are 
-\emph{not} installing the Kernel-Machine Library.
+\textbf{not} installing the Kernel-Machine Library, but rather
+would like to obtain a stand-alone ATLAS installation.
 Download 
 \href{research/kml/kml\_win\_dll.sh}{kml\_win\_dll.sh}
 to the directory that contains the \texttt{libatlas.a}, etc., files.  
@@ -304,6 +305,14 @@ files called
 \item \texttt{kml\_atlas.lib}
 \end{itemize}
 in that directory.
+%
+If you would like to link against the ATLAS routines from within Visual Studio, 
+you will have to do two things in Visual Studio:
+\begin{itemize}
+\item ensure the \texttt{kml\_atlas.dll} file is located in your PATH
+\item instruct the linker to link your project against \texttt{kml\_atlas.lib}.
+\end{itemize}
+
 
 \end{enumerate}
 
@@ -342,16 +351,6 @@ the \href{\kmlroot/reference/}{Reference}.
 If for some reason these instructions did not work out as advertised here,
 please drop us a message at kml-devel@terborg.net, and/or take a look
 at the \href{\kmlroot/improve.html}{improvement guide}.
-
-% \section{Link to the DLL and lib in Visual C++}
-% \label{section:using_kml}
-% 
-% In order to link against the ATLAS routines, you need to do two things in 
-% Visual Studio.
-% First, put the \texttt{kml\_atlas.dll} file in one of your path
-% directories: the directory the executable of your
-% own program resides will do. Second, instruct the linker to link your 
-% project against \texttt{kml\_atlas.lib}.
 
 \bibliographystyle{unsrtnat}
 \bibliography{/home/rutger/documents/bibliography/references}
