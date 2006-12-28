@@ -26,5 +26,10 @@ obj += env.HTML( 'classification.tex' )
 obj += env.HTML( 'ranking.tex' )
 obj += env.HTML( 'regression.tex' )
 
+# kernel machines
+obj += env.HTML( 'svm.tex' )
+obj += env.HTML( 'rvm.tex' )
+obj += env.HTML( 'krls.tex' )
+
 Return( 'obj' )
 
