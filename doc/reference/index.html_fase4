@@ -40,6 +40,18 @@ These adhering types are called a <em>Model</em> of a certain Concept.
           </ul>
         </li><!-- kernel functions -->
 
+	<!--data sets-->
+        <li>Data Sets
+          <ul class="toc2">
+            <li>Concepts
+            </li>
+            <li>Data Set Classes
+            </li>
+          </ul>
+        </li>
+	<!--data sets-->
+
+
         <li>Computational Learning
           <ul class="toc2">
             <li>Concepts
@@ -59,7 +71,6 @@ These adhering types are called a <em>Model</em> of a certain Concept.
         <!-- learning problems -->
 
 
-<!--        <li><a href="research/kml/data_model.html">Data Model</a></li>-->
 
         <li>Kernel Machines
           <ul class="toc2">
