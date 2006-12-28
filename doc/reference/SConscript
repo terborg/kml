@@ -18,6 +18,13 @@ obj += env.HTML( 'hermitian.tex' )
 obj += env.HTML( 'polynomial.tex' )
 obj += env.HTML( 'sigmoid.tex' )
 
+# learning concepts
+obj += env.HTML( 'supervised_learning.tex' )
+
+# supervised learning problems
+obj += env.HTML( 'classification.tex' )
+obj += env.HTML( 'ranking.tex' )
+obj += env.HTML( 'regression.tex' )
 
 Return( 'obj' )
 
