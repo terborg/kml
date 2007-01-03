@@ -14,10 +14,12 @@
 
 \texttt{Gaussian<T>} is a Kernel. Specifically, it is a \href{\kmlroot/reference/mercer_kernel.html}{Mercer Kernel}. If k is an object of class \texttt{gaussian<T>}, and \texttt{u} and \texttt{v} are objects of class T, then k(u,v) returns
 %
-$$k(u,v) = \textrm{exp}( - \half \sigma^{-2} \Vert u-v \Vert^2 ) $$
 %
-where $\sigma$ is the width of the kernel. 
-Figure~\ref{figure:gaussian_kernel} shows a Gaussian kernel.
+% Important: use \[ \] in stead of $$ $$, because otherwise tex4ht will generate wrong HTML (missing paragraph tags <p></p>)
+%
+\[k(u,v) = \textrm{exp}( - \half \sigma^{-2} \Vert u-v \Vert^2 )\]
+%
+where $\sigma$ is the width of the kernel. Figure~\ref{figure:gaussian_kernel} shows a Gaussian kernel.
 
 \begin{figure}
 \includegraphics{gaussian_kernel}
