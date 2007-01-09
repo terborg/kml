@@ -10,12 +10,17 @@
 
 \section*{Description}
 
-\texttt{svm<P,K,D>} implements the Support Vector Machine. 
+\texttt{svm<P,K,D>} implements the Support Vector Machine. A number of implementations
+is available \cite{cauwenberghs00incremental,platt99fast,engel02sparse,ma03accurate}. At the moment we have
+different classes for batch and on-line operation, our goal is to 
+merge them to one class that automatically deploys the most suited algorithm. 
 
 \section*{Example}
 \section*{Definition}
 
-Defined in the KML header \href{\kmlsvnroot/kml/svm.hpp}{kml/svm.hpp}.
+
+SMO is defined in the KML header \href{\kmlsvnroot/kml/svm.hpp}{kml/svm.hpp}.\\
+\noindent AOSVR is defined in the KML header \href{\kmlsvnroot/kml/online_svm.hpp}{kml/online_svm.hpp}.
 
 \section*{Template Parameters}
 \section*{Model of}
