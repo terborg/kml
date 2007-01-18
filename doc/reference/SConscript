@@ -30,6 +30,11 @@ obj += env.HTML( 'regression.tex' )
 obj += env.HTML( 'svm.tex' )
 obj += env.HTML( 'rvm.tex' )
 obj += env.HTML( 'krls.tex' )
+obj += env.HTML( 'figueiredo.tex' )
+
+# misc / not yet classified
+obj += env.HTML( 'incomplete_cholesky.tex' )
+obj += env.PDF( 'incomplete_cholesky.tex' )
 
 Return( 'obj' )
 

@@ -245,54 +245,31 @@ utilises the projection operator introduced in the preceding
 section. This is the pseudo code for the incomplete cholesky factorisation.
 %
 \begin{algorithm}
-\begin{algorithmic}
-
-\FOR{$i=1:n$}
-
-\STATE $c(i)=a_i^T a_i$
-
-\ENDFOR
-
-\STATE $k = \mathrm{max~element} \{c(1),\ldots,c(n)\}$
-
-\STATE $\tau=c(k)$; $r=0$
-
-\WHILE{$\tau>0$ \textbf{and} $r<n$}
-
-\STATE $r=r+1$
-
-\STATE $c(r) \leftrightarrow c(k)$; $R(1$:$r$-$1,r) \leftrightarrow R(1$:$r$-$1,k)$
-
-\STATE $R(r,r) = \sqrt{\tau}$
-
-\STATE $R(r,r$+$1$:$n) = R(1$:$r$-$1,r$+$1$:$n)^T R(1$:$r$-$1,r) $
-
-\FOR{$i$ in $r$+$1$:$n$}
-
-\STATE $R(r,i) = ( a_k^T a_i - R(r,i) ) / \sqrt{\tau} $
-
-\STATE $c(i) = c(i) - R(r,i)^2$
-
-\ENDFOR
-
-\IF{compute Q}
-
-\STATE $Q(1$:$m,r) = ( A(1$:$m,k) - Q(1$:$m,1$:$r$-$1)R( 1$:$r$-$1,r) )$
-
-\ENDIF
-
-\STATE $c(r)= 0 $
-
-\STATE $k = \mathrm{max~element} \{c(r+1),\ldots,c(n)\}$
-
-\STATE $\tau=c(k)$
-
-\ENDWHILE
-
-\end{algorithmic}
-
 \caption{Pseudo code of the incomplete Cholesky factorisation process.}%
 \label{algorithm:incomplete_cholesky}
+
+\begin{algorithmic}\FOR{$i=1:n$}
+\STATE $c(i)=a_i^T a_i$
+\ENDFOR
+\STATE $k = \mathrm{max~element} \{c(1),\ldots,c(n)\}$
+\STATE $\tau=c(k)$; $r=0$
+\WHILE{$\tau>0$ \textbf{and} $r<n$}
+\STATE $r=r+1$
+\STATE $c(r) \leftrightarrow c(k)$; $R(1$:$r$-$1,r) \leftrightarrow R(1$:$r$-$1,k)$
+\STATE $R(r,r) = \sqrt{\tau}$
+\STATE $R(r,r$+$1$:$n) = R(1$:$r$-$1,r$+$1$:$n)^T R(1$:$r$-$1,r) $
+\FOR{$i$ in $r$+$1$:$n$}
+\STATE $R(r,i) = ( a_k^T a_i - R(r,i) ) / \sqrt{\tau} $
+\STATE $c(i) = c(i) - R(r,i)^2$
+\ENDFOR
+\IF{compute Q}
+\STATE $Q(1$:$m,r) = ( A(1$:$m,k) - Q(1$:$m,1$:$r$-$1)R( 1$:$r$-$1,r) )$
+\ENDIF
+\STATE $c(r)= 0 $
+\STATE $k = \mathrm{max~element} \{c(r+1),\ldots,c(n)\}$
+\STATE $\tau=c(k)$
+\ENDWHILE\end{algorithmic}
+
 \end{algorithm}
 
 
