@@ -8,7 +8,7 @@ obj = []
 
 # generic pages
 obj += env.XHTML( 'index.html_fase4' )
-obj += env.HTML(  'improve.tex' )
+obj += env.HTML(  'improvement.tex' )
 obj += env.HTML(  'tutorial.tex' )
 obj += env.HTML(  'installation.tex' )
 
