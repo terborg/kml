@@ -41,7 +41,7 @@ elif env['PLATFORM'] == 'win32':
 elif env['PLATFORM'] == 'darwin':
    boost_search_path = ['/sw/include/boost']
    atlas_search_path = ['/sw/include/atlas']
-   atlas_link_libs = ['cblas','atlas']
+   atlas_link_libs = ['lapack','cblas','atlas']
    lib_path = ['/sw/lib']
    c_link_libs = ['kml']
 
