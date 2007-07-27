@@ -21,6 +21,7 @@
 #define LINEAR_HPP
 
 #include <boost/mpl/arithmetic.hpp>
+#include <boost/mpl/bool.hpp>
 #include <boost/mpl/divides.hpp>
 #include <boost/mpl/eval_if.hpp>
 #include <boost/mpl/identity.hpp>
@@ -194,7 +195,15 @@ typename power_return_type<Vector,N>::type power( Vector const &x ) {
                      }
 
 
+  /* Define templates is_linear so we can recognise the linear kernel in use
+     when we need to, e.g. in ranking SVMs */
 
+  /* I think this is not the right way to go about it; read Josuttis at home */
+  template<typename T>
+  struct is_linear : boost::mpl::bool_<false> {};
+
+  template<typename T>
+  struct is_linear<linear<T> > : boost::mpl::bool_<true> {};
 
 
 } // namespace kml

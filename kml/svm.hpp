@@ -34,6 +34,7 @@
 #define EPS .001
 #define sgn(a)     (((a) < 0) ? -1 : ((a) > 0) ? 1 : 0)
 
+#include <boost/mpl/not.hpp>
 #include <boost/numeric/bindings/traits/std_vector.hpp>
 #include <boost/numeric/bindings/traits/ublas_vector.hpp>
 #include <boost/utility/enable_if.hpp>
@@ -58,6 +59,12 @@
 #include <kml/classification.hpp>
 #include <kml/ranking.hpp>
 #include <kml/regression.hpp>
+#include <kml/linear.hpp>
+
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/tracking.hpp>
+#include <boost/serialization/vector.hpp>
 
 namespace lambda = boost::lambda;
 namespace ublas = boost::numeric::ublas;
@@ -78,6 +85,9 @@ namespace kml {
     typedef typename Problem::input_type input_type; 
     typedef typename Problem::output_type output_type;  
     typedef double scalar_type;
+
+    typedef typename boost::property_traits<PropertyMap>::key_type key_type;
+    typedef typename boost::property_traits<PropertyMap>::value_type object_type;
 
     svm( typename boost::call_traits<kernel_type>::param_type k,
 	 typename boost::call_traits<scalar_type>::param_type max_weight,
@@ -304,7 +314,25 @@ namespace kml {
 	std::cout << weight[i] << " ";
       std::cout << std::endl;
     }
-    
+
+    scalar_type get_C() { return C; }
+
+    std::vector<scalar_type> get_alpha() {
+      std::vector<scalar_type> ret;
+      std::remove_copy_if(weight.begin(), weight.end(),
+			  std::back_inserter(ret),
+			  std::bind2nd(std::equal_to<scalar_type>(), 0));
+      return ret;
+    }
+
+    std::vector<input_type> get_svs() {
+      std::vector<input_type> ret;
+      for (size_t i=0; i<weight.size(); ++i) 
+	if (0 != weight[i])
+	  ret.push_back((*base_type::data)[i].get<0>());
+      return ret;
+    }
+
     unsigned int size;
     scalar_type C;
     std::vector<scalar_type> weight;
@@ -333,6 +361,8 @@ namespace kml {
     typedef boost::vector_property_map<inner_example_type> InnerPropertyMap;
     typedef svm<inner_problem_type, kernel_type, InnerPropertyMap> inner_svm_type;
 
+    friend class boost::serialization::access;
+
     svm( typename boost::call_traits<kernel_type>::param_type k,
 	 typename boost::call_traits<double>::param_type max_weight,
 	 typename boost::call_traits<PropertyMap>::param_type map): 
@@ -347,25 +377,62 @@ namespace kml {
       return inner_machine(x);
     }
 
+    input_type make_diff(input_type &i, input_type &j) {
+      input_type diff_vec;
+      std::transform(i.begin(), i.end(), j.begin(), 
+		     std::back_inserter(diff_vec),
+		     std::minus<typename boost::range_value<input_type>::type>());
+      return diff_vec;
+    }
+
+    // TODO find out if propertymaps can use push_back
+
+    template<typename T>
+    typename boost::enable_if<boost::mpl::not_<is_linear<T> > >::type
+    add_point(input_type &i, input_type &j, unsigned int count, int target) {
+      (*inner_data)[count] = boost::make_tuple(i, target);
+    }
+
+    template<typename T>
+    typename boost::enable_if<is_linear<T> >::type
+    add_point(input_type &i, input_type &j, unsigned int count, int target) {
+      (*inner_data)[count] = boost::make_tuple(make_diff(i, j), target);
+    }
+
     template<typename KeyIterator>
     void learn(KeyIterator begin, KeyIterator end) {
       size = std::distance(begin, end);
       unsigned int count=0;
-      for (unsigned int i = 0; i < size-1; ++i)  // no need to compare against the last point, we already did
-	for (unsigned int j = i+1; j < size; ++j)
-	  if ((*base_type::data)[i].get<1>() == (*base_type::data)[j].get<1>()) 
-	    if ((*base_type::data)[i].get<2>() != (*base_type::data)[j].get<2>()) {
-	      input_type diff_vec;
-	      std::transform((*base_type::data)[i].get<0>().begin(), 
-			     (*base_type::data)[i].get<0>().end(), 
-			     (*base_type::data)[j].get<0>().begin(), 
-			     std::back_inserter(diff_vec),
-			     std::minus<typename boost::range_value<input_type>::type>());
-	      (*inner_data)[count] = boost::make_tuple(diff_vec, sgn((*base_type::data)[i].get<2>() - (*base_type::data)[j].get<2>()));
-	      ++count;
+      bool already_greater, already_lesser;
+      for (unsigned int i = 0; i < size-1; ++i) {
+	already_greater = false; 
+	already_lesser = false;
+	for (unsigned int j = i+1; j < size; ++j) {
+	  if ((*base_type::data)[i].get<1>() == (*base_type::data)[j].get<1>()) {
+	    if ((*base_type::data)[i].get<2>() > (*base_type::data)[j].get<2>()) {
+	      if (!already_greater) {
+		add_point<kernel_type>((*base_type::data)[i].get<0>(),
+				       (*base_type::data)[j].get<0>(), 
+				       count, 1);
+		already_greater = true;
+		++count;
+	      }
 	    }
+	    else if ((*base_type::data)[i].get<2>() < (*base_type::data)[j].get<2>()) {
+	      if (!already_lesser) {
+		add_point<kernel_type>((*base_type::data)[i].get<0>(),
+				       (*base_type::data)[j].get<0>(),
+				       count, -1);
+		already_lesser = true;
+		++count;
+	      }
+	    }
+	  }
+	}
+      }
 
       /* Let's see if artificially creating a second class works */
+      // 072507 this may not be necessary anymore
 
       bool one_class = true;
       for (unsigned int i=1; i<count; ++i) 
@@ -374,12 +441,25 @@ namespace kml {
 	  break;
 	}
 
-      if (one_class) 
+      if (one_class) {
 	for (unsigned int i=0; i<count; i=i+2) 
 	  (*inner_data)[i] = boost::make_tuple(std::vector<scalar_type>(std::transform((*inner_data)[i].get<0>().begin(), (*inner_data)[i].get<0>().end(), (*inner_data)[i].get<0>().begin(), std::negate<scalar_type>()), (*inner_data)[i].get<0>().end()), -(*inner_data)[i].get<1>());
+      }
 
       inner_machine.set_data(inner_data);
       inner_machine.learn(inner_data->storage_begin(), inner_data->storage_end());
+    }
+
+    unsigned int get_size() { return size; }
+
+    scalar_type get_C() { return C; }
+
+    std::vector<scalar_type> get_alpha() {
+      return inner_machine.get_alpha();
+    }
+
+    std::vector<input_type> get_svs() {
+      return inner_machine.get_svs();
     }
 
     unsigned int size;
