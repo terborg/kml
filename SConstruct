@@ -39,6 +39,7 @@ elif env['PLATFORM'] == 'win32':
    if 'VSINSTALLDIR' in os.environ:
 		lib_path.append( os.environ["VSINSTALLDIR"].replace('\\','/') + '/VC/lib' )
 elif env['PLATFORM'] == 'darwin':
+   print "Using darwin config"
    boost_search_path = ['/sw/include/boost']
    atlas_search_path = ['/sw/include/atlas']
    atlas_link_libs = ['lapack','cblas','atlas']
@@ -124,7 +125,7 @@ if env['CXX'] == 'g++':
 	elif cpu.is_Athlon64():
 		optimise_flags += ' -march=k8'
 	if cpu.is_32bit() and not cpu.is_ppc():
-		if cpu.has_sse() or cpu._has_sse2():
+		if cpu.has_sse() or cpu.has_sse2():
 			optimise_flags += ' -mfpmath=sse'
 		if cpu.has_sse():
    			optimise_flags += ' -msse'

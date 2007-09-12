@@ -153,7 +153,7 @@ public:
                 typename boost::call_traits<scalar_type>::param_type tube_width,
                 typename boost::call_traits<kernel_type>::param_type k,
                 typename boost::call_traits<PropertyMap>::param_type map ):
-    base_type(k,map), epsilon(tube_width), C(max_weight) {}
+    base_type(k,map), C(max_weight), epsilon(tube_width) {}
 
 
     template< typename TokenIterator >

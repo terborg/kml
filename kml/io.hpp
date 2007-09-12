@@ -395,8 +395,8 @@ bool compatible( std::vector<std::string> const &container ) {
         boost::tokenizer<boost::char_separator<char> >::iterator j = first_line.begin();
         if ( j == first_line.end() )
             return false;
-        unsigned int samples = boost::lexical_cast<unsigned int>( *j++ );
-        unsigned int attributes = boost::lexical_cast<unsigned int>( *j++ );
+	//        unsigned int samples = boost::lexical_cast<unsigned int>( *j++ );
+	//        unsigned int attributes = boost::lexical_cast<unsigned int>( *j++ );
     } catch( boost::bad_lexical_cast & ) {
         return false;
     }

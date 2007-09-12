@@ -17,7 +17,7 @@ else:
 env.Program('gaussian.cpp', LIBS=serialization_lib)
 env.Program('svm_regression.cpp', LIBS=atlas_link_libs + serialization_lib )
 env.Program('svm_classification.cpp' )
-env.Program('svm_ranking.cpp' )
+env.Program('svm_ranking.cpp', LIBS=serialization_lib )
 env.Program('incomplete_cholesky.cpp', LIBS=atlas_link_libs )
 
 
@@ -25,7 +25,7 @@ env.Program('incomplete_cholesky.cpp', LIBS=atlas_link_libs )
 
 
 
-env.Program('kmltool.cpp', LIBS= atlas_link_libs + program_options_lib + serialization_lib )
+#env.Program('kmltool.cpp', LIBS= atlas_link_libs + program_options_lib + serialization_lib )
 
 
 

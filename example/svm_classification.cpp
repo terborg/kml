@@ -10,6 +10,8 @@
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/normal_distribution.hpp>
 #include <kml/gaussian.hpp>
+#include <kml/polynomial.hpp>
+#include <kml/linear.hpp>
 #include <kml/classification.hpp>
 #include <kml/svm.hpp>
 #include <kml/io.hpp>
@@ -39,7 +41,9 @@ int main(int argc, char *argv[]) {
   typedef boost::tuple<std::vector<double>, int> example_type;
   typedef kml::classification<example_type> problem_type;
   typedef boost::vector_property_map<example_type> data_type;
-  typedef kml::gaussian<problem_type::input_type> kernel_type;
+  typedef kml::gaussian<problem_type::input_type> gaussian_kernel_type;
+  typedef kml::polynomial<problem_type::input_type> polynomial_kernel_type;
+  typedef kml::linear<problem_type::input_type> linear_kernel_type;
 
   if (argc < 2) {
     cout << "Error: need an input file to train and test on." << endl 
@@ -54,12 +58,12 @@ int main(int argc, char *argv[]) {
   train_file.read(data, learn_keys);
   
   cerr << "Done, " << std::distance(learn_keys.begin(), learn_keys.end()) << " points of size " << data[0].get<0>().size() << endl;
-  kml::svm<problem_type, kernel_type, data_type> my_machine(3.162277, 1.0, data);
+  kml::svm<problem_type, gaussian_kernel_type, data_type> gaussian_machine(3.162277, 1.0, data);
 
-  my_machine.learn(learn_keys.begin(), learn_keys.end());
+  gaussian_machine.learn(learn_keys.begin(), learn_keys.end());
   cerr << "Done training" << endl;
-  for (std::vector<double>::iterator i = my_machine.weight.begin();
-       i != my_machine.weight.end(); ++i)
+  for (std::vector<double>::iterator i = gaussian_machine.weight.begin();
+       i != gaussian_machine.weight.end(); ++i)
     cout << boost::lexical_cast<double>(*i) << " ";
   cout << endl;
 
@@ -71,6 +75,22 @@ int main(int argc, char *argv[]) {
   test_file.read(test_data, test_keys);
   cerr << "Done, " << std::distance(test_keys.begin(), test_keys.end()) << " points of size " << test_data[0].get<0>().size() << endl;
   for (i = test_keys.begin(); i != test_keys.end(); ++i)
-    cout << my_machine(test_data[*i].get<0>()) << endl;
+    cout << gaussian_machine(test_data[*i].get<0>()) << endl;
+
+  cout << "C = " << gaussian_machine.get_C() << endl;
+
+  std::vector<double> alpha = gaussian_machine.get_alpha();
+  cout << "alpha: ";
+  for (unsigned int i=0; i < alpha.size(); ++i)
+    cout << alpha[i] << " ";
+  cout << endl;
+
+  std::vector<std::vector<double> > svs = gaussian_machine.get_svs();
+  cout << "SVs: " << endl;
+  for (unsigned int i=0; i < svs.size(); ++i) {
+    for (unsigned int j=0; j < svs[i].size(); ++j)
+      cout << svs[i][j] << " ";
+    cout << endl;
+  }
   return 0;
 }

@@ -4,6 +4,8 @@
 
 #define BOOST_UBLAS_NESTED_CLASS_DR45
 
+#include <boost/archive/text_oarchive.hpp>
+
 #include <boost/lexical_cast.hpp>
 #include <boost/math/special_functions/sinc.hpp>
 #include <boost/random/variate_generator.hpp>
@@ -80,27 +82,10 @@ int main(int argc, char *argv[]) {
   point.resize(0);
 
   std::cerr << "All created, about to create SVM" << std::endl;
-  kml::svm<problem_type, kernel_type, PropertyMap> my_machine(3.162277, 1.0, data);
+  kml::svm<problem_type, kernel_type, PropertyMap> my_machine(1.0, 1.0, data);
   std::cerr << "About to learn" << std::endl;
   my_machine.learn(data->storage_begin(), data->storage_end());
 
-  /*
-  std::cerr << "Weight vector (size " << my_machine.weight.size() << "): ";
-  for (unsigned int i=0; i<my_machine.weight.size(); ++i)
-    std::cerr << my_machine.weight[i] << ", ";
-  std::cerr << std::endl;
-
-  for (std::vector<std::vector<double> >::const_iterator it1 = 
-	 my_machine.support_vector.begin();
-       it1 != my_machine.support_vector.end(); ++it1) {
-    std::cerr << "Vector size: " << it1->size() << std::endl;
-    std::cerr << "[";
-    for (std::vector<double>::const_iterator it2 = it1->begin();
-	 it2 != it1->end(); ++it2)
-      std::cerr << *it2 << ", ";
-    std::cerr << "]" << std::endl;
-  }
-  */
   std::vector<problem_type::input_type> testpoints;
   point.push_back(1);
   point.push_back(0);
@@ -133,5 +118,21 @@ int main(int argc, char *argv[]) {
 
   for (std::vector<problem_type::input_type>::iterator i = testpoints.begin(); i != testpoints.end(); ++i)
     cout << my_machine(*i) << endl;
+
+  cout << "C = " << my_machine.get_C() << endl;
+
+  std::vector<double> alpha = my_machine.get_alpha();
+  cout << "alpha: ";
+  for (unsigned int i=0; i < alpha.size(); ++i)
+    cout << alpha[i] << " ";
+  cout << endl;
+
+  std::vector<std::vector<double> > svs = my_machine.get_svs();
+  cout << "SVs: " << endl;
+  for (unsigned int i=0; i < svs.size(); ++i) {
+    for (unsigned int j=0; j < svs[i].size(); ++j)
+      cout << svs[i][j] << " ";
+    cout << endl;
+  }
   return 0;
 }

@@ -71,7 +71,7 @@ public:
 
     incomplete_cholesky( typename boost::call_traits<Kernel>::param_type k,
                          typename boost::call_traits<PropertyMap>::param_type map ):
-    kernel_function(k), data(map), basis_size(0) {}
+    basis_size(0), kernel_function(k), data(map) {}
 
 
 
@@ -261,10 +261,10 @@ public:
     }
 
 
-
+  /*
     double distance( key_type const &key ) {
     }
-
+  */
 
 
 
