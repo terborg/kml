@@ -15,6 +15,7 @@ atlas_search_path = []
 atlas_link_libs = []
 lapack_link_libs = []
 c_link_libs = []
+arch_flags = '' # for darwin universal binaries
 
 if env['PLATFORM'] == 'posix':
    boost_search_path = ['/usr/include/boost']
@@ -41,10 +42,11 @@ elif env['PLATFORM'] == 'win32':
 elif env['PLATFORM'] == 'darwin':
    print "Using darwin config"
    boost_search_path = ['/sw/include/boost']
-   atlas_search_path = ['/sw/include/atlas']
+   # atlas_search_path = ['/sw/include/atlas']
    atlas_link_libs = ['lapack','cblas','atlas']
-   lib_path = ['/sw/lib']
+   lib_path = ['/usr/lib']
    c_link_libs = ['kml']
+   arch_flags = '-arch ppc -arch i386'
 
 # Search path dictionaries for dependent libraries
 path = env.FindFile( 'version.hpp', boost_search_path )
@@ -108,7 +110,7 @@ if env['CXX'] == 'g++':
         # change default CXXflags to something which is 
 	# CXXFLAGS = ....
 	cc_flags += '-Wall -ansi -pedantic'
-	optimise_flags = '-O3 -ffast-math -fomit-frame-pointer -DNDEBUG -DNO_DEBUG'
+	optimise_flags = '-O3 ' + arch_flags + ' -ffast-math -fomit-frame-pointer -DNDEBUG -DNO_DEBUG'
 	debug_flags += ' -g'
 	if cpu.is_PentiumIII():
    		optimise_flags += ' -march=pentium3'
@@ -169,9 +171,10 @@ Export( 'atlas_link_libs' )
 Export( 'lapack_link_libs' )
 Export( 'c_link_libs' )
 Export( 'arch_ext' )
+Export( 'arch_flags' )
 
 # Deligate to build scripts
-env.Replace( CXXFLAGS = cc_flags + ' ' + optimise_flags + debug_flags)
+env.Replace( CXXFLAGS = cc_flags + ' ' + optimise_flags + debug_flags )
 SConscript( dirs=['lib', 'example'] )
 
 

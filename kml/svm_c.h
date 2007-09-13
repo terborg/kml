@@ -34,14 +34,14 @@ extern "C" {
   double kml_rank_double_polynomial(void *v, double *i, int sz);
   
 
-  void* kml_new_class_double_linear(double k, double s);
+  void* kml_new_class_double_linear(double s);
   void* kml_copy_class_double_linear(void *v);
   void kml_delete_class_double_linear(void *v);
   void kml_learn_class_double_linear(void *v, double **p, int *t,
 					      int sz_row, int sz_col);
   double kml_classify_double_linear(void *v, double *i, int sz);
 
-  void* kml_new_rank_double_linear(double k, double s);
+  void* kml_new_rank_double_linear(double s);
   void* kml_copy_rank_double_linear(void *v);
   void kml_delete_rank_double_linear(void *v);
   void kml_learn_rank_double_linear(void *v, double **p, int *t, int *g,
