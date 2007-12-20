@@ -17,8 +17,8 @@
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  *
  ***************************************************************************/
 
-#ifndef M_TREE_HPP
-#define M_TREE_HPP
+#ifndef KML_M_TREE_HPP
+#define KML_M_TREE_HPP
 
 //#include <kml/tree.hh>
 
@@ -155,7 +155,7 @@ public:
 	//typedef tree<node<Object> > tree_type;
 	//typedef typename tree<node<Object> >::iterator tree_iterator_type;
 
-	m_tree( map_type &map ): pattern_map(&map) {
+	m_tree( map_type map ): pattern_map(map) {
 		
 		// keep a reference to the property map
 		std::cout << "m_tree constructor called..." << std::endl;
@@ -167,7 +167,7 @@ public:
  	void insert( key_type const &key ) {
  		
 		std::cout << "inserting key " << key << " into the M-tree... " << std::endl;
-		std::cout << "data at key " << key << " is " << (*pattern_map)[ key ] << std::endl;
+		std::cout << "data at key " << key << " is " << pattern_map[ key ] << std::endl;
 
 		// should look for the most appropriate node to put this point in 
 		std::cout << "Looking for possible node to insert this object..." << std::endl;
@@ -239,7 +239,7 @@ public:
 			typedef typename boost::graph_traits< graph_type >::adjacency_iterator adj_iter;
 			for( std::pair<adj_iter,adj_iter> child = boost::adjacent_vertices(node, m_graph); child.first != child.second; ++child.first ) {
 				std::cout << "processing a child node... " << std::endl;
-				double dist2node = distance_square( (*pattern_map)[key], (*pattern_map)[ m_graph[ *child.first ].centroid ] );
+				double dist2node = distance_square( pattern_map[key], pattern_map[ m_graph[ *child.first ].centroid ] );
 				std::cout << "distance: " << dist2node << std::endl;
 				if ( dist2node < min_dist) {
 					min_dist = dist2node;
@@ -282,7 +282,7 @@ public:
 
 	vertex_descriptor nearest_centroid( vertex_descriptor const &node, key_type const &key, double &min_dist ) {
 
-		std::cout << "dist2centroid " << distance_square( (*pattern_map)[key], (*pattern_map)[ m_graph[ node ].centroid ] ) << std::endl;
+		std::cout << "dist2centroid " << distance_square( pattern_map[key], pattern_map[ m_graph[ node ].centroid ] ) << std::endl;
 		std::cout << "min_dist: " << min_dist << std::endl;
 
 		if ( boost::out_degree( node, m_graph ) > 0 ) {
@@ -304,7 +304,7 @@ public:
 
 		// else {
 
-		double dist = distance_square( (*pattern_map)[key], (*pattern_map)[ m_graph[ node ].centroid ] );
+		double dist = distance_square( pattern_map[key], pattern_map[ m_graph[ node ].centroid ] );
 		return node;
 	
 		//}
@@ -344,13 +344,13 @@ public:
 		two_center( centroid_1, centroid_2 );
 		
 
-		double max_dist = distance_square( (*pattern_map)[centroid_1], (*pattern_map)[centroid_2] );
+		double max_dist = distance_square( pattern_map[centroid_1], pattern_map[centroid_2] );
 
 		
 		// can also be 2 aribtrarily random points!
 		// search for the point furthest away
 		for( ; i != m_graph[node].object.end(); ++i ) {
-			double dist = distance_square( (*pattern_map)[centroid_1], (*pattern_map)[ *i ] );
+			double dist = distance_square( pattern_map[centroid_1], pattern_map[ *i ] );
 			std::cout << "distance to point: " << dist << std::endl;
 			if ( dist > max_dist ) {
 				max_dist = dist;
@@ -487,7 +487,7 @@ public:
 	vertex_descriptor root;
 
 	// pattern_map
-	PropertyMap *pattern_map;
+	PropertyMap pattern_map;
 
 	// a random number generator
 	boost::mt19937 rng; 
