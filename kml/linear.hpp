@@ -33,6 +33,8 @@
 #include <boost/range/value_type.hpp>
 #include <boost/range/size.hpp>
 #include <boost/type_traits/is_scalar.hpp>
+#include <boost/serialization/tracking.hpp>
+#include <boost/serialization/access.hpp>
 
 #include <kml/power_value.hpp>
 #include <numeric>
