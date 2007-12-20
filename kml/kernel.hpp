@@ -17,244 +17,42 @@
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  *
  ***************************************************************************/
 
-#ifndef KERNEL_HPP
-#define KERNEL_HPP
+#ifndef KML_KERNEL_HPP
+#define KML_KERNEL_HPP
 
 
-#include <boost/function.hpp>
-#include <boost/tuple/tuple.hpp>
-#include <boost/array.hpp>
+namespace kml {
 
+template< typename Input, typename Result, typename Super >
+class kernel: public std::binary_function<Input, Input, Result > {
 
-/// \defgroup kernels Kernels
-/// \defgroup kernel_machines Kernel-Machines
-/*! \defgroup regression_machines Regression Machines
-	\ingroup kernel_machines
-*/
-/*! \defgroup classification_machines Regression Machines
-	\ingroup kernel_machines
-*/
-/// \defgroup problem Problem Specification
-/// \defgroup meta Metaprogramming related
-/// \defgroup helper Helper Functions
-/// \defgroup fileio File I/O
+    /*! Refinement of AdaptableBinaryFunction */
+    typedef Input first_argument_type;
+    typedef Input second_argument_type;
+    typedef Result result_type;
 
-/*!
-\mainpage The Kernel Machine Library
-\author Rutger W. ter Borg
-\version 0.1
-\section section0 Introduction
+    inline
+    Result operator()( Input const &u, Input const &v ) const {
+        return Super::dot( u, v );
+    }
 
-The Kernel-Machine Library is a freely available (released under the LGPL) C++ library to promote the use and
-progress of kernel machines. It is both for academic use and for developing real world applications. The
-Kernel-Machine Library draws heavily from features of modern C++ such as template meta-programming to achieve
-high performance while at the same time offering a comfortable interface. It enables compile-time selection of
-specialised algorithms on the basis of data types: for example, the specific case of a SVM in combination with
-a linear kernel can be computed by a specialised efficient algorithm.
+    inline
+    Result dot_self( Input const &u ) {
+    }
 
-The Kernel-Machine Library has implementations for the following kernel machines and their algorithms:
-- Support Vector Machine
-- Relevance Vector Machine
-- Kernel Recursive Least Squares
-- Adaptive Sparseness using Jeffreys Prior
-- Smooth Relevance Vector Machine
-Up till now, the focus has been on regression. The handling of classification and ranking problems is being added.
 
-For information about installing KML refer to the
-\ref installation_page "Installation" page.
 
-\section section2 Concepts
 
-Concepts are sets of requirements on a type, so it can be correctly used as an argument in a call
-to a generic algorithm. 
 
-\subsection subsection0 Input and Output types 
 
-Input is either a base type (double, int, etc.), or a Container type (vector, list, sparse vector, etc.).
-The requirements of this Container type depend on the kernel to be used on the Input type.
 
-Output is either a float type in case of regression, a binary in case of binary classification, or an integer
-in case of multiclass classification.
 
+};
 
-\section seckern Kernels
 
 
-\subsection subsection1 Nonmercer Kernel
-
-The generic Kernel concept defines a kernel which computes a pairwise similarity between objects. It can be used 
-to define e.g. the similarity between two words, or other input patterns.
-
-- Valid expressions.
-- Associated types:      input_type, return_type, parameter_type, ...., etc.
-- Semantic invariants.
-- Complexity guarantees. A kernel typically at most takes O(N+C) time, with N the size of the input pattern(s) and C
-                         some constant.
-
-\code
-set_parameter
-get_parameter
-inner_product( u, v )
-\endcode
-
-
-Models:
-- sigmoid
-
-\subsection somesubsect Mercer Kernel
-
-A Mercer Kernel is a Kernel with some additional requirements which have to be fulfilled. A Mercer kernel defines an inner product
-in a feature space. In this case, the kernel function is positive definite. 
-
-This allows for additional member functions to be defined:
-
-- dimension(). Returns the dimension of the underlying feature space.
-- distance( u, v ). Returns the distance of objects I1 and I2 in the underlying feature space.
-
-Derivatives
-
-Models:
-- gaussian
-- polynomial
-
-Derivatives.
-Derivative object generator.
-
-
-\subsection subseccache Matrix Cache Policy
-
-Not yet done, but this should select the way all computations are cached and performed.
-
-- Kernel matrix
-- Design matrix
-- H^T H, i.e. inner product of design matrices
-- H^T y
-
-Updates and computation of different types of inverse matrices.
-
-Insert, erase, etc..
-
-
-\section seckernel Kernel Machines
-
-
-
-\subsection submode Determinate Machine
-
-
-The determinate machine is the well-known defined equation for kernel machines. For regression,
-the following expression is assumed
-
-\f$ f(x) = w_0 + \sum_i w_i k(x_i,x) \f$
-
-and for classification, the following
-
-
-
-The type of task - Classification or Regression- is determined by C++ type system,
-when the outputs are a floating point type, regression is performed, and when the outputs
-are a binary or integer type, classification should be performed.
-
-
-Supported methods:
-
-\code
-result_type operator()( Input );               // return the kernel machine at the input
-
-template<class IRange, class ORange>
-void learn( Range const &input, Range const &output );
-
-\endcode
-
-Available models:
-
-- svm
-
-\subsection submode2 Probabilistic Machine
-
-A Probabilistic Kernel Machine is a Determinate Machine that additionally assumes some kind of probabilty model on the data.
-
-\code
-std::pair<result_type,result_type> operator()( Input );       // compute mean and variance at the input
-\endcode
-
-
-Available models:
-- rvm
-- srvm
-- figueiredo
-
-
-\subsection asubmode2 Greedy Determinate Machine
-
-
-\subsection bsubmode2 Greedy Probabilistic Machine
-
-
-\subsection subsectonline Online Determinate Machine
-
-
-
-\subsection subsectonlineprob Online Probabilistic Machine
-
-\subsection subsectgreedy Online Greedy Determinate Machine
-
-Available models:
-- krls
-
-
-\subsection subsectgreedyprob Online Greedy Probabilistic Machine
-
-
-
-\section example Examples
-
-\code
-
-// create a kernel
-kml::gaussian< ublas::vector<double> > my_kernel( 1.0 );
-
-// compute the kernel on two inputs
-ublas::vector<double> u(2);
-ublas::vector<double> v(2);
-
-std::cout << my_kernel( u, v ) << std::endl;
-
-// create an online support vector machine
-kml::online_svm< ublas::vector<double>, double, kml::gaussian > my_machine( 1.0, 0.1, 10.0 );
-
-// create a vector of 50 input-output pairs
-std::vector< ublas::vector<double> > my_inputs( 50 );
-std::vector< double > my_outputs( 50 );
-
-
-// fill the data
-for( int i=0; i<50; ++i ) {
-	double x = (double(i)/double(49))*20.0-10.0;
-	my_inputs[i].resize(1);
-	my_inputs[i](0) = x;
-	my_outputs[i] = sin(x)/x;
 }
 
-// train the whole data set
-my_machine.learn( my_inputs, my_outputs );
-
-// produce the predictions
-std::vector< double > test( 50 );
-std::transform( my_inputs.begin(), my_inputs.end(), test.begin(), my_machine );
-
-
-\endcode
-
-
-
-
-*/
-
-
-
-
-
-
-
 #endif
+
+
