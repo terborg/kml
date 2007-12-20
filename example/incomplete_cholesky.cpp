@@ -81,13 +81,26 @@ int main(int argc, char *argv[]) {
     }
 
     kml::incomplete_cholesky<kernel_type, data_access_type> my_eval( my_kernel, data );
+    kml::incomplete_cholesky<kernel_type, data_access_type> my_eval2( my_kernel, data );
 
-    my_eval.compute_R( all_keys.begin(), all_keys.end(), 10 );
+    my_eval.compute_R( all_keys.begin(), all_keys.begin() + 8, 3 );
+    my_eval2.compute_R( all_keys.begin(), all_keys.begin() + 5, 3 );
+
+    my_eval2.increment( 5 );
+    my_eval2.increment( 6 );
+    my_eval2.increment( 7 );
 
     std::cout << "Pivots used: ";
-    for( int i=0; i< 10; ++i )
+    for( int i=0; i< my_eval.basis_size; ++i )
         std::cout << my_eval.pivot[i] << " ";
     std::cout << std::endl;
+    std::cout << my_eval.RT.view() << std::endl;
+
+    std::cout << "Pivots-2 used: ";
+    for( int i=0; i< my_eval2.basis_size; ++i )
+        std::cout << my_eval2.pivot[i] << " ";
+    std::cout << std::endl;
+    std::cout << my_eval2.RT.view() << std::endl;
 
 
     return EXIT_SUCCESS;
