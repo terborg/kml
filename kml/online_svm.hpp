@@ -580,8 +580,12 @@ public:
             weight_t += delta_weight_t;
             // std::cout << "update weight_t to " << weight_t << std::endl;
 
-            // update weight vector and bias
-            atlas::axpy( delta_weight_t, ublas::vector_range<vector_type>(coef_sense,ublas::range(1,coef_sense.size())), weight );
+            // update weight vector
+            // it should have more than 0 elements
+            if (weight.size() > 0)
+                atlas::axpy( delta_weight_t, ublas::vector_range<vector_type>(coef_sense,ublas::range(1,coef_sense.size())), weight );
+
+            // update bias
             bias += coef_sense(0) * delta_weight_t;
 
             // update residual vector
