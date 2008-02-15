@@ -59,10 +59,9 @@ int main(int argc, char *argv[]) {
   
   cerr << "Done reading " << std::distance(learn_keys.begin(), learn_keys.end()) << " points of size " << data[0].get<0>().size() << endl;
 
-
   kml::svm<problem_type, gaussian_kernel_type, data_type> gaussian_machine(3.162277, 1.0, data);
-  kml::svm<problem_type, polynomial_kernel_type, data_type> polynomial_machine(1.0, 1.0, data);
-  kml::svm<problem_type, linear_kernel_type, data_type> linear_machine(1.0, data);
+  kml::svm<problem_type, polynomial_kernel_type, data_type> polynomial_machine( polynomial_kernel_type(1.0,0.0,3.0), 1.0, data);
+  kml::svm<problem_type, linear_kernel_type, data_type> linear_machine( linear_kernel_type(), 1.0, data);
 
   gaussian_machine.learn(learn_keys.begin(), learn_keys.end());
   cerr << "Done training gaussian." << endl;
@@ -71,7 +70,6 @@ int main(int argc, char *argv[]) {
     cout << boost::lexical_cast<double>(*i) << " ";
   cout << endl;
 
-  
 
   data_type test_data;
   std::vector<data_type::key_type> test_keys;
