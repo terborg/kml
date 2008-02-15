@@ -3,7 +3,7 @@
  *  Copyright (C) 2004, 2005 by Rutger W. ter Borg and Meredith L. Patterson *
  *                                                                           *
  *  This program is free software; you can redistribute it and/or            *
- *  modify it under the terms of the GNU General Public License              *
+ *  modify it under the terms of the GNU Limited General Public License      *
  *  as published by the Free Software Foundation; either version 2           *
  *  of the License, or (at your option) any later version.                   *
  *                                                                           *
@@ -12,7 +12,7 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            *
  *  GNU General Public License for more details.                             *
  *                                                                           *
- *  You should have received a copy of the GNU General Public License        *
+ *  You should have received a copy of the GNU Limited General Public License*
  *  along with this program; if not, write to the Free Software              *
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307    *
  *****************************************************************************/
@@ -48,19 +48,17 @@ typedef kml::polynomial<input_type> polynomial_k;
 typedef kml::linear<input_type> linear_k;
 
 extern "C" {  
-
+  
   void* kml_new_class_double_gaussian(double k, double s) { 
     boost::shared_ptr<class_property_map> m(new class_property_map);
     kml::svm<class_prob, gaussian_k, class_property_map> *v = new kml::svm<class_prob, gaussian_k, class_property_map>(k, s, m);
     return (void *) v;
-    //    return (void *) new kml::svm<class_prob, gaussian_k, class_property_map>(k, s, m);
   }
 
   void* kml_copy_class_double_gaussian(void *v) {
     kml::svm<class_prob, gaussian_k, class_property_map>* m = (kml::svm<class_prob, gaussian_k, class_property_map> *) v;
     kml::svm<class_prob, gaussian_k, class_property_map>* m1 = new kml::svm<class_prob, gaussian_k, class_property_map>(*m);
     return (void *) m1;
-      //    return (void *) new kml::svm<class_prob, gaussian_k, class_property_map>(*m);
   }
 
   void kml_delete_class_double_gaussian(void *v) {
@@ -85,7 +83,44 @@ extern "C" {
       return 1;
     else 
       return 0;
- // This way we can coerce to boolean trivially. Should try return (m->operator()(std::vector<double>(i, i+sz)) > 0) though.
+    // This way we can coerce to boolean trivially. Should try return (m->operator()(std::vector<double>(i, i+sz)) > 0) though.
+  }
+
+  unsigned int kml_num_svs_class_double_gaussian(void *v) {
+    kml::svm<class_prob, gaussian_k, class_property_map>* m = (kml::svm<class_prob, gaussian_k, class_property_map> *) v;
+    std::vector<std::vector<double> > svs = m->get_svs();
+    return svs.size();
+  }
+
+  unsigned int kml_sv_size_class_double_gaussian(void *v) {
+    kml::svm<class_prob, gaussian_k, class_property_map>* m = (kml::svm<class_prob, gaussian_k, class_property_map> *) v;
+    return (m->get_svs())[0].size();
+  }
+
+  double kml_get_C_class_double_gaussian(void *v) {
+    kml::svm<class_prob, gaussian_k, class_property_map>* m = (kml::svm<class_prob, gaussian_k, class_property_map> *) v;
+    return m->get_C();
+  }
+
+  double kml_get_gamma_class_double_gaussian(void *v) {
+    kml::svm<class_prob, gaussian_k, class_property_map>* m = (kml::svm<class_prob, gaussian_k, class_property_map> *) v;
+    return m->kernel_function.get_gamma();
+  }
+
+  void kml_get_alpha_class_double_gaussian(double **alpha, void *v) {
+    kml::svm<class_prob, gaussian_k, class_property_map>* m = (kml::svm<class_prob, gaussian_k, class_property_map> *) v;
+    std::vector<double> a = m->get_alpha();
+    *alpha = (double*) malloc(sizeof(double) * a.size());
+    for (unsigned int i=0; i<a.size(); ++i)
+      (*alpha)[i] = a[i];
+  }
+
+  void kml_get_sv_class_double_gaussian(double **sv, unsigned int i, void *v) {
+    kml::svm<class_prob, gaussian_k, class_property_map>* m = (kml::svm<class_prob, gaussian_k, class_property_map> *) v;
+    std::vector<std::vector<double> > svs = m->get_svs();
+    *sv = (double*) malloc(sizeof(double) * svs[0].size());
+    for (unsigned int j=0; j<svs.size(); ++j)
+      (*sv)[j] = svs[i][j];
   }
 
   void* kml_new_rank_double_gaussian(double k, double s) {
@@ -97,7 +132,6 @@ extern "C" {
     kml::svm<rank_prob, gaussian_k, rank_property_map>* m = (kml::svm<rank_prob, gaussian_k, rank_property_map> *) v;
     return (void *) new kml::svm<rank_prob, gaussian_k, rank_property_map>(*m);
   }
-
 
   void kml_learn_rank_double_gaussian(void *v, double **p, int *g, int *t, 
 					 int sz_row, int sz_col) {
@@ -114,6 +148,43 @@ extern "C" {
   double kml_rank_double_gaussian(void* v, double *i, int sz) {
     kml::svm<rank_prob, gaussian_k, rank_property_map>* m = (kml::svm<rank_prob, gaussian_k, rank_property_map> *) v;
     return (m->operator()(std::vector<double>(i, i+sz)));
+  }
+
+  unsigned int kml_num_svs_rank_double_gaussian(void *v) {
+    kml::svm<rank_prob, gaussian_k, rank_property_map>* m = (kml::svm<rank_prob, gaussian_k, rank_property_map> *) v;
+    std::vector<std::vector<double> > svs = m->get_svs();
+    return svs.size();
+  }
+
+  unsigned int kml_sv_size_rank_double_gaussian(void *v) {
+    kml::svm<rank_prob, gaussian_k, rank_property_map>* m = (kml::svm<rank_prob, gaussian_k, rank_property_map> *) v;
+    return (m->get_svs())[0].size();
+  }
+
+  double kml_get_C_rank_double_gaussian(void *v) {
+    kml::svm<rank_prob, gaussian_k, rank_property_map>* m = (kml::svm<rank_prob, gaussian_k, rank_property_map> *) v;
+    return m->get_C();
+  }
+
+  double kml_get_gamma_rank_double_gaussian(void *v) {
+    kml::svm<rank_prob, gaussian_k, rank_property_map>* m = (kml::svm<rank_prob, gaussian_k, rank_property_map> *) v;
+    return m->kernel_function.get_gamma();
+  }
+
+  void kml_get_alpha_rank_double_gaussian(double **alpha, void *v) {
+    kml::svm<rank_prob, gaussian_k, rank_property_map>* m = (kml::svm<rank_prob, gaussian_k, rank_property_map> *) v;
+    std::vector<double> a = m->get_alpha();
+    *alpha = (double*) malloc(sizeof(double) * a.size());
+    for (unsigned int i=0; i<a.size(); ++i)
+      (*alpha)[i] = a[i];
+  }
+
+  void kml_get_sv_rank_double_gaussian(double **sv, unsigned int i, void *v) {
+    kml::svm<rank_prob, gaussian_k, rank_property_map>* m = (kml::svm<rank_prob, gaussian_k, rank_property_map> *) v;
+    std::vector<std::vector<double> > svs = m->get_svs();
+    *sv = (double*) malloc(sizeof(double) * svs[0].size());
+    for (unsigned int j=0; j<svs.size(); ++j)
+      (*sv)[j] = svs[i][j];
   }
 
   void* kml_new_class_double_polynomial(double g, double l, double d, double s) { 
@@ -151,6 +222,53 @@ extern "C" {
       return 0; // This way we can coerce to boolean trivially. Should try return (m->operator()(std::vector<double>(i, i+sz)) > 0) though.
   }
 
+  unsigned int kml_num_svs_class_double_polynomial(void *v) {
+    kml::svm<class_prob, polynomial_k, class_property_map>* m = (kml::svm<class_prob, polynomial_k, class_property_map> *) v;
+    std::vector<std::vector<double> > svs = m->get_svs();
+    return svs.size();
+  }
+
+  unsigned int kml_sv_size_class_double_polynomial(void *v) {
+    kml::svm<class_prob, polynomial_k, class_property_map>* m = (kml::svm<class_prob, polynomial_k, class_property_map> *) v;
+    return (m->get_svs())[0].size();
+  }
+
+  double kml_get_C_class_double_polynomial(void *v) {
+    kml::svm<class_prob, polynomial_k, class_property_map>* m = (kml::svm<class_prob, polynomial_k, class_property_map> *) v;
+    return m->get_C();
+  }
+
+  double kml_get_scale_class_double_polynomial(void *v) {
+    kml::svm<class_prob, polynomial_k, class_property_map>* m = (kml::svm<class_prob, polynomial_k, class_property_map> *) v;
+    return m->kernel_function.get_scale();
+  }
+
+  double kml_get_bias_class_double_polynomial(void *v) {
+    kml::svm<class_prob, polynomial_k, class_property_map>* m = (kml::svm<class_prob, polynomial_k, class_property_map> *) v;
+    return m->kernel_function.get_bias();
+  }
+
+  double kml_get_order_class_double_polynomial(void *v) {
+    kml::svm<class_prob, polynomial_k, class_property_map>* m = (kml::svm<class_prob, polynomial_k, class_property_map> *) v;
+    return m->kernel_function.get_order();
+  }
+
+  void kml_get_alpha_class_double_polynomial(double **alpha, void *v) {
+    kml::svm<class_prob, polynomial_k, class_property_map>* m = (kml::svm<class_prob, polynomial_k, class_property_map> *) v;
+    std::vector<double> a = m->get_alpha();
+    *alpha = (double*) malloc(sizeof(double) * a.size());
+    for (unsigned int i=0; i<a.size(); ++i)
+      (*alpha)[i] = a[i];
+  }
+
+  void kml_get_sv_class_double_polynomial(double **sv, unsigned int i, void *v) {
+    kml::svm<class_prob, polynomial_k, class_property_map>* m = (kml::svm<class_prob, polynomial_k, class_property_map> *) v;
+    std::vector<std::vector<double> > svs = m->get_svs();
+    *sv = (double*) malloc(sizeof(double) * svs[0].size());
+    for (unsigned int j=0; j<svs.size(); ++j)
+      (*sv)[j] = svs[i][j];
+  }
+
   void* kml_new_rank_double_polynomial(double g, double l, double d, double s) {
     polynomial_k p(g, l, d);
     rank_property_map m;
@@ -178,6 +296,54 @@ extern "C" {
   double kml_rank_double_polynomial(void* v, double *i, int sz) {
     kml::svm<rank_prob, polynomial_k, rank_property_map>* m = (kml::svm<rank_prob, polynomial_k, rank_property_map> *) v;
     return (m->operator()(std::vector<double>(i, i+sz)));
+  }
+
+
+  unsigned int kml_num_svs_rank_double_polynomial(void *v) {
+    kml::svm<rank_prob, polynomial_k, rank_property_map>* m = (kml::svm<rank_prob, polynomial_k, rank_property_map> *) v;
+    std::vector<std::vector<double> > svs = m->get_svs();
+    return svs.size();
+  }
+
+  unsigned int kml_sv_size_rank_double_polynomial(void *v) {
+    kml::svm<rank_prob, polynomial_k, rank_property_map>* m = (kml::svm<rank_prob, polynomial_k, rank_property_map> *) v;
+    return (m->get_svs())[0].size();
+  }
+
+  double kml_get_C_rank_double_polynomial(void *v) {
+    kml::svm<rank_prob, polynomial_k, rank_property_map>* m = (kml::svm<rank_prob, polynomial_k, rank_property_map> *) v;
+    return m->get_C();
+  }
+
+  double kml_get_scale_rank_double_polynomial(void *v) {
+    kml::svm<rank_prob, polynomial_k, rank_property_map>* m = (kml::svm<rank_prob, polynomial_k, rank_property_map> *) v;
+    return m->kernel_function.get_scale();
+  }
+
+  double kml_get_bias_rank_double_polynomial(void *v) {
+    kml::svm<rank_prob, polynomial_k, rank_property_map>* m = (kml::svm<rank_prob, polynomial_k, rank_property_map> *) v;
+    return m->kernel_function.get_bias();
+  }
+
+  double kml_get_order_rank_double_polynomial(void *v) {
+    kml::svm<rank_prob, polynomial_k, rank_property_map>* m = (kml::svm<rank_prob, polynomial_k, rank_property_map> *) v;
+    return m->kernel_function.get_order();
+  }
+
+  void kml_get_alpha_rank_double_polynomial(double **alpha, void *v) {
+    kml::svm<rank_prob, polynomial_k, rank_property_map>* m = (kml::svm<rank_prob, polynomial_k, rank_property_map> *) v;
+    std::vector<double> a = m->get_alpha();
+    *alpha = (double*) malloc(sizeof(double) * a.size());
+    for (unsigned int i=0; i<a.size(); ++i)
+      (*alpha)[i] = a[i];
+  }
+
+  void kml_get_sv_rank_double_polynomial(double **sv, unsigned int i, void *v) {
+    kml::svm<rank_prob, polynomial_k, rank_property_map>* m = (kml::svm<rank_prob, polynomial_k, rank_property_map> *) v;
+    std::vector<std::vector<double> > svs = m->get_svs();
+    *sv = (double*) malloc(sizeof(double) * svs[0].size());
+    for (unsigned int j=0; j<svs.size(); ++j)
+      (*sv)[j] = svs[i][j];
   }
 
   void* kml_new_class_double_linear(double s) { 
@@ -214,6 +380,38 @@ extern "C" {
       return 0; // This way we can coerce to boolean trivially. Should try return (m->operator()(std::vector<double>(i, i+sz)) > 0) though.
   }
 
+  unsigned int kml_num_svs_class_double_linear(void *v) {
+    kml::svm<class_prob, linear_k, class_property_map>* m = (kml::svm<class_prob, linear_k, class_property_map> *) v;
+    std::vector<std::vector<double> > svs = m->get_svs();
+    return svs.size();
+  }
+
+  unsigned int kml_sv_size_class_double_linear(void *v) {
+    kml::svm<class_prob, linear_k, class_property_map>* m = (kml::svm<class_prob, linear_k, class_property_map> *) v;
+    return (m->get_svs())[0].size();
+  }
+
+  double kml_get_C_class_double_linear(void *v) {
+    kml::svm<class_prob, linear_k, class_property_map>* m = (kml::svm<class_prob, linear_k, class_property_map> *) v;
+    return m->get_C();
+  }
+
+  void kml_get_alpha_class_double_linear(double **alpha, void *v) {
+    kml::svm<class_prob, linear_k, class_property_map>* m = (kml::svm<class_prob, linear_k, class_property_map> *) v;
+    std::vector<double> a = m->get_alpha();
+    *alpha = (double*) malloc(sizeof(double) * a.size());
+    for (unsigned int i=0; i<a.size(); ++i)
+      (*alpha)[i] = a[i];
+  }
+
+  void kml_get_sv_class_double_linear(double **sv, unsigned int i, void *v) {
+    kml::svm<class_prob, linear_k, class_property_map>* m = (kml::svm<class_prob, linear_k, class_property_map> *) v;
+    std::vector<std::vector<double> > svs = m->get_svs();
+    *sv = (double*) malloc(sizeof(double) * svs[0].size());
+    for (unsigned int j=0; j<svs.size(); ++j)
+      (*sv)[j] = svs[i][j];
+  }
+
   void* kml_new_rank_double_linear(double s) {
     rank_property_map m;
     return (void *) new kml::svm<rank_prob, linear_k, rank_property_map>(linear_k(), s, m);
@@ -240,6 +438,38 @@ extern "C" {
   double kml_rank_double_linear(void* v, double *i, int sz) {
     kml::svm<rank_prob, linear_k, rank_property_map>* m = (kml::svm<rank_prob, linear_k, rank_property_map> *) v;
     return (m->operator()(std::vector<double>(i, i+sz)));
+  }
+
+  unsigned int kml_num_svs_rank_double_linear(void *v) {
+    kml::svm<rank_prob, linear_k, rank_property_map>* m = (kml::svm<rank_prob, linear_k, rank_property_map> *) v;
+    std::vector<std::vector<double> > svs = m->get_svs();
+    return svs.size();
+  }
+
+  unsigned int kml_sv_size_rank_double_linear(void *v) {
+    kml::svm<rank_prob, linear_k, rank_property_map>* m = (kml::svm<rank_prob, linear_k, rank_property_map> *) v;
+    return (m->get_svs())[0].size();
+  }
+
+  double kml_get_C_rank_double_linear(void *v) {
+    kml::svm<rank_prob, linear_k, rank_property_map>* m = (kml::svm<rank_prob, linear_k, rank_property_map> *) v;
+    return m->get_C();
+  }
+
+  void kml_get_alpha_rank_double_linear(double **alpha, void *v) {
+    kml::svm<rank_prob, linear_k, rank_property_map>* m = (kml::svm<rank_prob, linear_k, rank_property_map> *) v;
+    std::vector<double> a = m->get_alpha();
+    *alpha = (double*) malloc(sizeof(double) * a.size());
+    for (unsigned int i=0; i<a.size(); ++i)
+      (*alpha)[i] = a[i];
+  }
+
+  void kml_get_sv_rank_double_linear(double **sv, unsigned int i, void *v) {
+    kml::svm<rank_prob, linear_k, rank_property_map>* m = (kml::svm<rank_prob, linear_k, rank_property_map> *) v;
+    std::vector<std::vector<double> > svs = m->get_svs();
+    *sv = (double*) malloc(sizeof(double) * svs[0].size());
+    for (unsigned int j=0; j<svs.size(); ++j)
+      (*sv)[j] = svs[i][j];
   }
 
 }
