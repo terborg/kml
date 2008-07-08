@@ -20,6 +20,7 @@
 #ifndef ONLINE_SVM_HPP
 #define ONLINE_SVM_HPP
 
+#include <boost/lexical_cast.hpp>
 #include <boost/numeric/bindings/traits/std_vector.hpp>
 #include <boost/numeric/bindings/traits/ublas_matrix.hpp>
 #include <boost/numeric/bindings/traits/ublas_symmetric.hpp>
@@ -29,7 +30,7 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/tracking.hpp>
-#include <boost/serialization/vector.hpp>
+//#include <boost/serialization/vector.hpp>
 
 #include <boost/type_traits/is_float.hpp>
 #include <boost/type_traits/is_same.hpp>

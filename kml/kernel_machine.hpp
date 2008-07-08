@@ -34,8 +34,9 @@
 
 // for the property traits
 #include <boost/property_map.hpp>
+#include <boost/ref.hpp>
 
-using boost::tuples::get;
+//using boost::tuples::get;
 
 namespace lambda = boost::lambda;
 
@@ -72,7 +73,6 @@ public:
 
     typedef typename std::vector< key_type >::size_type index_type;
 
-
     // FIXME make this something else...
     typedef double scalar_type;
 
@@ -81,12 +81,11 @@ public:
     	\param k parameter used to initialize the kernel
     */
     kernel_machine( typename boost::call_traits<kernel_type>::param_type k,
-                    typename boost::call_traits<PropertyMap>::param_type map ):
-    kernel_function(k), data(map) {}
+                    PropertyMap const &map ): kernel_function(k), data(boost::cref(map)) {}
 
-    void set_data( PropertyMap const& map ) {
-        data = map;
-    }
+//     void set_data( PropertyMap const& map ) {
+//         data = map;
+//     }
 
     void set_kernel( kernel_type const &k ) {
         kernel_function = k;
@@ -94,12 +93,12 @@ public:
 
     inline
     input_type const& input( key_type const key ) const {
-	return get<0>(data[key]);
+	return boost::tuples::get<0>(data.get()[key]);
     }
 
     inline
     output_type const& output( key_type const key ) const {
-	return get<1>(data[key]);
+	return boost::tuples::get<1>(data.get()[key]);
     }
 
 
@@ -199,8 +198,7 @@ private:
     kernel_type kernel_function;
 
     /// pointer to data container used by the machine
-    PropertyMap const data;
-
+    boost::reference_wrapper< PropertyMap const > data;
 };
 
 
@@ -232,52 +230,49 @@ public:
 
 
     kernel_machine( typename boost::call_traits<kernel_type>::param_type k,
-                    typename boost::call_traits<PropertyMap>::param_type map ):
-    kernel_function(k), data(&map) {}
+                    PropertyMap const &map ):
+    kernel_function(k), data(boost::cref(map)) {}
 
-    kernel_machine( typename boost::call_traits<kernel_type>::param_type k,
-		    typename boost::call_traits<boost::shared_ptr<PropertyMap> >::param_type map ):
-	kernel_function(k), data(map) { }
+//     kernel_machine( typename boost::call_traits<kernel_type>::param_type k,
+// 		    PropertyMap const &map ):
+// 	kernel_function(k), data(boostmap) { }
 
     kernel_machine(kernel_machine &k): kernel_function(k.kernel_function),
 				       data(k.data) { }
 
 
+    inline
     input_type const& input( key_type const key ) const {
-	return get<0>((*data)[key]);
+	return boost::tuples::get<0>(data.get()[key]);
     }
 
+    inline
     output_type const& output( key_type const key ) const {
-	return get<1>((*data)[key]);
+	return boost::tuples::get<1>(data.get()[key]);
     }
-
 
     typename kernel_type::result_type kernel( key_type const i, key_type const j ) {
-                                    return kernel_function( (*data)[i].get<0>(), (*data)[j].get<0>() );
-                                }
+        return kernel_function( input(i), input(j) );
+    }
 
-                                typename kernel_type::result_type kernel( input_type const &x, key_type const j ) {
-                                                                return kernel_function( x, (*data)[j].get<0>() );
-                                                            }
-      
-  typename kernel_type::result_type kernel(key_type const i, input_type const &x) {
-    return kernel_function((*data)[i].get<0>(), x);
-  }
+    typename kernel_type::result_type kernel( input_type const &x1, key_type const j ) {
+        return kernel_function( x1, input(j) );
+    }
 
+    typename kernel_type::result_type kernel( input_type const &x1, input_type const &x2 ) {
+        return kernel_function( x1, x2 );
+    }
 
-
-
-
-                                                            template<typename KeyIterator, typename OutputIterator>
+    template<typename KeyIterator, typename OutputIterator>
     void fill_kernel( input_type const &x,
                       KeyIterator const begin, KeyIterator const end, OutputIterator out ) {
         KeyIterator i(begin);
         OutputIterator j(out);
         while (i!=end) {
-            if ( (*data)[*i].get<1>() )
-                *j = kernel_function( x, (*data)[*i].get<0>() );
+            if ( data.get()[*i].get<1>() )
+                *j = kernel_function( x, input(*i) );
             else
-                *j = -kernel_function( x, (*data)[*i].get<0>() );
+                *j = -kernel_function( x, input(*i) );
             ++i;
             ++j;
         }
@@ -288,51 +283,25 @@ public:
                       KeyIterator const begin, KeyIterator const end, OutputIterator out ) {
         KeyIterator i(begin);
         OutputIterator j(out);
-        if ( (*data)[key].get<1>() ) {
+        if ( data.get()[key].get<1>() ) {
             while (i!=end) {
-                if ( (*data)[*i].get<1>() )
-                    *j = kernel_function( (*data)[key].get<0>(), (*data)[*i].get<0>() );
+                if ( data.get()[*i].get<1>() )
+                    *j = kernel_function( input(key), input(*i) );
                 else
-                    *j = -kernel_function( (*data)[key].get<0>(), (*data)[*i].get<0>() );
+                    *j = -kernel_function( input(key), input(*i) );
                 ++i;
                 ++j;
             }
         } else {
             while (i!=end) {
-                if ( (*data)[*i].get<1>() )
-                    *j = -kernel_function( (*data)[key].get<0>(), (*data)[*i].get<0>() );
+                if ( data.get()[*i].get<1>() )
+                    *j = -kernel_function( input(key), input(*i) );
                 else
-                    *j = kernel_function( (*data)[key].get<0>(), (*data)[*i].get<0>() );
+                    *j = kernel_function( input(key), input(*i) );
                 ++i;
                 ++j;
             }
         }
-    }
-
-
-
-    // FIXME optimal return type (by value, return value, i.e. see boost call_traits)
-    //     output_type operator()( typename boost::call_traits<input_type>::param_type x ) {
-    //
-    // 	// this must be convertable to bool
-    //         return std::inner_product( weight.begin(),
-    // 	                           weight.end(),
-    // 				   support_vector.begin(),
-    // 				   bias,
-    //                                    std::plus<output_type>(), boost::lambda::bind(detail::multiplies<double,output_type>(), boost::lambda::_1,
-    //                                                              boost::lambda::bind(kernel,x,boost::lambda::_2)) ) >= 0.0;
-    //     }
-
-    void set_data( PropertyMap const &map ) {
-	data = boost::shared_ptr<PropertyMap const>(&map);
-    }
-
-    void set_data(PropertyMap const *map) {
-	data = boost::shared_ptr<PropertyMap const>(map);
-    }
-
-    void set_data(boost::shared_ptr<PropertyMap const> map) {
-	data = map;
     }
 
     void set_kernel( kernel_type const &k ) {
@@ -351,28 +320,13 @@ public:
     }
 
 
-
-    //     void clear() {
-    //         bias = 0.0;
-    //         weight.clear();
-    //     }
-
+private:
     /// kernel_function used by the machine
     kernel_type kernel_function;
 
     /// pointer to data container used by the machine
-    boost::shared_ptr<PropertyMap const> data;
+    boost::reference_wrapper< PropertyMap const > data;
 
-    /// to translate to a sequential view
-    //     std::map< key_type, std::size_t > key_mapping;
-    //     std::vector< key_type > key_lookup;
-
-
-    //     double bias;
-
-    // the weight should have the sign of the corresponding output sample!
-    // w_i = a_i * y_i
-    /*    std::vector<double> weight;*/
 };
 
 /*! \brief Ranking kernel machine
@@ -405,8 +359,8 @@ public:
     kernel_function(k), data(&map) {}
 
     kernel_machine( typename boost::call_traits<kernel_type>::param_type k,
-		    typename boost::call_traits<boost::shared_ptr<PropertyMap> >::param_type map) :
-	kernel_function(k), data(map) { }
+		    PropertyMap const &map ) :
+	kernel_function(k), data(boost::cref(map)) {}
 
     typename kernel_type::result_type kernel( key_type const i, key_type const j ) {
                                     return kernel_function( (*data)[i].get<0>(), (*data)[j].get<0>() );
@@ -417,7 +371,7 @@ public:
                                                             }
       
   typename kernel_type::result_type kernel(key_type const i, input_type const &x) {
-    return kernel_function((*data)[i].get<0>(), x);
+    return kernel_function(data.get()[i].get<0>(), x);
   }
 
                                                             template<typename KeyIterator, typename OutputIterator>
@@ -426,10 +380,10 @@ public:
         KeyIterator i(begin);
         OutputIterator j(out);
         while (i!=end) {
-            if ( (*data)[*i].get<1>() )
-                *j = kernel_function( x, (*data)[*i].get<0>() );
+            if ( data.get()[*i].get<1>() )
+                *j = kernel_function( x, data.get()[*i].get<0>() );
             else
-                *j = -kernel_function( x, (*data)[*i].get<0>() );
+                *j = -kernel_function( x, data.get()[*i].get<0>() );
             ++i;
             ++j;
         }
@@ -440,21 +394,21 @@ public:
                       KeyIterator const begin, KeyIterator const end, OutputIterator out ) {
         KeyIterator i(begin);
         OutputIterator j(out);
-        if ( (*data)[key].get<1>() ) {
+        if ( data.get()[key].get<1>() ) {
             while (i!=end) {
-                if ( (*data)[*i].get<1>() )
-                    *j = kernel_function( (*data)[key].get<0>(), (*data)[*i].get<0>() );
+                if ( data.get()[*i].get<1>() )
+                    *j = kernel_function( data.get()[key].get<0>(), data.get()[*i].get<0>() );
                 else
-                    *j = -kernel_function( (*data)[key].get<0>(), (*data)[*i].get<0>() );
+                    *j = -kernel_function( data.get()[key].get<0>(), data.get()[*i].get<0>() );
                 ++i;
                 ++j;
             }
         } else {
             while (i!=end) {
-                if ( (*data)[*i].get<1>() )
-                    *j = -kernel_function( (*data)[key].get<0>(), (*data)[*i].get<0>() );
+                if ( data.get()[*i].get<1>() )
+                    *j = -kernel_function( data.get()[key].get<0>(), data.get()[*i].get<0>() );
                 else
-                    *j = kernel_function( (*data)[key].get<0>(), (*data)[*i].get<0>() );
+                    *j = kernel_function( data.get()[key].get<0>(), data.get()[*i].get<0>() );
                 ++i;
                 ++j;
             }
@@ -487,12 +441,7 @@ public:
     kernel_type kernel_function;
 
     /// pointer to data container used by the machine
-    boost::shared_ptr<PropertyMap const> data;
-
-
-    /// to translate to a sequential view
-    //     std::map< key_type, std::size_t > key_mapping;
-    //     std::vector< key_type > key_lookup;
+    boost::reference_wrapper< PropertyMap const > data;
 
 };
 
