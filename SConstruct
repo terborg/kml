@@ -23,10 +23,16 @@ if env['PLATFORM'] == 'posix':
    c_link_libs = ['kml']
    lib_path = ['/usr/lib', '/usr/lib64/atlas' ]
    atlas_link_libs = []
-   if env.FindFile( 'libatlas.so.3', lib_path ): atlas_link_libs.append( 'atlas' )
-   if env.FindFile( 'libcblas.so.3', lib_path ): atlas_link_libs.append( 'cblas' )
-   if env.FindFile( 'liblapack_atlas.so.3', lib_path ): atlas_link_libs.append( 'lapack_atlas' )
-   if env.FindFile( 'libg2c.so.0', lib_path ): atlas_link_libs.append( 'g2c' )
+   search_files = {	'atlas': [ 'libatlas.so.3', 'libatlas.so.3gf' ],
+			'cblas': [ 'libcblas.so.3', 'libcblas.so.3gf' ],
+			'lapack_atlas': [ 'liblapack_atlas.so.3' ],
+			'g2c': [ 'libg2c.so.0' ]
+		}
+   for [ key, value ] in search_files.iteritems():
+	for file in value:
+		if env.FindFile( file, lib_path ):
+			atlas_link_libs.append( key )
+
    if env.FindFile( 'liblapack.so.3', lib_path ): lapack_link_libs.append( 'lapack' )
 
 elif env['PLATFORM'] == 'win32':
