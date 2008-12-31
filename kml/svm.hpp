@@ -109,7 +109,7 @@ namespace kml {
       scalar_type ret=0;
       for (size_t i=0; i<weight.size(); ++i) 
 	if (weight[i] > 0) 
-	  ret += weight[i] * (*base_type::data)[i].get<1>() * base_type::kernel(i, x);
+	  ret += weight[i] * base_type::output(i) * base_type::kernel(x, i);
       ret -= bias;
       return (output_type)ret;
     }
@@ -118,22 +118,22 @@ namespace kml {
       if (i1 == i2) return 0; 
       
       double alpha1 = weight[i1];
-      output_type y1 = (*base_type::data)[i1].get<1>();
+      output_type y1 = base_type::output(i1);
       scalar_type e1, e2, L, H, a2;
       /* p. 49, Platt: "When an error E is required by SMO, it will look up the error in the error cache if the 
 	 corresponding Lagrange multiplier is not at bound." */
       if (0 != alpha1 && C != alpha1) 
 	e1 = error_cache[i1];
       else
-	e1 = operator()((*base_type::data)[i1].get<0>()) - y1;
+	e1 = operator()(base_type::input(i1)) - y1;
       
       double alpha2 = weight[i2];
-      output_type y2 = (*base_type::data)[i2].get<1>();
+      output_type y2 = base_type::output(i2);
       /* p. 49 again */
       if (0 != alpha2 && C != alpha2)
 	e2 = error_cache[i2];
       else
-	e2 = (double)operator()((*base_type::data)[i2].get<0>()) - y2;
+	e2 = (double)operator()(base_type::input(i2)) - y2;
       
       scalar_type s = y1 * y2;
       
@@ -164,16 +164,16 @@ namespace kml {
 	else if (a2 > H) a2 = H;
       }
       else {  /* This block handles corner cases; usually this means a training vector has been repeated */
-	scalar_type f1 = operator()((*base_type::data)[i1].get<0>());
-	scalar_type f2 = operator()((*base_type::data)[i2].get<0>());
+	scalar_type f1 = operator()(base_type::input(i1));
+	scalar_type f2 = operator()(base_type::input(i2));
 	/* Equation 12.21 */
-	scalar_type v1 = f1 + bias - (*base_type::data)[i1].get<1>() * alpha1 * k11 - (*base_type::data)[i2].get<1>() * alpha2 * k12;
-	scalar_type v2 = f2 + bias - (*base_type::data)[i1].get<1>() * alpha1 * k12 - (*base_type::data)[i2].get<1>() * alpha2 * k22;
+	scalar_type v1 = f1 + bias - base_type::output(i1) * alpha1 * k11 - base_type::output(i2) * alpha2 * k12;
+	scalar_type v2 = f2 + bias - base_type::output(i1) * alpha1 * k12 - base_type::output(i2) * alpha2 * k22;
 	/* Equation 12.22 */
 	scalar_type gamma = alpha1 + s * alpha2;
 	/* Equation 12.23 -- this is ugly and should maybe be refactored out? */
-	scalar_type Lobj = gamma - s * L + L - .5 * k11 * (gamma - s * L) * (gamma - s * L) - .5 * k22 * L * L - s * k12 * (gamma - s * L) * L - (*base_type::data)[i1].get<1>() * (gamma - s * L) * v1 - (*base_type::data)[i2].get<1>() * L * v2;
-	scalar_type Hobj = gamma - s * H + H - .5 * k11 * (gamma - s * H) * (gamma - s * H) - .5 * k22 * L * L - s * k12 * (gamma - s * H) * H - (*base_type::data)[i1].get<1>() * (gamma - s * H) * v1 - (*base_type::data)[i2].get<1>() * H * v2;
+	scalar_type Lobj = gamma - s * L + L - .5 * k11 * (gamma - s * L) * (gamma - s * L) - .5 * k22 * L * L - s * k12 * (gamma - s * L) * L - base_type::output(i1) * (gamma - s * L) * v1 - base_type::output(i2) * L * v2;
+	scalar_type Hobj = gamma - s * H + H - .5 * k11 * (gamma - s * H) * (gamma - s * H) - .5 * k22 * L * L - s * k12 * (gamma - s * H) * H - base_type::output(i1) * (gamma - s * H) * v1 - base_type::output(i2) * H * v2;
 	
 	/* Now we move the Lagrangian multipliers to the endpoint which has the highest value for W */
 	if (Lobj > Hobj + EPS)
@@ -221,7 +221,7 @@ namespace kml {
       /* Update the error cache */
       for (size_t i = 0; i < error_cache.size(); ++i) {
 	if (0 != weight[i] && C != weight[i]) {
-	  error_cache[i] += y1 * (a1 - alpha1) * base_type::kernel(i1, i) + (*base_type::data)[i2].get<1>() * (a2 - alpha2) * base_type::kernel(i2, i) - (bias - old_bias);
+	  error_cache[i] += y1 * (a1 - alpha1) * base_type::kernel(i, i1) + base_type::output(i2) * (a2 - alpha2) * base_type::kernel(i, i2) - (bias - old_bias);
 	}
 	else {
 	  /* This may not actually be necessary -- I'm not convinced any code paths will ever get here -- but since Platt
@@ -241,13 +241,13 @@ namespace kml {
     }
     
     int examineExample(int idx) {
-      output_type y2 = (*base_type::data)[idx].get<1>();
+      output_type y2 = base_type::output(idx);
       double alpha2 = weight[idx];
       scalar_type e2;
       if (alpha2 != 0 && alpha2 != C)
 	e2 = error_cache[idx];
       else 
-	e2 = operator()((*base_type::data)[idx].get<0>()) - y2;
+	e2 = operator()(base_type::input(idx)) - y2;
       
       scalar_type r2 = e2 * y2;
       if ((r2 < -tol && alpha2 < C) || (r2 > tol && alpha2 > 0)) {
@@ -329,7 +329,7 @@ namespace kml {
       std::vector<input_type> ret;
       for (size_t i=0; i<weight.size(); ++i) 
 	if (0 != weight[i])
-	  ret.push_back((*base_type::data)[i].get<0>());
+	  ret.push_back(base_type::input(i));
       return ret;
     }
 
@@ -408,10 +408,10 @@ namespace kml {
 	already_greater = false; 
 	already_lesser = false;
 	for (unsigned int j = i+1; j < size; ++j) {
-	  if ((*base_type::data)[i].get<1>() == (*base_type::data)[j].get<1>()) {
+	  if (base_type::output(i) == (*base_type::data)[j].get<1>()) {
 	    if ((*base_type::data)[i].get<2>() > (*base_type::data)[j].get<2>()) {
 	      if (!already_greater) {
-		add_point<kernel_type>((*base_type::data)[i].get<0>(),
+		add_point<kernel_type>(base_type::input(i),
 				       (*base_type::data)[j].get<0>(), 
 				       count, 1);
 		already_greater = true;
@@ -420,7 +420,7 @@ namespace kml {
 	    }
 	    else if ((*base_type::data)[i].get<2>() < (*base_type::data)[j].get<2>()) {
 	      if (!already_lesser) {
-		add_point<kernel_type>((*base_type::data)[i].get<0>(),
+		add_point<kernel_type>(base_type::input(i),
 				       (*base_type::data)[j].get<0>(),
 				       count, -1);
 		already_lesser = true;
