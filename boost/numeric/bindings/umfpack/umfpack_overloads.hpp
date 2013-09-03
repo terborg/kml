@@ -2,12 +2,9 @@
  * 
  * Copyright (c) Kresimir Fresl 2003 
  *
- * Permission to copy, modify, use and distribute this software 
- * for any non-commercial or commercial purpose is granted provided 
- * that this license appear on all copies of the software source code.
- *
- * Author assumes no responsibility whatsoever for its use and makes 
- * no guarantees about its quality, correctness or reliability.
+ * Distributed under the Boost Software License, Version 1.0.
+ * (See accompanying file LICENSE_1_0.txt or copy at
+ * http://www.boost.org/LICENSE_1_0.txt)
  *
  * Author acknowledges the support of the Faculty of Civil Engineering, 
  * University of Zagreb, Croatia.
@@ -21,9 +18,9 @@
 #define BOOST_NUMERIC_BINDINGS_UMFPACK_OVERLOADS_HPP
 
 #include <boost/numeric/bindings/umfpack/umfpack_inc.hpp>
-#include <boost/numeric/bindings/traits/type.hpp>
-#include <boost/numeric/bindings/traits/detail/array.hpp>
+#include <boost/numeric/bindings/detail/array.hpp>
 #include <boost/numeric/bindings/traits/detail/utils.hpp>
+#include <cassert>
 
 namespace boost { namespace numeric { namespace bindings { 
 
@@ -50,9 +47,9 @@ namespace boost { namespace numeric { namespace bindings {
                   void **Symbolic, double const* Control, double* Info)
     {
       int nnz = Ap[n_col];
-      traits::detail::array<double> Axr (nnz); 
+      bindings::detail::array<double> Axr (nnz); 
       if (!Axr.valid()) return UMFPACK_ERROR_out_of_memory;
-      traits::detail::array<double> Axi (nnz); 
+      bindings::detail::array<double> Axi (nnz); 
       if (!Axi.valid()) return UMFPACK_ERROR_out_of_memory;
       traits::detail::disentangle (Ax, Ax+nnz, 
                                    Axr.storage(), Axi.storage()); 
@@ -80,9 +77,9 @@ namespace boost { namespace numeric { namespace bindings {
                  double const* Control, double* Info)
     {
       int nnz = Ap[n_col];
-      traits::detail::array<double> Axr (nnz); 
+      bindings::detail::array<double> Axr (nnz); 
       if (!Axr.valid()) return UMFPACK_ERROR_out_of_memory;
-      traits::detail::array<double> Axi (nnz); 
+      bindings::detail::array<double> Axi (nnz); 
       if (!Axi.valid()) return UMFPACK_ERROR_out_of_memory;
       traits::detail::disentangle (Ax, Ax+nnz, 
                                    Axr.storage(), Axi.storage()); 
@@ -109,21 +106,21 @@ namespace boost { namespace numeric { namespace bindings {
                void *Numeric, double const* Control, double* Info)
     {
       int nnz = Ap[n];
-      traits::detail::array<double> Axr (nnz); 
+      bindings::detail::array<double> Axr (nnz); 
       if (!Axr.valid()) return UMFPACK_ERROR_out_of_memory;
-      traits::detail::array<double> Axi (nnz); 
+      bindings::detail::array<double> Axi (nnz); 
       if (!Axi.valid()) return UMFPACK_ERROR_out_of_memory;
       traits::detail::disentangle (Ax, Ax+nnz, 
                                    Axr.storage(), Axi.storage()); 
-      traits::detail::array<double> Br (n); 
+      bindings::detail::array<double> Br (n); 
       if (!Br.valid()) return UMFPACK_ERROR_out_of_memory;
-      traits::detail::array<double> Bi (n); 
+      bindings::detail::array<double> Bi (n); 
       if (!Bi.valid()) return UMFPACK_ERROR_out_of_memory;
       traits::detail::disentangle (B, B+n, 
                                    Br.storage(), Bi.storage()); 
-      traits::detail::array<double> Xr (n); 
+      bindings::detail::array<double> Xr (n); 
       if (!Xr.valid()) return UMFPACK_ERROR_out_of_memory;
-      traits::detail::array<double> Xi (n); 
+      bindings::detail::array<double> Xi (n); 
       if (!Xi.valid()) return UMFPACK_ERROR_out_of_memory;
 
       int status = umfpack_zi_solve (sys, Ap, Ai, 
@@ -197,9 +194,9 @@ namespace boost { namespace numeric { namespace bindings {
                    void **Symbolic, double const* Control, double* Info)
     {
       int nnz = Ap[n_col];
-      traits::detail::array<double> Axr (nnz); 
+      bindings::detail::array<double> Axr (nnz); 
       if (!Axr.valid()) return UMFPACK_ERROR_out_of_memory;
-      traits::detail::array<double> Axi (nnz); 
+      bindings::detail::array<double> Axi (nnz); 
       if (!Axi.valid()) return UMFPACK_ERROR_out_of_memory;
       traits::detail::disentangle (Ax, Ax+nnz, 
                                    Axr.storage(), Axi.storage()); 
@@ -235,9 +232,9 @@ namespace boost { namespace numeric { namespace bindings {
       assert (Tx == 0 && Ax == 0 || Tx != 0 && Ax != 0); 
       double *Txr = 0, *Txi = 0;
       if (Tx != 0) {
-        traits::detail::array<double> ATxr (nz); 
+        bindings::detail::array<double> ATxr (nz); 
         if (!ATxr.valid()) return UMFPACK_ERROR_out_of_memory;
-        traits::detail::array<double> ATxi (nz); 
+        bindings::detail::array<double> ATxi (nz); 
         if (!ATxi.valid()) return UMFPACK_ERROR_out_of_memory;
         Txr = ATxr.storage();
         Txi = ATxi.storage(); 
@@ -245,9 +242,9 @@ namespace boost { namespace numeric { namespace bindings {
       }
       double *Axr = 0, *Axi = 0;
       if (Ax != 0) {
-        traits::detail::array<double> AAxr (nz); 
+        bindings::detail::array<double> AAxr (nz); 
         if (!AAxr.valid()) return UMFPACK_ERROR_out_of_memory;
-        traits::detail::array<double> AAxi (nz); 
+        bindings::detail::array<double> AAxi (nz); 
         if (!AAxi.valid()) return UMFPACK_ERROR_out_of_memory;
         Axr = AAxr.storage();
         Axi = AAxi.storage(); 
@@ -275,15 +272,15 @@ namespace boost { namespace numeric { namespace bindings {
     int scale (int n, traits::complex_d* X, 
                traits::complex_d const* B, void* Numeric) 
     {
-      traits::detail::array<double> Br (n); 
+      bindings::detail::array<double> Br (n); 
       if (!Br.valid()) return UMFPACK_ERROR_out_of_memory;
-      traits::detail::array<double> Bi (n); 
+      bindings::detail::array<double> Bi (n); 
       if (!Bi.valid()) return UMFPACK_ERROR_out_of_memory;
       traits::detail::disentangle (B, B+n, 
                                    Br.storage(), Bi.storage()); 
-      traits::detail::array<double> Xr (n); 
+      bindings::detail::array<double> Xr (n); 
       if (!Xr.valid()) return UMFPACK_ERROR_out_of_memory;
-      traits::detail::array<double> Xi (n); 
+      bindings::detail::array<double> Xi (n); 
       if (!Xi.valid()) return UMFPACK_ERROR_out_of_memory;
 
       int status = umfpack_zi_scale (Xr.storage(), Xi.storage(), 
@@ -359,9 +356,9 @@ namespace boost { namespace numeric { namespace bindings {
                        int col_form, double const* Control) 
     {
       int nnz = Ap[n_col];
-      traits::detail::array<double> Axr (nnz); 
+      bindings::detail::array<double> Axr (nnz); 
       if (!Axr.valid()) return UMFPACK_ERROR_out_of_memory;
-      traits::detail::array<double> Axi (nnz); 
+      bindings::detail::array<double> Axi (nnz); 
       if (!Axi.valid()) return UMFPACK_ERROR_out_of_memory;
       traits::detail::disentangle (Ax, Ax+nnz, 
                                    Axr.storage(), Axi.storage()); 
@@ -373,6 +370,7 @@ namespace boost { namespace numeric { namespace bindings {
 
     // report triplet (coordinate)
 
+    inline
     int report_triplet (int n_row, int n_col, int nz,
                         int const* Ti, int const* Tj, double const* Tx,
                         double const* Control) 
@@ -380,14 +378,15 @@ namespace boost { namespace numeric { namespace bindings {
       return umfpack_di_report_triplet (n_row, n_col, nz, Ti, Tj, Tx, Control);
     }
 
+    inline
     int report_triplet (int n_row, int n_col, int nz,
                         int const* Ti, int const* Tj, 
                         traits::complex_d const* Tx, 
                         double const* Control) 
     {
-      traits::detail::array<double> Txr (nz); 
+      bindings::detail::array<double> Txr (nz); 
       if (!Txr.valid()) return UMFPACK_ERROR_out_of_memory;
-      traits::detail::array<double> Txi (nz); 
+      bindings::detail::array<double> Txi (nz); 
       if (!Txi.valid()) return UMFPACK_ERROR_out_of_memory;
       traits::detail::disentangle (Tx, Tx+nz, 
                                    Txr.storage(), Txi.storage()); 
@@ -399,18 +398,20 @@ namespace boost { namespace numeric { namespace bindings {
 
     // report vector 
 
+    inline
     int report_vector (int n, double const* X, double const* Control) {
       return umfpack_di_report_vector (n, X, Control);
     }
 
+    inline
     int report_vector (int n, traits::complex_d const* X, 
                        double const* Control) 
     {
 #if 0
       // see UMFPACK v 4.1 User Guide
-      traits::detail::array<double> Xr (n); 
+      bindings::detail::array<double> Xr (n); 
       if (!Xr.valid()) return UMFPACK_ERROR_out_of_memory;
-      traits::detail::array<double> Xi (n); 
+      bindings::detail::array<double> Xi (n); 
       if (!Xi.valid()) return UMFPACK_ERROR_out_of_memory;
       traits::detail::disentangle (X, X+n, 
                                    Xr.storage(), Xi.storage()); 
