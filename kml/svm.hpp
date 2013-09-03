@@ -35,8 +35,8 @@
 #define sgn(a)     (((a) < 0) ? -1 : ((a) > 0) ? 1 : 0)
 
 #include <boost/mpl/not.hpp>
-#include <boost/numeric/bindings/traits/std_vector.hpp>
-#include <boost/numeric/bindings/traits/ublas_vector.hpp>
+#include <boost/numeric/bindings/std/vector.hpp>
+#include <boost/numeric/bindings/ublas/vector.hpp>
 #include <boost/utility/enable_if.hpp>
 #include <boost/random/variate_generator.hpp>
 #include <boost/random/mersenne_twister.hpp>
@@ -44,7 +44,7 @@
 #include <boost/range/value_type.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/tuple/tuple.hpp>
-#include <boost/vector_property_map.hpp>
+#include <boost/property_map/vector_property_map.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/call_traits.hpp>
 #include <boost/shared_ptr.hpp>

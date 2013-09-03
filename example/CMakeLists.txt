@@ -17,8 +17,11 @@
 #  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301
 #
  
+add_executable( gaussian gaussian.cpp )
+target_link_libraries( gaussian ${Boost_LIBRARIES} ${BLAS_LIBRARIES} )
 
 add_executable( incomplete_cholesky incomplete_cholesky.cpp )
-target_link_libraries( incomplete_cholesky ${BLAS_LIBRARIES} )
+target_link_libraries( incomplete_cholesky ${Boost_LIBRARIES} ${BLAS_LIBRARIES} )
 
+add_executable( svm_classification svm_classification.cpp )
 
