@@ -39,11 +39,8 @@ add_definitions( "-Wall -std=c++98 -pedantic -Wno-long-long" )
 
 #
 # Find and setup the required packages used in this project:
-# * the Boost Libraries
-#   - Boost.Signals
-# * Threading
+# * A couple of the Boost Libraries
 # * BLAS
-# * LAPACK
 #  
 find_package( Boost REQUIRED program_options serialization thread )
 find_package( BLAS )
