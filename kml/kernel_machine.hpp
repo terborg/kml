@@ -33,7 +33,7 @@
 #include <boost/serialization/tracking.hpp>
 
 // for the property traits
-#include <boost/property_map.hpp>
+#include <boost/property_map/property_map.hpp>
 #include <boost/ref.hpp>
 
 //using boost::tuples::get;

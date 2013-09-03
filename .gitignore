@@ -1,0 +1,17 @@
+
+# Editor temporaries
+*~
+*.bak
+*.kate-swp
+
+# Python compiled objects
+*.pyc
+
+# Build products
+build/
+cache/
+*.[oa]
+.sconsign.dblite
+a.out
+config.log
+.sconf_temp

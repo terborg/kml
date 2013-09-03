@@ -21,7 +21,7 @@
 #define IO_HPP
 
 #include <boost/lexical_cast.hpp>
-#include <boost/property_map.hpp>
+#include <boost/property_map/property_map.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/range/size.hpp>
 #include <boost/range/value_type.hpp>

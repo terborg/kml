@@ -27,7 +27,7 @@
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/numeric/bindings/atlas/cblas.hpp>
-#include <boost/property_map.hpp>
+#include <boost/property_map/property_map.hpp>
 
 /*!
  
