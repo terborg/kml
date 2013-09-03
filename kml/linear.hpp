@@ -27,7 +27,7 @@
 #include <boost/mpl/identity.hpp>
 #include <boost/mpl/if.hpp>
 #include <boost/mpl/math/is_even.hpp>
-#include <boost/numeric/bindings/atlas/cblas.hpp>
+#include <boost/numeric/bindings/blas/level1/dot.hpp>
 #include <boost/range/begin.hpp>
 #include <boost/range/end.hpp>
 #include <boost/range/value_type.hpp>
@@ -39,7 +39,7 @@
 #include <kml/power_value.hpp>
 #include <numeric>
 
-namespace atlas = boost::numeric::bindings::atlas;
+namespace blas = boost::numeric::bindings::blas;
 namespace mpl = boost::mpl;
 
 /*!
@@ -49,7 +49,7 @@ Template metaprogramming is used to make one generic function work on both scala
 vector types.
  
 \todo 
-- ensure the atlas-specific implementation is not deployed on non-supported types
+- ensure the blas-specific implementation is not deployed on non-supported types
  
 */
 
@@ -71,7 +71,7 @@ class vector_inner_prod {
 public:
     template<typename T>
     static typename boost::range_value<T>::type compute( T const &u, T const &v ) {
-        return atlas::dot( u, v );
+        return blas::dot( u, v );
     }
 };
 

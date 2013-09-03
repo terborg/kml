@@ -23,7 +23,7 @@
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/bindings/atlas/cblas.hpp>
+#include <boost/numeric/bindings/blas.hpp>
 
 #include <boost/serialization/ublas_matrix.hpp>
 
@@ -35,7 +35,7 @@
 
 
 namespace ublas = boost::numeric::ublas;
-namespace atlas = ::boost::numeric::bindings::atlas;
+namespace blas = ::boost::numeric::bindings::blas;
 
 namespace kml {
 
@@ -57,13 +57,13 @@ This takes O(log N) memory allocation calls only, delivering a considerable spee
 It is assumed matrix view changes by 1 row or 1 column (or both) at a time, for which member
 functions are available.
  
-It can be directly used in conjunction with calls to atlas bindings, as shown below.
+It can be directly used in conjunction with calls to blas bindings, as shown below.
  
 \code
 kml::matrix_view< ublas::matrix<double> > A;    // view in matrix A
 ublas::vector<double> x;                        // vector x
 ublas::vector<double> b;                        // result vector b
-atlas::gemv( A.view(), x, b );                  // compute b <- Ax
+blas::gemv( A.view(), x, b );                  // compute b <- Ax
 \endcode
  
 */
@@ -146,7 +146,7 @@ public:
         for( int i=index; i<(view_cols-1); ++i ) {
             ublas::matrix_column< ublas::matrix_range<M> > cur_col( matrix_view, i);
             ublas::matrix_column< ublas::matrix_range<M> > next_col( matrix_view, i+1);
-            atlas::copy( next_col, cur_col );
+            blas::copy( next_col, cur_col );
         }
         --view_cols;
     }
@@ -163,7 +163,7 @@ public:
         ublas::matrix_range<M> matrix_view(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols));
         ublas::matrix_column< ublas::matrix_range<M> > last_col( matrix_view, view_cols-1);
         ublas::matrix_column< ublas::matrix_range<M> > index_col( matrix_view, index );
-        atlas::copy( last_col, index_col );
+        blas::copy( last_col, index_col );
         --view_cols;
     }
 
@@ -191,7 +191,7 @@ public:
         ublas::matrix_range<M> matrix_view(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols));
         ublas::matrix_row< ublas::matrix_range<M> > last_row( matrix_view, view_rows-1);
         ublas::matrix_row< ublas::matrix_range<M> > index_row( matrix_view, index);
-        atlas::copy( last_row, index_row );
+        blas::copy( last_row, index_row );
         --view_rows;
     }
 
@@ -199,7 +199,7 @@ public:
         ublas::matrix_range<M> matrix_view(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols));
         ublas::matrix_row< ublas::matrix_range<M> > index1_row( matrix_view, index1 );
         ublas::matrix_row< ublas::matrix_range<M> > index2_row( matrix_view, index2 );
-	atlas::swap( index1_row, index2_row );
+	blas::swap( index1_row, index2_row );
     }
 
     void remove_row_col( int index ) {
@@ -213,15 +213,15 @@ public:
         ublas::matrix_range<M> matrix_view(matrix, ublas::range(0,view_rows),ublas::range(0,view_cols));
         int index_last = view_rows-1;
 
-        // perhaps this is an overkill for 1 atlas-op.
+        // perhaps this is an overkill for 1 blas-op.
         // perhaps can be done with 2 matrix vector slices?
         ublas::matrix_row< ublas::matrix_range<M> > last_row( matrix_view, index_last );
         ublas::matrix_row< ublas::matrix_range<M> > index_row( matrix_view, index );
         ublas::vector_range< ublas::matrix_row< ublas::matrix_range<M> > > last_row_part_1( last_row, ublas::range(0,index) );
         ublas::vector_range< ublas::matrix_row< ublas::matrix_range<M> > > index_row_part_1( index_row, ublas::range(0,index) );
-        atlas::copy( last_row_part_1, index_row_part_1 );
+        blas::copy( last_row_part_1, index_row_part_1 );
 
-        // and a difficult element copy, in same direction. can be atlasified
+        // and a difficult element copy, in same direction. can be blasified
         // note that index_last is one less than the matrix size
         for( int i=index+1; i<index_last; ++i ) {
             matrix( i, index ) = matrix( index_last, i );

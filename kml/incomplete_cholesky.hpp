@@ -22,11 +22,12 @@
 
 #include <kml/matrix_view.hpp>
 #include <boost/utility.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
+#include <boost/numeric/bindings/ublas/vector.hpp>
+#include <boost/numeric/bindings/ublas/matrix.hpp>
+#include <boost/numeric/bindings/ublas/matrix_proxy.hpp>
 #include <boost/tuple/tuple.hpp>
-#include <boost/numeric/bindings/atlas/cblas.hpp>
+#include <boost/numeric/bindings/blas/level2/gemv.hpp>
+#include <boost/numeric/bindings/blas/level1/dot.hpp>
 #include <boost/property_map/property_map.hpp>
 
 /*!
@@ -53,7 +54,7 @@ Section 2.1
 
 
 namespace ublas = boost::numeric::ublas;
-namespace atlas = boost::numeric::bindings::atlas;
+namespace blas = boost::numeric::bindings::blas;
 
 using boost::tuples::get;
 
@@ -143,7 +144,7 @@ public:
                                     ublas::slice(basis_size, 0, basis_size),
                                     ublas::slice(0, 1, basis_size) );
             ublas::vector<double> target( RT.size1()-basis_size-1 );
-            atlas::gemv( RT_range, basis_range, target );
+            blas::gemv( 1.0, RT_range, basis_range, 1.0, target );
 
             // Pass 2: finish the work we have just started, take the temporary vector, and make the update
             //         R( i, new_basis_vec ) <- ( k( i, new_basis_vec ) - RT[new_basis_vec]^T RT[i] ) / d_perp
@@ -190,7 +191,7 @@ public:
 		typedef ublas::matrix_vector_slice<ublas::matrix<double> > slice_type;
 		slice_type basis_range( RT.matrix, ublas::slice(i, 0, i), ublas::slice(0, 1, i) );
 		slice_type new_vector_range( RT.matrix, ublas::slice( pivot.size(), 0, i ), ublas::slice(0, 1, i) );
-		double value = ( kernel_function( get<0>(data[key]), get<0>(data[pivot[i]]) ) - atlas::dot( basis_range, new_vector_range ) ) /
+		double value = ( kernel_function( get<0>(data[key]), get<0>(data[pivot[i]]) ) - blas::dot( basis_range, new_vector_range ) ) /
 				       RT.matrix( i, i );
 		RT.matrix( pivot.size(), i ) = value;
 		squared_distance.back() -= value * value;
