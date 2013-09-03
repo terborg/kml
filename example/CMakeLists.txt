@@ -25,3 +25,9 @@ target_link_libraries( incomplete_cholesky ${Boost_LIBRARIES} ${BLAS_LIBRARIES} 
 
 add_executable( svm_classification svm_classification.cpp )
 
+
+add_executable( svm_regression svm_regression.cpp )
+target_link_libraries( svm_regression ${Boost_LIBRARIES} ${BLAS_LIBRARIES} )
+
+
+

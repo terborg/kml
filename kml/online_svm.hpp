@@ -21,10 +21,10 @@
 #define ONLINE_SVM_HPP
 
 #include <boost/lexical_cast.hpp>
-#include <boost/numeric/bindings/traits/std_vector.hpp>
-#include <boost/numeric/bindings/traits/ublas_matrix.hpp>
-#include <boost/numeric/bindings/traits/ublas_symmetric.hpp>
-#include <boost/numeric/bindings/traits/ublas_vector.hpp>
+#include <boost/numeric/bindings/std/vector.hpp>
+#include <boost/numeric/bindings/ublas/matrix.hpp>
+#include <boost/numeric/bindings/ublas/symmetric.hpp>
+#include <boost/numeric/bindings/ublas/vector.hpp>
 #include <boost/mpl/equal_to.hpp>
 
 #include <boost/serialization/access.hpp>
@@ -49,7 +49,7 @@
 
 
 
-namespace atlas = boost::numeric::bindings::atlas;
+namespace blas = boost::numeric::bindings::blas;
 namespace mpl = boost::mpl;
 
 namespace kml {
@@ -179,7 +179,7 @@ public:
         if (!margin_set.empty()) {
             vector_type temp_K( margin_set.size() );
             fill_kernel( x, margin_key.begin(), margin_key.end(), temp_K.begin() );
-            result += atlas::dot( temp_K, weight );
+            result += blas::dot( temp_K, weight );
         }
         if (!error_set.empty()) {
             result_type temp_K(0);
@@ -393,7 +393,7 @@ public:
             coef_sense.resize( margin_set.size()+1, false );
             ublas::matrix_range< ublas::matrix<double> > R_range( R.view() );
             ublas::symmetric_adaptor< ublas::matrix_range< ublas::matrix<double> > > R_view( R_range );
-            atlas::symv( R_view, H.row(index), coef_sense );
+            blas::symv( 1.0, R_view, H.row(index), 1.0, coef_sense );
 
             // 	    for( int i=0; i<margin_set.size(); ++i ) {
             // 		std::cout << "margin " << margin_set[i] << " coef sense " << coef_sense[i+1];
@@ -401,8 +401,8 @@ public:
             // 	    }
 
             // compute all margin sensitivities
-            atlas::gemv( H.view(), coef_sense, margin_sense );
-            atlas::xpy( candidate_column, margin_sense );
+            blas::gemv( 1.0, H.view(), coef_sense, 1.0, margin_sense );
+            blas::axpy( 1.0, candidate_column, margin_sense );
 
             scalar_type delta_weight_t;
             scalar_type max_var;
@@ -584,13 +584,13 @@ public:
             // update weight vector
             // it should have more than 0 elements
             if (weight.size() > 0)
-                atlas::axpy( delta_weight_t, ublas::vector_range<vector_type>(coef_sense,ublas::range(1,coef_sense.size())), weight );
+                blas::axpy( delta_weight_t, ublas::vector_range<vector_type>(coef_sense,ublas::range(1,coef_sense.size())), weight );
 
             // update bias
             bias += coef_sense(0) * delta_weight_t;
 
             // update residual vector
-            atlas::axpy( -delta_weight_t, margin_sense, residual );
+            blas::axpy( -delta_weight_t, margin_sense, residual );
 
 
 
@@ -760,13 +760,13 @@ public:
             ublas::matrix_vector_slice< ublas::matrix<double> > R_row_part( R.shrinked_row(old_size) );
 
             // compute the unscaled last row of R (similar to the coefficient sensitivities)
-            atlas::symv( R_symm_view, H.row(index), R_row_part );
+            blas::symv( 1.0, R_symm_view, H.row(index), 1.0, R_row_part );
 
             // compute the scaling factor
 
             // BAIL OUT HERE IF NECESSARY
 
-            double divisor = kernel( key, key ) + atlas::dot( H.row(index), R_row_part );
+            double divisor = kernel( key, key ) + blas::dot( H.row(index), R_row_part );
 
             if (std::fabs( divisor ) < 1e-12 ) {
 
@@ -789,7 +789,7 @@ public:
                 int qqq;
                 std::cin >> qqq;
 
-                //atlas::set( 0.0, R_row_part );
+                //blas::set( 0.0, R_row_part );
                 //R.matrix( old_size, old_size ) = 0.0;
 
 
@@ -799,10 +799,10 @@ public:
             R.matrix(old_size,old_size) = -1.0 / divisor;
 
             // perform a rank-1 update of the R matrix
-            atlas::syr( R.matrix(old_size,old_size), R_row_part, R_symm_view );
+            blas::syr( R.matrix(old_size,old_size), R_row_part, R_symm_view );
 
             // scale the last row with the scaling factor
-            atlas::scal( R.matrix(old_size,old_size), R_row_part );
+            blas::scal( R.matrix(old_size,old_size), R_row_part );
         }
 
         // adjust "design" matrix
@@ -838,7 +838,7 @@ public:
             ublas::symmetric_adaptor< ublas::matrix_range< ublas::matrix<double> > > R_view( R_range );
 
             vector_type R_row( row(R_view, idx+1) );
-            atlas::syr( -1.0/R.matrix(idx+1,idx+1), R_row, R_view );
+            blas::syr( -1.0/R.matrix(idx+1,idx+1), R_row, R_view );
 
             // efficient removal from inverse matrix R
             R.swap_remove_row_col( idx+1 );
@@ -1005,7 +1005,7 @@ public:
         if (margin_set.size()>0) {
             vector_type temp_K( margin_set.size() );
             fill_kernel( x, margin_key.begin(), margin_key.end(), temp_K.begin() );
-            result += atlas::dot( temp_K, weight );
+            result += blas::dot( temp_K, weight );
         }
         if (error_set.size()>0) {
             scalar_type temp_K(0);
@@ -1223,13 +1223,13 @@ public:
             coef_sense.resize( margin_set.size()+1, false );
             ublas::matrix_range< ublas::matrix<double> > R_range( R.view() );
             ublas::symmetric_adaptor< ublas::matrix_range< ublas::matrix<double> > > R_view( R_range );
-            atlas::symv( R_view, H.row(index), coef_sense );
+            blas::symv( 1.0, R_view, H.row(index), 1.0, coef_sense );
             // 	    if (debug)
             //       	        std::cout << "Coefficient sensitivities: " << coef_sense << std::endl;
             //
             // Equation 12: compute all margin sensitivities
-            atlas::gemv( H.view(), coef_sense, margin_sense );
-            atlas::xpy( candidate_column, margin_sense );
+            blas::gemv( 1.0, H.view(), coef_sense, 1.0, margin_sense );
+            blas::axpy( 1.0, candidate_column, margin_sense );
             // 	    if (debug)
             // 	    	std::cout << "Margin sensitivities: " << margin_sense << std::endl;
 
@@ -1368,7 +1368,7 @@ public:
             bias += delta_weight_t * coef_sense[0];
 
             // Equation 9: update weight vector using the coefficient sensitivities and the change in the weight_t
-            atlas::axpy( delta_weight_t, ublas::vector_range<vector_type>(coef_sense,ublas::range(1,coef_sense.size())), weight );
+            blas::axpy( delta_weight_t, ublas::vector_range<vector_type>(coef_sense,ublas::range(1,coef_sense.size())), weight );
 
             if (debug) {
                 std::cout << "Updated weights to: ";
@@ -1379,7 +1379,7 @@ public:
             }
 
             // Equation 11: update condition vector
-            atlas::axpy( delta_weight_t, margin_sense, condition );
+            blas::axpy( delta_weight_t, margin_sense, condition );
 
             // 	    if (debug) {
             // 		    std::cout << "Updated conditions to: ";
@@ -1526,14 +1526,14 @@ public:
             ublas::matrix_vector_slice< ublas::matrix<double> > R_row_part( R.shrinked_row(old_size) );
 
             // compute the unscaled last row of R (similar to the coefficient sensitivities)
-            atlas::symv( R_symm_view, H.row(idx), R_row_part );
+            blas::symv( 1.0, R_symm_view, H.row(idx), 1.0, R_row_part );
 
             // compute the scaling factor
 
             // BAIL OUT HERE IF NECESSARY
 
             double divisor = kernel( every_key[idx], every_key[idx] ) +
-                             atlas::dot( H.row(idx), R_row_part );
+                             blas::dot( H.row(idx), R_row_part );
 
             // Pseudoinverse of a SVD:
             // in this case: fill that part of R with zeros!
@@ -1570,7 +1570,7 @@ public:
                 int qqq;
                 std::cin >> qqq;
 
-                //atlas::set( 0.0, R_row_part );
+                //blas::set( 0.0, R_row_part );
                 //R.matrix( old_size, old_size ) = 0.0;
 
 
@@ -1580,10 +1580,10 @@ public:
             R.matrix(old_size,old_size) = -1.0 / divisor;
 
             // perform a rank-1 update of the R matrix
-            atlas::syr( R.matrix(old_size,old_size), R_row_part, R_symm_view );
+            blas::syr( R.matrix(old_size,old_size), R_row_part, R_symm_view );
 
             // scale the last row with the scaling factor
-            atlas::scal( R.matrix(old_size,old_size), R_row_part );
+            blas::scal( R.matrix(old_size,old_size), R_row_part );
 
         }
 
@@ -1671,7 +1671,7 @@ public:
             ublas::symmetric_adaptor< ublas::matrix_range< ublas::matrix<double> > > R_view( R_range );
 
             vector_type R_row( row(R_view, idx+1) );
-            atlas::syr( -1.0/divisor, R_row, R_view );
+            blas::syr( -1.0/divisor, R_row, R_view );
 
             // efficient removal from inverse matrix R
             R.swap_remove_row_col( idx+1 );
