@@ -31,15 +31,17 @@
 // TODO fix old algorithms from kernels.h
 #include "kernels.h"
 
-// include AFTER enough traits have been included, of course... (?)
-#include <boost/numeric/bindings/atlas/cblas.hpp>
-#include <boost/numeric/bindings/atlas/clapack.hpp>
+#include <boost/numeric/bindings/blas.hpp>
+#include <boost/numeric/bindings/lapack.hpp>
+#include <boost/numeric/bindings/trans.hpp>
 
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/tracking.hpp>
 #include <boost/serialization/vector.hpp>
 
+
+namespace lapack = boost::numeric::bindings::lapack;
 
 
 namespace kml {
@@ -135,13 +137,13 @@ public:
             m_output[i] = output(*key_iter++);
         }
         vector_type Hty( problem_size + 1 );
-        atlas::gemv( static_cast<matrix_type>(ublas::trans(H)), m_output, Hty );
+        blas::gemv( 1.0, bindings::trans(H), m_output, 1.0, Hty );
         if (debug)
             std::cout << "done." << std::endl;
 
         std::cout << "computing HtH..." << std::flush;
         matrix_type HtH( problem_size + 1, problem_size + 1 );
-        atlas::gemm( static_cast<matrix_type>(ublas::trans(H)), H, HtH );
+        blas::gemm( 1.0, bindings::trans(H), H, 1.0, HtH );
         std::cout << "done." << std::endl;
 
         vector_type diag_HtH( HtH.size1() );
@@ -272,7 +274,7 @@ public:
 
             // perform the actual matrix inversion
             ublas::symmetric_adaptor< matrix_type > sigma_symm( sigma );
-            atlas::posv( sigma_inv_symm, sigma );
+            lapack::posv( sigma_inv_symm, sigma );
 
             // update mu vector
 
@@ -281,8 +283,8 @@ public:
             // mu is active_set size
 
 
-            atlas::symv( sigma_symm, Hty_cache, mu );
-            atlas::scal( beta, mu );
+            blas::symv( 1.0, sigma_symm, Hty_cache, 1.0, mu );
+            blas::scal( beta, mu );
 
             /*
 
@@ -291,15 +293,15 @@ public:
             */
             // work matrix will be HtH.size1() by active_set.size (equals HtH_part size)
             matrix_type work_mat( HtH.size1(), active_set.size() );
-            atlas::symm( HtH_cache, sigma_symm, work_mat );
+            blas::symm( 1.0, HtH_cache, sigma_symm, 1.0, work_mat );
 
             // compute ALL S(i)'s and Q(i)'s (quite efficient)
             for( unsigned int i=0; i<S.size(); ++i ) {
-                S[i] = atlas::dot( ublas::row(work_mat,i), ublas::row(HtH_cache,i) );
+                S[i] = blas::dot( ublas::row(work_mat,i), ublas::row(HtH_cache,i) );
             }
-            atlas::axpby( beta, diag_HtH, -beta*beta, S );
-            atlas::copy( Hty, Q );
-            atlas::gemv( -beta*beta, work_mat, Hty_cache, beta, Q );
+            blas::axpby( beta, diag_HtH, -beta*beta, S );
+            blas::copy( Hty, Q );
+            blas::gemv( -beta*beta, work_mat, Hty_cache, beta, Q );
 
             // initialise with a non-working move
             best_action = unknown;
@@ -419,8 +421,8 @@ public:
                     inactive_set.push_back( i );
                     /*                ublas::matrix_column<ublas::matrix<double, ublas::column_major> > sigma_j( sigma, action_index );*/
                     ublas::matrix_column< matrix_type > sigma_j( sigma, action_index );
-                    atlas::axpy( -mu[action_index] / sigma(action_index,action_index), sigma_j, mu );
-                    atlas::syr( -1.0/sigma(action_index,action_index), sigma_j, sigma_symm );
+                    blas::axpy( -mu[action_index] / sigma(action_index,action_index), sigma_j, mu );
+                    blas::syr( -1.0/sigma(action_index,action_index), sigma_j, sigma_symm );
                     // NOTE TODO VERY inefficient!
                     preserved_shrink( mu, action_index );
                     preserved_shrink( sigma, action_index, action_index );
@@ -441,9 +443,9 @@ public:
                     scalar_type kappa = 1.0 / (sigma(action_index,action_index) + (1.0 / (1.0/theta_l_max - 1.0/theta(i))));
                     /*                ublas::matrix_column<ublas::matrix<double, ublas::column_major> > sigma_j( sigma, action_index );*/
                     ublas::matrix_column< matrix_type > sigma_j( sigma, action_index );
-                    atlas::axpy( -kappa * mu[action_index], sigma_j, mu );
+                    blas::axpy( -kappa * mu[action_index], sigma_j, mu );
                     // FIXED! BUG!! kappa -> -kappa.
-                    atlas::syr( -kappa, sigma_j, sigma_symm );
+                    blas::syr( -kappa, sigma_j, sigma_symm );
                     theta(i) = theta_l_max;
                     if (debug)
                         std::cout << "Reestimated " << i << std::endl;
@@ -476,7 +478,7 @@ public:
                     // perform update of Sigma (equation 28)
                     // TODO FIXME remove beta from the updated matrix? In that case, we don't need to ever
                     // recompute the kernel matrix.
-                    atlas::syr( sigma_ii * beta * beta, row(work_mat,i), sigma_symm );
+                    blas::syr( sigma_ii * beta * beta, row(work_mat,i), sigma_symm );
                     preserved_resize( sigma, new_size, new_size );
                     ublas::matrix_vector_slice< matrix_type > sigma_row_part( sigma, ublas::slice(old_size,0,old_size), ublas::slice(0,1,old_size));
                     noalias(sigma_row_part) = -beta * beta * sigma_ii * row(work_mat,i);
@@ -486,7 +488,7 @@ public:
 
 
                     // perform update of mu (equation 29)
-                    atlas::axpy( -mu_i*beta, row(work_mat,i), mu );
+                    blas::axpy( -mu_i*beta, row(work_mat,i), mu );
                     preserved_resize( mu, new_size );
                     mu[old_size] = mu_i;
 
@@ -541,12 +543,12 @@ public:
             //scalar_type heuh2 = residual_sum_of_squares_2( H, mu, active_set, output ) / (static_cast<scalar_type>(output.size()) - trace_Sigma_HtH );
 
 
-            atlas::gemv( H_cache, mu, residuals );
-            atlas::axpy( -1.0, m_output, residuals );
+            blas::gemv( 1.0, H_cache, mu, 1.0, residuals );
+            blas::axpy( -1.0, m_output, residuals );
             if (debug)
-                std::cout << "rss: " << atlas::dot( residuals, residuals ) << std::endl;
+                std::cout << "rss: " << blas::dot( residuals, residuals ) << std::endl;
 
-            scalar_type heuh2 = atlas::dot( residuals, residuals) / (static_cast<scalar_type>(m_output.size()) - trace_Sigma_HtH );
+            scalar_type heuh2 = blas::dot( residuals, residuals) / (static_cast<scalar_type>(m_output.size()) - trace_Sigma_HtH );
 
 
             //             std::cout << "variance could be: " << heuh2 << std::endl;

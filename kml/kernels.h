@@ -27,11 +27,12 @@
 
 
 // Boost numeric bindings to e.g. ATLAS
-#include <boost/numeric/bindings/traits/ublas_matrix.hpp>
-#include <boost/numeric/bindings/traits/ublas_symmetric.hpp>
-#include <boost/numeric/bindings/traits/ublas_vector.hpp>
-#include <boost/numeric/bindings/traits/std_vector.hpp>
-#include <boost/numeric/bindings/atlas/cblas.hpp>
+#include <boost/numeric/bindings/ublas/matrix.hpp>
+#include <boost/numeric/bindings/ublas/symmetric.hpp>
+#include <boost/numeric/bindings/ublas/vector.hpp>
+#include <boost/numeric/bindings/std/vector.hpp>
+#include <boost/numeric/bindings/blas.hpp>
+#include <boost/numeric/bindings/trans.hpp>
 
 //#include <boost/numeric/bindings/lapack/gelsd.hpp>
 
@@ -66,7 +67,8 @@
 
 
 namespace ublas = boost::numeric::ublas;
-namespace atlas = boost::numeric::bindings::atlas;
+namespace blas = boost::numeric::bindings::blas;
+namespace bindings = boost::numeric::bindings;
 //namespace lapack = boost::numeric::bindings::lapack;
 
 enum kernel_type { Gaussian_trait, polynomial_trait };
@@ -114,12 +116,12 @@ inline void outer_prod( matX const &X, matR &result ) {
     if (X.size1()>X.size2()) {
         for (int col=0; col<X.size2(); ++col) {
             ublas::matrix_column<matX const> X_col( X, col );
-            atlas::spr( X_col, result );
+            blas::spr( X_col, result );
         }
     } else {
         for (int row=0; row<X.size1(); ++row) {
             ublas::matrix_row<matX const> X_row( X, row );
-            atlas::spr( X_row, result );
+            blas::spr( X_row, result );
         }
     }
 }
@@ -128,14 +130,14 @@ inline void outer_prod( matX const &X, matR &result ) {
 template<typename MatX, typename MatR>
 inline void inner_prod( MatX const &X, MatR &result ) {
     MatX temp( X.size2(), X.size2() );
-    atlas::gemm<MatX>( ublas::trans(X), X, temp );
+    blas::gemm<MatX>( ublas::trans(X), X, temp );
     result.assign( temp );
 }
 
 template<typename MatX, typename MatR>
 inline void inner_prod( MatX const &X, MatX const &Y, MatR &result ) {
     MatX temp( X.size2(), X.size2() );
-    atlas::gemm<MatX>( trans(X), Y, temp );
+    blas::gemm<MatX>( trans(X), Y, temp );
     result.assign( temp );
 }
 
@@ -156,7 +158,7 @@ inline void outer_norm2( matX const &X, matR &result ) {
     // create a vector filled with a constant
     ublas::vector<Type> diag(ublas::matrix_vector_range<ublas::symmetric_matrix<Type> >(result, ublas::range(0, result.size1()), ublas::range(0, result.size1())));
     ublas::vector<Type> one_vector( result.size1() );
-    atlas::set
+    blas::set
         ( 1.0, one_vector );
 
     // multiply the result, for the -2 in "u^T*u - 2 * u^T*v + v^T*v"
@@ -164,7 +166,7 @@ inline void outer_norm2( matX const &X, matR &result ) {
     result *= -2.0;
 
     // spr2: A <- x yT + y xT + A,  A symmetric real matrix in packed format
-    atlas::spr2( one_vector, diag, result );
+    blas::spr2( one_vector, diag, result );
 }
 
 
@@ -297,7 +299,7 @@ class kernel_precomp<Type, in_prod> {
 public:
     inline static Type inner_prod( std::vector<Type> u, std::vector<Type> v ) {
         // return the classic inner product of these two vectors
-        return atlas::dot( u, v );
+        return blas::dot( u, v );
     }
 
 
@@ -309,12 +311,12 @@ public:
         if (X.size1()>X.size2()) {
             for (int col=0; col<X.size2(); ++col) {
                 ublas::matrix_column<ublas::matrix<Type> const> X_col( X, col );
-                atlas::spr( X_col, result );
+                blas::spr( X_col, result );
             }
         } else {
             for (int row=0; row<X.size1(); ++row) {
                 ublas::matrix_row<ublas::matrix<Type> const> X_row( X, row );
-                atlas::spr( X_row, result );
+                blas::spr( X_row, result );
             }
         }
     }
@@ -330,8 +332,8 @@ public:
 
 
         std::vector<Type> temp(u);
-        atlas::axpy(-1.0,v,temp);
-        return atlas::dot( temp, temp );
+        blas::axpy(-1.0,v,temp);
+        return blas::dot( temp, temp );
     }
 
     inline static void kernel_matrix( ublas::matrix<Type> const &X, ublas::symmetric_matrix<Type> &result ) {}
@@ -502,7 +504,7 @@ void design_matrix( MatT const &X, MatT const &Y, Kernel const&k, MatR &result )
     //ublas::matrix_column<MatR> intercept( result, 0 );
 
     // depends on the derivative order of the kernel type...
-    atlas::set( static_cast<typename MatT::value_type>(order_weight<Kernel::order>::value), ublas::column( result, 0 ) );
+    blas::set( static_cast<typename MatT::value_type>(order_weight<Kernel::order>::value), ublas::column( result, 0 ) );
     for( typename MatT::size_type i = 0; i < Y.size1(); ++i ) {
         for( typename MatT::size_type j = 0; j < X.size1(); ++j ) {
             ublas::matrix_row<MatT const> x_j( X, j );
@@ -541,7 +543,7 @@ void packed_HtH( ublas::matrix<Type> const &H, ublas::symmetric_matrix<Type> &Ht
     ublas::symmetric_adaptor<ublas::matrix<Type> > temp_symm(temp);
 
     // compute it's own inner product, K^T K
-    atlas::syrk( CblasTrans, 1.0, temp, 0.0, temp_symm );
+    blas::syrk( 1.0, bindings::trans( temp ), 0.0, temp_symm );
 
     // resize H^T H to the appropriate size (nr of columns of K+1) (although K is a symmetric matrix here,
     // it doesn't really matter, but it does when K is not symmetric)
@@ -557,11 +559,11 @@ void packed_HtH( ublas::matrix<Type> const &H, ublas::symmetric_matrix<Type> &Ht
     ublas::vector<Type> one_vector( H.size1() );
     ublas::vector<Type> first_row_and_col( HtH.size1() );
     ublas::vector_range<ublas::vector<Type> > part_of_froc( first_row_and_col, ublas::range(1, first_row_and_col.size()) );
-    atlas::set
+    blas::set
         ( 1.0, one_vector );
 
     // a part of this is a simple matrix-vector multiplication.
-    atlas::spmv( H, one_vector, part_of_froc );
+    blas::spmv( H, one_vector, part_of_froc );
 
     // inner product of the intercept term column equals its length, and that length
     // is the number of rows in K (which equals the number of rows in H).
@@ -583,14 +585,14 @@ void packed_Hty( ublas::symmetric_matrix<Type> const &K, ublas::vector<Type> con
 
     // handle the intercept term
     ublas::vector<Type> one_vector( K.size1() );
-    atlas::set
+    blas::set
         ( 1.0, one_vector );
-    result(0) = atlas::dot( one_vector, y );
+    result(0) = blas::dot( one_vector, y );
 
     // compute first part: Hty <- K y (K is symmetric, so doesn't matter)
     // then second part: y <- 1 y + y
     ublas::vector_range<ublas::vector<Type> > part_of_Hty( result, ublas::range(1, result.size()) );
-    atlas::spmv( K, y, part_of_Hty );
+    blas::spmv( K, y, part_of_Hty );
 }
 
 
@@ -609,7 +611,7 @@ void memory_Hty( MatT const &X, MatT const &Y, kernel_type const &k, vector_type
             ublas::matrix_row<MatT const> y_i( Y, i );
             H_col( j ) = k( x_j, y_i );
         }
-        atlas::axpy( y(j), H_col, result );
+        blas::axpy( y(j), H_col, result );
     }
     // now the result should contain t(H) %*% y
 
@@ -626,7 +628,7 @@ void memory_Hty( MatT const &X, MatT const &Y, kernel_type const &k, vector_type
 
 
 template<typename Type, typename vector_type>
-Type variance_yHw( ublas::symmetric_matrix<Type> const &K, ublas::vector<Type> const &weight_vector, vector_type const &targets ) {
+Type variance_yHw( ublas::symmetric_matrix<Type> const &K, ublas::vector<Type> const &weight_vector, const vector_type& targets ) {
 
     // compute ||y-Halpha||^2
     assert( K.size1() == targets.size() );
@@ -634,18 +636,18 @@ Type variance_yHw( ublas::symmetric_matrix<Type> const &K, ublas::vector<Type> c
     ublas::vector<Type> residuals( targets.size() );
 
     // process the intercept term
-    atlas::set
-        ( -weight_vector(0), residuals );
-    atlas::xpy( targets, residuals );
+    blas::set( -weight_vector(0), residuals );
+    residuals += targets;
+    //blas::xpy( targets, residuals );
 
     // the second part: y - K alpha
     // spmv(a,A,x,b,y): y <- a A x + b y, A symmetric real matrix in packed format
     // skip weight[0] or alpha_0, a.k.a. the intercept term
     ublas::vector_range<ublas::vector<Type> const> part_of_weights( weight_vector, ublas::range(1, weight_vector.size()) );
-    atlas::spmv( -1.0, K, part_of_weights, 1.0, residuals );
+    blas::spmv( -1.0, K, part_of_weights, 1.0, residuals );
 
     // done!.
-    double result = atlas::nrm2( residuals );
+    double result = blas::nrm2( residuals );
     return( result * result );
 }
 
@@ -664,21 +666,21 @@ typename MatA::value_type residual_sum_squares( MatA const &A, VecA const &x, st
     assert( A.size2() == x.size() );
 
     VecA residuals( b.size() );
-    atlas::copy( b, residuals );
-    atlas::scal( -1.0, residuals );
+    blas::copy( b, residuals );
+    blas::scal( -1.0, residuals );
     
     //VecA residuals( -b );
 
     // only use the columns referenced by indices
     for( std::vector<unsigned int>::const_iterator i=indices.begin(); i!=indices.end(); ++i ) {
         //ublas::matrix_column<MatA const> A_col( A, *i );
-        // TODO reintroduce atlas
+        // TODO reintroduce blas
 	ublas::noalias(residuals) += x[*i] * ublas::column(A, *i);
-	//atlas::axpy( x[*i], A_col, residuals );
+	//blas::axpy( x[*i], A_col, residuals );
     }
 
     // done!
-    typename MatA::value_type result = atlas::dot( residuals, residuals );
+    typename MatA::value_type result = blas::dot( residuals, residuals );
     return result;
 }
 
@@ -695,10 +697,10 @@ typename MatA::value_type residual_sum_of_squares_2( MatA const &A, VecA const &
 
     // only use the columns referenced by indices
     for( unsigned int i=0; i<indices.size(); ++i ) {
-        atlas::axpy( x[i], ublas::column( A, indices[i] ), residuals );
+        blas::axpy( x[i], ublas::column( A, indices[i] ), residuals );
     }
 
-    return atlas::dot( residuals, residuals );//result;
+    return blas::dot( residuals, residuals );//result;
 }
 
 

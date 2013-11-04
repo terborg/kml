@@ -20,11 +20,10 @@
 #ifndef DESIGN_MATRIX_HPP
 #define DESIGN_MATRIX_HPP
 
-#include <boost/numeric/bindings/atlas/cblas.hpp>
-#include <boost/numeric/bindings/traits/ublas_matrix.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/bindings/blas.hpp>
+#include <boost/numeric/bindings/ublas/matrix.hpp>
+#include <boost/numeric/bindings/ublas/matrix_proxy.hpp>
+#include <boost/numeric/bindings/ublas/vector.hpp>
 #include <boost/range/begin.hpp>
 #include <boost/range/empty.hpp>
 #include <boost/range/end.hpp>
@@ -58,7 +57,7 @@ in conjunction with ATLAS, and resizes should only take place once in a while.
 */
 
 
-namespace atlas = boost::numeric::bindings::atlas;
+namespace blas = boost::numeric::bindings::blas;
 namespace ublas = boost::numeric::ublas;
 
 
@@ -74,9 +73,9 @@ void design_matrix( Range const &source, Range const &target, Kernel const &kern
     // do a non-preserving resize
     result.resize( boost::size(target), boost::size(source)+1, false );
 
-    // TODO check atlas additional functionality
+    // TODO check blas additional functionality
     ublas::matrix_column<ublas::matrix<double> > bias_col( result, 0 );
-    //atlas::set( bias_value, bias_col );
+    //blas::set( bias_value, bias_col );
     std::fill( boost::begin(bias_col), boost::end(bias_col), bias_value );
 
     for( unsigned int s = 0; s < boost::size( source ); ++s ) {

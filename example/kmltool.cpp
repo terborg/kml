@@ -28,7 +28,7 @@
 
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/tuple/tuple.hpp>
-#include <boost/vector_property_map.hpp>
+#include <boost/property_map/vector_property_map.hpp>
 
 
 

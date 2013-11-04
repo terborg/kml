@@ -20,11 +20,10 @@
 #ifndef KML_KRLS_HPP
 #define KML_KRLS_HPP
 
-#include <boost/numeric/bindings/traits/ublas_matrix.hpp>
-#include <boost/numeric/bindings/traits/ublas_symmetric.hpp>
-#include <boost/numeric/bindings/traits/ublas_vector.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/bindings/atlas/cblas.hpp>
+#include <boost/numeric/bindings/ublas/matrix.hpp>
+#include <boost/numeric/bindings/ublas/symmetric.hpp>
+#include <boost/numeric/bindings/ublas/vector.hpp>
+#include <boost/numeric/bindings/blas.hpp>
 #include <kml/kernel_machine.hpp>
 #include <kml/regression.hpp>
 #include <kml/symmetric_view.hpp>
@@ -35,7 +34,7 @@
 #include <boost/serialization/vector.hpp>
 
 
-namespace atlas = boost::numeric::bindings::atlas;
+namespace blas = boost::numeric::bindings::blas;
 
 
 namespace kml {
@@ -113,7 +112,7 @@ public:
         fill_kernel( x, basis_key.begin(), basis_key.end(), temp_K.begin() );
         for( unsigned int i=0; i < temp_K.size(); ++i )
             temp_K[i] += lambda_squared;
-        return atlas::dot( weight, temp_K );
+        return blas::dot( weight, temp_K );
 
     }
 
@@ -167,8 +166,8 @@ public:
             // a_t <- R %*% k_t
             ublas::matrix_range< ublas::matrix<double> > R_range( R.view() );
             ublas::symmetric_adaptor< ublas::matrix_range< ublas::matrix<double> > > R_view( R_range );
-            atlas::symv( R_view, k_t, a_t );
-            scalar_type delta_t = k_tt - atlas::dot( k_t, a_t );
+            blas::symv( 1.0, R_view, k_t, 1.0, a_t );
+            scalar_type delta_t = k_tt - blas::dot( k_t, a_t );
 
             // Perform Approximate Linear Dependency (ALD) test
             // If the ALD is larger than some previously set tolerance, add the input to 
@@ -180,10 +179,10 @@ public:
 
                 // update inverse matrix R (equation 14)
                 scalar_type factor = static_cast<scalar_type>(1) / delta_t;
-                atlas::syr( factor, a_t, R_view );
+                blas::syr( factor, a_t, R_view );
                 R.grow_row_column();
                 ublas::matrix_vector_slice< ublas::matrix<double> > R_row_part( R.shrinked_row(old_size) );
-                atlas::scal( -factor, a_t );
+                blas::scal( -factor, a_t );
                 R_row_part.assign( a_t );
                 R.matrix( old_size, old_size ) = factor;
 
@@ -191,12 +190,12 @@ public:
                 // assign unit vector with 1 on last element.
                 P.grow_row_column();
                 ublas::matrix_vector_slice< ublas::matrix<double> > P_row_part( P.shrinked_row(old_size) );
-                atlas::set(  0.0, P_row_part );
+                blas::set(  0.0, P_row_part );
                 P.matrix( old_size, old_size ) = 1.0;
 
                 // adjust weight vector alpha (equation 16)
-                factor = output(key) - atlas::dot(k_t,weight);
-                atlas::axpy( factor, a_t, weight );
+                factor = output(key) - blas::dot(k_t,weight);
+                blas::axpy( factor, a_t, weight );
 
                 // add new weight to the weight vector
                 weight.push_back( factor / delta_t );
@@ -213,17 +212,17 @@ public:
                 // spmv(A,x,y)       y <- A x
                 ublas::matrix_range< ublas::matrix<double> > P_range( P.view() );
                 ublas::symmetric_adaptor< ublas::matrix_range< ublas::matrix<double> > > P_view( P_range );
-                atlas::symv( P_view, a_t, P_a );
+                blas::symv( 1.0, P_view, a_t, 1.0, P_a );
 
                 // 1 / (1 + a_t %*% P_(t-1) %*% a_t)
-                scalar_type factor = 1.0 / (1.0 + atlas::dot( a_t, P_a ));
+                scalar_type factor = 1.0 / (1.0 + blas::dot( a_t, P_a ));
 
                 // update weights (equation 13)
-                atlas::symv( factor* output(key) - atlas::dot(k_t,weight),
+                blas::symv( factor* output(key) - blas::dot(k_t,weight),
                              R_view, P_a, static_cast<scalar_type>(1), weight );
 
                 // update permutation matrix (equation 14)
-                atlas::syr( -factor, P_a, P_view );
+                blas::syr( -factor, P_a, P_view );
             }
         }
     }
