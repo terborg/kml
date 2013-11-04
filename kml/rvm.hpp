@@ -293,12 +293,15 @@ public:
             */
             // work matrix will be HtH.size1() by active_set.size (equals HtH_part size)
             matrix_type work_mat( HtH.size1(), active_set.size() );
-            blas::symm( 1.0, HtH_cache, sigma_symm, 1.0, work_mat );
+            blas::symm( bindings::tag::left(), 1.0, HtH_cache, sigma_symm, 1.0, work_mat );
 
             // compute ALL S(i)'s and Q(i)'s (quite efficient)
             for( unsigned int i=0; i<S.size(); ++i ) {
                 S[i] = blas::dot( ublas::row(work_mat,i), ublas::row(HtH_cache,i) );
             }
+            
+            
+            
             blas::axpby( beta, diag_HtH, -beta*beta, S );
             blas::copy( Hty, Q );
             blas::gemv( -beta*beta, work_mat, Hty_cache, beta, Q );
