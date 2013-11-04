@@ -135,8 +135,8 @@ public:
     typedef typename Problem::input_type input_type;
     typedef typename Problem::output_type output_type;
     typedef double scalar_type;
-    typedef ublas::symmetric_matrix<double> symmetric_type;
-    typedef ublas::matrix<double> matrix_type;
+    typedef ublas::symmetric_matrix<double, ublas::column_major> symmetric_type;
+    typedef ublas::matrix<double, ublas::column_major> matrix_type;
     typedef ublas::vector<double> vector_type;
 
     friend class boost::serialization::access;
@@ -178,20 +178,20 @@ public:
         // temp_K[i], not temp_K[i+1]
         if (!margin_set.empty()) {
             vector_type temp_K( margin_set.size() );
-            fill_kernel( x, margin_key.begin(), margin_key.end(), temp_K.begin() );
+            this->fill_kernel( x, margin_key.begin(), margin_key.end(), temp_K.begin() );
             result += blas::dot( temp_K, weight );
         }
         if (!error_set.empty()) {
             result_type temp_K(0);
             //vector_type temp_K( error_set.size() );
             for( unsigned int i=0; i < error_set.size(); ++i )
-                temp_K += kernel( x, every_key[error_set[i]] );
+                temp_K += this->kernel( x, every_key[error_set[i]] );
             result += C * temp_K;
         }
         if (!error_star_set.empty()) {
             result_type temp_K(0);
             for( unsigned int i=0; i < error_star_set.size(); ++i )
-                temp_K += kernel( x, every_key[error_star_set[i]] );
+                temp_K += this->kernel( x, every_key[error_star_set[i]] );
             result -= C * temp_K;
         }
         return result;
@@ -228,7 +228,7 @@ public:
         }
 
         // important: the sign of the residual is used below
-        residual.push_back( output( key ) - operator()( input( key ) ) );
+        residual.push_back( this->output( key ) - operator()( this->input( key ) ) );
 
         // add to support vector buffer
         //     preserved_resize( all_vectors, index+1, x_t.size() );
@@ -242,7 +242,7 @@ public:
             if (debug)
                 std::cout << "Initialising the Accurate Online Support Vector Regression machine" << std::endl;
             residual.back() = 0.0;
-            bias = output(key);
+            bias = this->output(key);
 
             // put this first point (with index 0) in the remaining set
             remaining_set.push_back( index );
@@ -274,9 +274,9 @@ public:
             // fill last row of design matrix with this input sample
             // TODO this should be an otimised function call
 
-            ublas::matrix_row<ublas::matrix<double> >::iterator j = ublas::row( H.matrix, index ).begin();
+            ublas::matrix_row< matrix_type >::iterator j = ublas::row( H.matrix, index ).begin();
             *j++ = 1.0;
-            fill_kernel( key, margin_key.begin(), margin_key.end(), j );
+            this->fill_kernel( key, margin_key.begin(), margin_key.end(), j );
 
             if ( std::fabs(residual.back()) <= epsilon ) {
                 if (debug)
@@ -374,7 +374,7 @@ public:
         // point under consideration
         vector_type candidate_column( every_key.size() );
 
-        fill_kernel( key, every_key.begin(), every_key.end(),
+        this->fill_kernel( key, every_key.begin(), every_key.end(),
                      candidate_column.begin() );
 
         if (debug)
@@ -391,8 +391,8 @@ public:
 
             // compute all coefficient sensitivities
             coef_sense.resize( margin_set.size()+1, false );
-            ublas::matrix_range< ublas::matrix<double> > R_range( R.view() );
-            ublas::symmetric_adaptor< ublas::matrix_range< ublas::matrix<double> > > R_view( R_range );
+            ublas::matrix_range< matrix_type > R_range( R.view() );
+            ublas::symmetric_adaptor< ublas::matrix_range< matrix_type > > R_view( R_range );
             blas::symv( 1.0, R_view, H.row(index), 1.0, coef_sense );
 
             // 	    for( int i=0; i<margin_set.size(); ++i ) {
@@ -744,7 +744,7 @@ public:
 
             // initialise the R matrix
             R.grow_row_column();
-            R.matrix(0,0) = kernel( key, key );
+            R.matrix(0,0) = this->kernel( key, key );
             R.matrix(1,0) = -1.0;
             R.matrix(1,1) = 0.0;
 
@@ -753,11 +753,11 @@ public:
             R.grow_row_column();
 
             // fetch a view into the matrix _without_ the new row and columns
-            ublas::matrix_range< ublas::matrix<double> > R_range( R.shrinked_view() );
-            ublas::symmetric_adaptor< ublas::matrix_range< ublas::matrix<double> > > R_symm_view( R_range );
+            ublas::matrix_range< matrix_type > R_range( R.shrinked_view() );
+            ublas::symmetric_adaptor< ublas::matrix_range< matrix_type > > R_symm_view( R_range );
 
             // fetch a view into the last row of the matrix of the _old_ size
-            ublas::matrix_vector_slice< ublas::matrix<double> > R_row_part( R.shrinked_row(old_size) );
+            ublas::matrix_vector_slice< matrix_type > R_row_part( R.shrinked_row(old_size) );
 
             // compute the unscaled last row of R (similar to the coefficient sensitivities)
             blas::symv( 1.0, R_symm_view, H.row(index), 1.0, R_row_part );
@@ -766,7 +766,7 @@ public:
 
             // BAIL OUT HERE IF NECESSARY
 
-            double divisor = kernel( key, key ) + blas::dot( H.row(index), R_row_part );
+            double divisor = this->kernel( key, key ) + blas::dot( H.row(index), R_row_part );
 
             if (std::fabs( divisor ) < 1e-12 ) {
 
@@ -810,11 +810,11 @@ public:
         // because a row of the "old" design matrix is used in the determination of "delta", see above.
         H.grow_column();
         //ublas::matrix_column<ublas::matrix<double> >::iterator
-        fill_kernel( key, every_key.begin(), every_key.end(),
+        this->fill_kernel( key, every_key.begin(), every_key.end(),
                      ublas::column( H.matrix, old_size ).begin() );
 
         //         for( unsigned int i=0; i<base_type::support_vector.size(); ++i )
-        //             H.matrix(i,old_size) = kernel( base_type::support_vector[i],base_type::support_vector[idx] );
+        //             H.matrix(i,old_size) = this->kernel( base_type::support_vector[i],base_type::support_vector[idx] );
 
         // perform the actual set transition
         margin_set.push_back( index );
@@ -834,8 +834,8 @@ public:
             R.matrix(0,0)=0.0;
         } else {
 
-            ublas::matrix_range< ublas::matrix<double> > R_range( R.view() );
-            ublas::symmetric_adaptor< ublas::matrix_range< ublas::matrix<double> > > R_view( R_range );
+            ublas::matrix_range< matrix_type > R_range( R.view() );
+            ublas::symmetric_adaptor< ublas::matrix_range< matrix_type > > R_view( R_range );
 
             vector_type R_row( row(R_view, idx+1) );
             blas::syr( -1.0/R.matrix(idx+1,idx+1), R_row, R_view );
@@ -882,8 +882,8 @@ public:
 
     static const bool debug = false;
 
-    matrix_view< ublas::matrix<double> > H;					// (part of) design matrix H
-    symmetric_view< ublas::matrix<double> > R;					// matrix inverse
+    matrix_view< matrix_type > H;					// (part of) design matrix H
+    symmetric_view< matrix_type > R;					// matrix inverse
     std::vector<double> residual;						// in some sense, the history of outputs
 
     scalar_type C;
@@ -962,8 +962,8 @@ public:
     typedef typename Problem::output_type output_type;
     typedef typename Problem::example_type example_type;
     typedef double scalar_type;
-    typedef ublas::symmetric_matrix<double> symmetric_type;
-    typedef ublas::matrix<double> matrix_type;
+    typedef ublas::symmetric_matrix<double, ublas::column_major> symmetric_type;
+    typedef ublas::matrix<double, ublas::column_major> matrix_type;
     typedef ublas::vector<double> vector_type;
 
     typedef typename boost::property_traits<PropertyMap>::key_type key_type;
@@ -1004,17 +1004,17 @@ public:
         // temp_K[i], not temp_K[i+1]
         if (margin_set.size()>0) {
             vector_type temp_K( margin_set.size() );
-            fill_kernel( x, margin_key.begin(), margin_key.end(), temp_K.begin() );
+            this->fill_kernel( x, margin_key.begin(), margin_key.end(), temp_K.begin() );
             result += blas::dot( temp_K, weight );
         }
         if (error_set.size()>0) {
             scalar_type temp_K(0);
             for( unsigned int i=0; i < error_set.size(); ++i ) {
                 key_type key = every_key[error_set[i]];
-                if ( output(key) )
-                    temp_K += kernel( x, key );
+                if ( this->output(key) )
+                    temp_K += this->kernel( x, key );
                 else
-                    temp_K -= kernel( x, key );
+                    temp_K -= this->kernel( x, key );
             }
             result += C * temp_K;
         }
@@ -1069,10 +1069,10 @@ public:
         //if (debug)
 
         // record condition figure
-        if ( output(key) )
-            condition.push_back( evaluate_f( input(key) ) - 1.0 );
+        if ( this->output(key) )
+            condition.push_back( evaluate_f( this->input(key) ) - 1.0 );
         else
-            condition.push_back( -evaluate_f( input(key) ) - 1.0 );
+            condition.push_back( -evaluate_f( this->input(key) ) - 1.0 );
 
         // store the input and output
         //base_type::support_vector.push_back( input );
@@ -1100,7 +1100,7 @@ public:
                 std::cout << "Initialising the Accurate Online Support Vector Machine" << std::endl;
 
             // set f(x_i) to y_i
-            bias = bool_to_float( output(key) );
+            bias = bool_to_float( this->output(key) );
             condition.back() = 0.0;
 
             // put this first point (with index 0) in the remaining set
@@ -1112,7 +1112,7 @@ public:
 
             // initialise "design" matrix with the value associated with the output
             H.grow_row_column();
-            H.matrix(0,0) = bool_to_float( output(key) );
+            H.matrix(0,0) = bool_to_float( this->output(key) );
 
             if (debug)
                 std::cout << std::endl;
@@ -1135,8 +1135,8 @@ public:
             //H.matrix( index, 0 ) = ( output ? 1.0 : -1.0 );
 
             ublas::matrix_row<ublas::matrix<double> >::iterator j = ublas::row( H.matrix, index ).begin();
-            *j++ = bool_to_float( output(key) );
-            fill_kernel( key, margin_key.begin(), margin_key.end(), j );
+            *j++ = bool_to_float( this->output(key) );
+            this->fill_kernel( key, margin_key.begin(), margin_key.end(), j );
 
             // 	    std::cout << "Filled H to ";
             //     	    std::cout << H.view() << std::endl;
@@ -1190,13 +1190,13 @@ public:
         //
 
         vector_type candidate_column( every_key.size() );
-        fill_kernel( key, every_key.begin(), every_key.end(),
+        this->fill_kernel( key, every_key.begin(), every_key.end(),
                      candidate_column.begin() );
 
         // 	if ( (*base_type::data)[key].get<1>() ) {
         // 		for( unsigned int i=0; i<every_key.size(); ++i )
         // 		  if ( (*base_type::data)[every_key[i]].get<1>() )
-        // 		  			 std::cout << kernel( key, every_key[i] ) << std::endl;
+        // 		  			 std::cout << this->kernel( key, every_key[i] ) << std::endl;
         // 		  else
         // 		  			 std::cout << -kernel( key, every_key[i] ) << std::endl;
         // 	} else {
@@ -1204,7 +1204,7 @@ public:
         // 		  if ( (*base_type::data)[every_key[i]].get<1>() )
         // 		  			 std::cout << -kernel( key, every_key[i] ) << std::endl;
         // 		  else
-        // 		  			 std::cout << kernel( key, every_key[i] ) << std::endl;
+        // 		  			 std::cout << this->kernel( key, every_key[i] ) << std::endl;
         // 	}
         if (debug)
             std::cout << "Computed candidate column" << std::endl;
@@ -1508,9 +1508,9 @@ public:
             R.grow_row_column();
 
             // this is correct: Q_ii == K(x_i,x_i)
-            R.matrix(0,0) = kernel( every_key[idx], every_key[idx] );
+            R.matrix(0,0) = this->kernel( every_key[idx], every_key[idx] );
             // NEGATED bool_to_float (!!)
-            R.matrix(1,0) = -bool_to_float( output( every_key[idx] ) );
+            R.matrix(1,0) = -bool_to_float( this->output( every_key[idx] ) );
             R.matrix(1,1) = 0.0;
 
         } else {
@@ -1532,7 +1532,7 @@ public:
 
             // BAIL OUT HERE IF NECESSARY
 
-            double divisor = kernel( every_key[idx], every_key[idx] ) +
+            double divisor = this->kernel( every_key[idx], every_key[idx] ) +
                              blas::dot( H.row(idx), R_row_part );
 
             // Pseudoinverse of a SVD:
@@ -1596,7 +1596,7 @@ public:
         // because a row of the "old" design matrix is used in the determination of "delta", see above.
         H.grow_column();
 
-        fill_kernel( every_key[idx], every_key.begin(), every_key.end(),
+        this->fill_kernel( every_key[idx], every_key.begin(), every_key.end(),
                      ublas::column( H.matrix, old_size ).begin() );
 
         //     std::cout << H.view() << std::endl;
@@ -1604,7 +1604,7 @@ public:
         // 	if ( (*base_type::data)[every_key[idx]].get<1>() ) {
         // 		for( unsigned int i=0; i<every_key.size(); ++i )
         // 		  if ( (*base_type::data)[every_key[i]].get<1>() )
-        // 		  			 std::cout << kernel( every_key[idx], every_key[i] ) << std::endl;
+        // 		  			 std::cout << this->kernel( every_key[idx], every_key[i] ) << std::endl;
         // 		  else
         // 		  			 std::cout << -kernel( every_key[idx], every_key[i] ) << std::endl;
         // 	} else {
@@ -1612,7 +1612,7 @@ public:
         // 		  if ( (*base_type::data)[every_key[i]].get<1>() )
         // 		  			 std::cout << -kernel( every_key[idx], every_key[i] ) << std::endl;
         // 		  else
-        // 		  			 std::cout << kernel( every_key[idx], every_key[i] ) << std::endl;
+        // 		  			 std::cout << this->kernel( every_key[idx], every_key[i] ) << std::endl;
         // 	}
 
 
@@ -1621,7 +1621,7 @@ public:
         /*	if ( outputs[idx] ) {
         		for( unsigned int i=0; i<base_type::support_vector.size(); ++i )
         		  if ( outputs[i] )
-                    	     H.matrix(i,old_size) = kernel( base_type::support_vector[idx], base_type::support_vector[i] );
+                    	     H.matrix(i,old_size) = this->kernel( base_type::support_vector[idx], base_type::support_vector[i] );
         		  else 
                     	     H.matrix(i,old_size) = -kernel( base_type::support_vector[idx], base_type::support_vector[i] );
         	} else {
@@ -1629,11 +1629,11 @@ public:
         		  if ( outputs[i] )
                     	     H.matrix(i,old_size) = -kernel( base_type::support_vector[idx], base_type::support_vector[i] );
         		  else 
-                    	     H.matrix(i,old_size) = kernel( base_type::support_vector[idx], base_type::support_vector[i] );
+                    	     H.matrix(i,old_size) = this->kernel( base_type::support_vector[idx], base_type::support_vector[i] );
         	}*/
 
         // 	for( unsigned int i=0; i<base_type::support_vector.size(); ++i )
-        //             H.matrix(i,old_size) = kernel( base_type::support_vector[i],base_type::support_vector[idx] );
+        //             H.matrix(i,old_size) = this->kernel( base_type::support_vector[i],base_type::support_vector[idx] );
 
         // perform the actual set transition
         margin_set.push_back( idx );
