@@ -69,10 +69,10 @@ class krls< Problem, Kernel, PropertyMap, typename boost::enable_if< is_regressi
     typedef typename base_type::kernel_type kernel_type;
     typedef double scalar_type;
 
-    typedef symmetric_view< ublas::matrix<double> > symmetric_type;
-
-    typedef ublas::matrix<double> matrix_type;
+    typedef ublas::matrix<double, ublas::column_major> matrix_type;
     typedef ublas::vector<double> vector_type;
+    typedef symmetric_view< matrix_type > symmetric_type;
+
 
     typedef typename Problem::input_type input_type;
     typedef typename Problem::output_type output_type;
@@ -109,7 +109,7 @@ public:
     output_type operator()( input_type const &x ) {
 
         vector_type temp_K( basis_key.size() );
-        fill_kernel( x, basis_key.begin(), basis_key.end(), temp_K.begin() );
+        this->fill_kernel( x, basis_key.begin(), basis_key.end(), temp_K.begin() );
         for( unsigned int i=0; i < temp_K.size(); ++i )
             temp_K[i] += lambda_squared;
         return blas::dot( weight, temp_K );
@@ -132,7 +132,7 @@ public:
     void increment( key_type const &key ) {
 
         // calculate the base_type::kernel function on (x_t,x_t), needed later on
-        scalar_type k_tt = kernel( key, key ) + lambda_squared;
+        scalar_type k_tt = this->kernel( key, key ) + lambda_squared;
 
         // check whether dictionary is still not initialised
         if ( basis_key.empty() ) {
@@ -147,7 +147,7 @@ public:
             P.matrix(0,0) = 1.0;
 
             // add to weight vector
-            weight.push_back( output(key) / k_tt );
+            weight.push_back( this->output(key) / k_tt );
 
             // add to support vector set
             basis_key.push_back( key );
@@ -159,13 +159,13 @@ public:
             vector_type k_t( basis_key.size() );
 
             // fill vector k_t
-            fill_kernel( key, basis_key.begin(), basis_key.end(), k_t.begin() );
+            this->fill_kernel( key, basis_key.begin(), basis_key.end(), k_t.begin() );
             for( typename vector_type::size_type i=0; i<k_t.size(); ++i )
                 k_t[i] += lambda_squared;
 
             // a_t <- R %*% k_t
-            ublas::matrix_range< ublas::matrix<double> > R_range( R.view() );
-            ublas::symmetric_adaptor< ublas::matrix_range< ublas::matrix<double> > > R_view( R_range );
+            ublas::matrix_range< matrix_type > R_range( R.view() );
+            ublas::symmetric_adaptor< ublas::matrix_range< matrix_type > > R_view( R_range );
             blas::symv( 1.0, R_view, k_t, 1.0, a_t );
             scalar_type delta_t = k_tt - blas::dot( k_t, a_t );
 
@@ -181,7 +181,7 @@ public:
                 scalar_type factor = static_cast<scalar_type>(1) / delta_t;
                 blas::syr( factor, a_t, R_view );
                 R.grow_row_column();
-                ublas::matrix_vector_slice< ublas::matrix<double> > R_row_part( R.shrinked_row(old_size) );
+                ublas::matrix_vector_slice< matrix_type > R_row_part( R.shrinked_row(old_size) );
                 blas::scal( -factor, a_t );
                 R_row_part.assign( a_t );
                 R.matrix( old_size, old_size ) = factor;
@@ -189,12 +189,12 @@ public:
                 // update permutation matrix P (equation 15)
                 // assign unit vector with 1 on last element.
                 P.grow_row_column();
-                ublas::matrix_vector_slice< ublas::matrix<double> > P_row_part( P.shrinked_row(old_size) );
+                ublas::matrix_vector_slice< matrix_type > P_row_part( P.shrinked_row(old_size) );
                 blas::set(  0.0, P_row_part );
                 P.matrix( old_size, old_size ) = 1.0;
 
                 // adjust weight vector alpha (equation 16)
-                factor = output(key) - blas::dot(k_t,weight);
+                factor = this->output(key) - blas::dot(k_t,weight);
                 blas::axpy( factor, a_t, weight );
 
                 // add new weight to the weight vector
@@ -210,15 +210,15 @@ public:
                 vector_type P_a( basis_key.size() );
 
                 // spmv(A,x,y)       y <- A x
-                ublas::matrix_range< ublas::matrix<double> > P_range( P.view() );
-                ublas::symmetric_adaptor< ublas::matrix_range< ublas::matrix<double> > > P_view( P_range );
+                ublas::matrix_range< matrix_type > P_range( P.view() );
+                ublas::symmetric_adaptor< ublas::matrix_range< matrix_type > > P_view( P_range );
                 blas::symv( 1.0, P_view, a_t, 1.0, P_a );
 
                 // 1 / (1 + a_t %*% P_(t-1) %*% a_t)
                 scalar_type factor = 1.0 / (1.0 + blas::dot( a_t, P_a ));
 
                 // update weights (equation 13)
-                blas::symv( factor* output(key) - blas::dot(k_t,weight),
+                blas::symv( factor* this->output(key) - blas::dot(k_t,weight),
                              R_view, P_a, static_cast<scalar_type>(1), weight );
 
                 // update permutation matrix (equation 14)

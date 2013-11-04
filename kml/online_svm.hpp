@@ -1134,7 +1134,7 @@ public:
             // TODO this should be an optimised function call
             //H.matrix( index, 0 ) = ( output ? 1.0 : -1.0 );
 
-            ublas::matrix_row<ublas::matrix<double> >::iterator j = ublas::row( H.matrix, index ).begin();
+            ublas::matrix_row<matrix_type >::iterator j = ublas::row( H.matrix, index ).begin();
             *j++ = bool_to_float( this->output(key) );
             this->fill_kernel( key, margin_key.begin(), margin_key.end(), j );
 
@@ -1221,8 +1221,8 @@ public:
 
             // Equation 10: compute all coefficient sensitivities
             coef_sense.resize( margin_set.size()+1, false );
-            ublas::matrix_range< ublas::matrix<double> > R_range( R.view() );
-            ublas::symmetric_adaptor< ublas::matrix_range< ublas::matrix<double> > > R_view( R_range );
+            ublas::matrix_range< matrix_type > R_range( R.view() );
+            ublas::symmetric_adaptor< ublas::matrix_range< matrix_type > > R_view( R_range );
             blas::symv( 1.0, R_view, H.row(index), 1.0, coef_sense );
             // 	    if (debug)
             //       	        std::cout << "Coefficient sensitivities: " << coef_sense << std::endl;
@@ -1518,12 +1518,12 @@ public:
             R.grow_row_column();
 
             // fetch a view into the matrix _without_ the new row and columns
-            ublas::matrix_range< ublas::matrix<double> > R_range( R.shrinked_view() );
-            ublas::symmetric_adaptor< ublas::matrix_range< ublas::matrix<double> > > R_symm_view( R_range );
+            ublas::matrix_range< matrix_type > R_range( R.shrinked_view() );
+            ublas::symmetric_adaptor< ublas::matrix_range< matrix_type > > R_symm_view( R_range );
 
             // fetch a view into the last row of the matrix of the _old_ size
             //ublas::matrix_row< ublas::matrix_range< ublas::matrix<double> > > R_row_part( R.shrinked_row(old_size) );
-            ublas::matrix_vector_slice< ublas::matrix<double> > R_row_part( R.shrinked_row(old_size) );
+            ublas::matrix_vector_slice< matrix_type > R_row_part( R.shrinked_row(old_size) );
 
             // compute the unscaled last row of R (similar to the coefficient sensitivities)
             blas::symv( 1.0, R_symm_view, H.row(idx), 1.0, R_row_part );
@@ -1667,8 +1667,8 @@ public:
             }
 
 
-            ublas::matrix_range< ublas::matrix<double> > R_range( R.view() );
-            ublas::symmetric_adaptor< ublas::matrix_range< ublas::matrix<double> > > R_view( R_range );
+            ublas::matrix_range< matrix_type > R_range( R.view() );
+            ublas::symmetric_adaptor< ublas::matrix_range< matrix_type > > R_view( R_range );
 
             vector_type R_row( row(R_view, idx+1) );
             blas::syr( -1.0/divisor, R_row, R_view );
@@ -1713,8 +1713,8 @@ public:
     //static const bool debug = false;
     bool debug;
 
-    matrix_view< ublas::matrix<double> > H;					// "design matrix" Q (not as in the paper!)
-    symmetric_view< ublas::matrix<double> > R;					// matrix inverse
+    matrix_view< matrix_type > H;					// "design matrix" Q (not as in the paper!)
+    symmetric_view< matrix_type > R;					// matrix inverse
 
     scalar_type bias;
     std::vector<key_type> every_key;

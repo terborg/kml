@@ -84,8 +84,8 @@ public:
     typedef typename Problem::input_type input_type;
     typedef typename Problem::output_type output_type;
     typedef double scalar_type;
-    typedef ublas::symmetric_matrix<double> symmetric_type;
-    typedef ublas::matrix<double> matrix_type;
+    typedef ublas::symmetric_matrix<double, ublas::column_major> symmetric_type;
+    typedef ublas::matrix<double, ublas::column_major> matrix_type;
     typedef ublas::vector<double> vector_type;
 
     friend class boost::serialization::access;
@@ -134,7 +134,7 @@ public:
         vector_type m_output( problem_size );
         KeyIterator key_iter( begin );
         for( std::size_t i = 0; i<problem_size; ++i ) {
-            m_output[i] = output(*key_iter++);
+            m_output[i] = this->output(*key_iter++);
         }
         vector_type Hty( problem_size + 1 );
         blas::gemv( 1.0, bindings::trans(H), m_output, 1.0, Hty );
