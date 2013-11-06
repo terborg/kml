@@ -35,6 +35,11 @@
 #include <boost/numeric/bindings/lapack.hpp>
 #include <boost/numeric/bindings/trans.hpp>
 
+#include <boost/numeric/bindings/ublas/symmetric.hpp>
+#include <boost/numeric/bindings/ublas/matrix_proxy.hpp>
+
+
+
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/tracking.hpp>
@@ -301,8 +306,8 @@ public:
             }
             
             
-            
-            blas::axpby( beta, diag_HtH, -beta*beta, S );
+            S = beta * diag_HtH - beta*beta * S;
+            //blas::axpby( beta, diag_HtH, -beta*beta, S );
             blas::copy( Hty, Q );
             blas::gemv( -beta*beta, work_mat, Hty_cache, beta, Q );
 
