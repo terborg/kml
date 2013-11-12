@@ -158,8 +158,7 @@ inline void outer_norm2( matX const &X, matR &result ) {
     // create a vector filled with a constant
     ublas::vector<Type> diag(ublas::matrix_vector_range<ublas::symmetric_matrix<Type> >(result, ublas::range(0, result.size1()), ublas::range(0, result.size1())));
     ublas::vector<Type> one_vector( result.size1() );
-    blas::set
-        ( 1.0, one_vector );
+    blas::set( 1.0, one_vector );
 
     // multiply the result, for the -2 in "u^T*u - 2 * u^T*v + v^T*v"
     // do this after the diagonal vector was assigned!
@@ -585,8 +584,7 @@ void packed_Hty( ublas::symmetric_matrix<Type> const &K, ublas::vector<Type> con
 
     // handle the intercept term
     ublas::vector<Type> one_vector( K.size1() );
-    blas::set
-        ( 1.0, one_vector );
+    blas::set( 1.0, one_vector );
     result(0) = blas::dot( one_vector, y );
 
     // compute first part: Hty <- K y (K is symmetric, so doesn't matter)

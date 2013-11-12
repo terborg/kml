@@ -142,13 +142,13 @@ public:
             m_output[i] = this->output(*key_iter++);
         }
         vector_type Hty( problem_size + 1 );
-        blas::gemv( 1.0, bindings::trans(H), m_output, 1.0, Hty );
+        blas::gemv( 1.0, bindings::trans(H), m_output, 0.0, Hty );
         if (debug)
             std::cout << "done." << std::endl;
 
         std::cout << "computing HtH..." << std::flush;
         matrix_type HtH( problem_size + 1, problem_size + 1 );
-        blas::gemm( 1.0, bindings::trans(H), H, 1.0, HtH );
+        blas::gemm( 1.0, bindings::trans(H), H, 0.0, HtH );
         std::cout << "done." << std::endl;
 
         vector_type diag_HtH( HtH.size1() );
@@ -288,7 +288,7 @@ public:
             // mu is active_set size
 
 
-            blas::symv( 1.0, sigma_symm, Hty_cache, 1.0, mu );
+            blas::symv( 1.0, sigma_symm, Hty_cache, 0.0, mu );
             blas::scal( beta, mu );
 
             /*
@@ -298,7 +298,7 @@ public:
             */
             // work matrix will be HtH.size1() by active_set.size (equals HtH_part size)
             matrix_type work_mat( HtH.size1(), active_set.size() );
-            blas::symm( bindings::tag::left(), 1.0, HtH_cache, sigma_symm, 1.0, work_mat );
+            blas::symm( bindings::tag::right(), 1.0, HtH_cache, sigma_symm, 0.0, work_mat );
 
             // compute ALL S(i)'s and Q(i)'s (quite efficient)
             for( unsigned int i=0; i<S.size(); ++i ) {
@@ -551,7 +551,7 @@ public:
             //scalar_type heuh2 = residual_sum_of_squares_2( H, mu, active_set, output ) / (static_cast<scalar_type>(output.size()) - trace_Sigma_HtH );
 
 
-            blas::gemv( 1.0, H_cache, mu, 1.0, residuals );
+            blas::gemv( 1.0, H_cache, mu, 0.0, residuals );
             blas::axpy( -1.0, m_output, residuals );
             if (debug)
                 std::cout << "rss: " << blas::dot( residuals, residuals ) << std::endl;

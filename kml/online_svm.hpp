@@ -393,7 +393,7 @@ public:
             coef_sense.resize( margin_set.size()+1, false );
             ublas::matrix_range< matrix_type > R_range( R.view() );
             ublas::symmetric_adaptor< ublas::matrix_range< matrix_type > > R_view( R_range );
-            blas::symv( 1.0, R_view, H.row(index), 1.0, coef_sense );
+            blas::symv( 1.0, R_view, H.row(index), 0.0, coef_sense );
 
             // 	    for( int i=0; i<margin_set.size(); ++i ) {
             // 		std::cout << "margin " << margin_set[i] << " coef sense " << coef_sense[i+1];
@@ -401,7 +401,7 @@ public:
             // 	    }
 
             // compute all margin sensitivities
-            blas::gemv( 1.0, H.view(), coef_sense, 1.0, margin_sense );
+            blas::gemv( 1.0, H.view(), coef_sense, 0.0, margin_sense );
             blas::axpy( 1.0, candidate_column, margin_sense );
 
             scalar_type delta_weight_t;
@@ -760,7 +760,7 @@ public:
             ublas::matrix_vector_slice< matrix_type > R_row_part( R.shrinked_row(old_size) );
 
             // compute the unscaled last row of R (similar to the coefficient sensitivities)
-            blas::symv( 1.0, R_symm_view, H.row(index), 1.0, R_row_part );
+            blas::symv( 1.0, R_symm_view, H.row(index), 0.0, R_row_part );
 
             // compute the scaling factor
 
@@ -1223,12 +1223,12 @@ public:
             coef_sense.resize( margin_set.size()+1, false );
             ublas::matrix_range< matrix_type > R_range( R.view() );
             ublas::symmetric_adaptor< ublas::matrix_range< matrix_type > > R_view( R_range );
-            blas::symv( 1.0, R_view, H.row(index), 1.0, coef_sense );
+            blas::symv( 1.0, R_view, H.row(index), 0.0, coef_sense );
             // 	    if (debug)
             //       	        std::cout << "Coefficient sensitivities: " << coef_sense << std::endl;
             //
             // Equation 12: compute all margin sensitivities
-            blas::gemv( 1.0, H.view(), coef_sense, 1.0, margin_sense );
+            blas::gemv( 1.0, H.view(), coef_sense, 0.0, margin_sense );
             blas::axpy( 1.0, candidate_column, margin_sense );
             // 	    if (debug)
             // 	    	std::cout << "Margin sensitivities: " << margin_sense << std::endl;
@@ -1526,7 +1526,7 @@ public:
             ublas::matrix_vector_slice< matrix_type > R_row_part( R.shrinked_row(old_size) );
 
             // compute the unscaled last row of R (similar to the coefficient sensitivities)
-            blas::symv( 1.0, R_symm_view, H.row(idx), 1.0, R_row_part );
+            blas::symv( 1.0, R_symm_view, H.row(idx), 0.0, R_row_part );
 
             // compute the scaling factor
 

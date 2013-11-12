@@ -167,7 +167,7 @@ public:
             // a_t <- R %*% k_t
             ublas::matrix_range< matrix_type > R_range( R.view() );
             ublas::symmetric_adaptor< ublas::matrix_range< matrix_type > > R_view( R_range );
-            blas::symv( 1.0, R_view, k_t, 1.0, a_t );
+            blas::symv( 1.0, R_view, k_t, 0.0, a_t );
             scalar_type delta_t = k_tt - blas::dot( k_t, a_t );
 
             // Perform Approximate Linear Dependency (ALD) test
@@ -213,7 +213,7 @@ public:
                 // spmv(A,x,y)       y <- A x
                 ublas::matrix_range< matrix_type > P_range( P.view() );
                 ublas::symmetric_adaptor< ublas::matrix_range< matrix_type > > P_view( P_range );
-                blas::symv( 1.0, P_view, a_t, 1.0, P_a );
+                blas::symv( 1.0, P_view, a_t, 0.0, P_a );
 
                 // 1 / (1 + a_t %*% P_(t-1) %*% a_t)
                 scalar_type factor = 1.0 / (1.0 + blas::dot( a_t, P_a ));
