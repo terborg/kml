@@ -298,7 +298,7 @@ public:
             */
             // work matrix will be HtH.size1() by active_set.size (equals HtH_part size)
             matrix_type work_mat( HtH.size1(), active_set.size() );
-            blas::symm( bindings::tag::right(), 1.0, HtH_cache, sigma_symm, 0.0, work_mat );
+            blas::symm( bindings::tag::right(), 1.0, sigma_symm, HtH_cache, 0.0, work_mat );
 
             // compute ALL S(i)'s and Q(i)'s (quite efficient)
             for( unsigned int i=0; i<S.size(); ++i ) {

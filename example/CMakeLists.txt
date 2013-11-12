@@ -31,4 +31,4 @@ target_link_libraries( svm_regression ${Boost_LIBRARIES} ${BLAS_LIBRARIES} )
 
 
 add_executable( kmltool kmltool.cpp )
-target_link_libraries( kmltool ${Boost_LIBRARIES} ${BLAS_LIBRARIES} )
+target_link_libraries( kmltool ${Boost_LIBRARIES} ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES} )

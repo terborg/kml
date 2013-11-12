@@ -44,6 +44,7 @@ add_definitions( "-Wall -std=c++98 -pedantic -Wno-long-long" )
 #  
 find_package( Boost REQUIRED program_options serialization thread )
 find_package( BLAS )
+find_package( LAPACK )
 
 include_directories( . )
 add_subdirectory( example )
