@@ -1035,11 +1035,17 @@ public:
 
     }
 
-
-    float bool_to_float( bool const value ) {
+    scalar_type as_scalar_type( bool const value ) {
         return ( value ? 1.0 : -1.0 );
     }
 
+    scalar_type as_scalar_type( float const value ) {
+        return value;
+    }
+    
+    scalar_type as_scalar_type( double const value ) {
+        return value;
+    }
 
 
     /*! \param input an input pattern of input type I
@@ -1100,7 +1106,7 @@ public:
                 std::cout << "Initialising the Accurate Online Support Vector Machine" << std::endl;
 
             // set f(x_i) to y_i
-            bias = bool_to_float( this->output(key) );
+            bias = as_scalar_type( this->output(key) );
             condition.back() = 0.0;
 
             // put this first point (with index 0) in the remaining set
@@ -1112,7 +1118,7 @@ public:
 
             // initialise "design" matrix with the value associated with the output
             H.grow_row_column();
-            H.matrix(0,0) = bool_to_float( this->output(key) );
+            H.matrix(0,0) = as_scalar_type( this->output(key) );
 
             if (debug)
                 std::cout << std::endl;
@@ -1135,7 +1141,7 @@ public:
             //H.matrix( index, 0 ) = ( output ? 1.0 : -1.0 );
 
             ublas::matrix_row<matrix_type >::iterator j = ublas::row( H.matrix, index ).begin();
-            *j++ = bool_to_float( this->output(key) );
+            *j++ = as_scalar_type( this->output(key) );
             this->fill_kernel( key, margin_key.begin(), margin_key.end(), j );
 
             // 	    std::cout << "Filled H to ";
@@ -1509,8 +1515,8 @@ public:
 
             // this is correct: Q_ii == K(x_i,x_i)
             R.matrix(0,0) = this->kernel( every_key[idx], every_key[idx] );
-            // NEGATED bool_to_float (!!)
-            R.matrix(1,0) = -bool_to_float( this->output( every_key[idx] ) );
+            // NEGATED as_scalar_type (!!)
+            R.matrix(1,0) = -as_scalar_type( this->output( every_key[idx] ) );
             R.matrix(1,1) = 0.0;
 
         } else {
