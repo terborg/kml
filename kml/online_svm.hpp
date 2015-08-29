@@ -1035,15 +1035,23 @@ public:
 
     }
 
-    scalar_type as_scalar_type( bool const value ) {
+    scalar_type as_scalar_type( unsigned int const value ) const {
+        return ( value ? 1.0 : -1.0 );
+    }
+    
+    scalar_type as_scalar_type( int const value ) const {
+        return ( value > 0 ? 1.0 : -1.0 );
+    }
+
+    scalar_type as_scalar_type( bool const value ) const {
         return ( value ? 1.0 : -1.0 );
     }
 
-    scalar_type as_scalar_type( float const value ) {
+    scalar_type as_scalar_type( float const value ) const {
         return value;
     }
     
-    scalar_type as_scalar_type( double const value ) {
+    scalar_type as_scalar_type( double const value ) const {
         return value;
     }
 
